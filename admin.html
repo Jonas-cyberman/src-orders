@@ -39,6 +39,13 @@
         });
       }
     })();
+
+    // Auto-check session every minute to force logout if expired while page is open
+    setInterval(() => {
+      if (!AdminAuth.isAuthenticated()) {
+        window.location.replace('admin-login.html');
+      }
+    }, 60000);
   </script>
 
   <style>
@@ -139,6 +146,28 @@
       border: 1px solid var(--lux-ink);
       cursor: pointer;
     }
+
+    /* Admin Action Button Variants */
+    .btn-action-lux {
+      padding: 6px 14px;
+      font-family: var(--font-sans);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-confirm-lux { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+    .btn-confirm-lux:hover { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+    .btn-cancel-lux { background: #ffebee; color: #c62828; border-color: #ffcdd2; }
+    .btn-cancel-lux:hover { background: #c62828; color: #fff; border-color: #c62828; }
+    .btn-fulfill-lux { background: var(--lux-bg); color: var(--lux-ink); border-color: var(--lux-border); }
+    .btn-fulfill-lux:hover { background: var(--lux-gold); color: #fff; border-color: var(--lux-gold); }
     .btn-analytics-lux {
       background: transparent;
       color: var(--lux-ink);
@@ -157,13 +186,33 @@
     }
 
     .admin-header-lux { margin-bottom: 64px; }
+    .logo-img-lux {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 1px solid var(--lux-border);
+    }
+    .logo-lux {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--lux-ink);
+      font-family: var(--font-serif);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
   </style>
 </head>
 <body>
 
   <!-- LUXURY NAVBAR -->
   <nav class="lux-navbar">
-    <a href="index.html" class="logo-lux">SRC PULSE</a>
+    <a href="index.html" class="logo-lux">
+      <img src="img/Flyer/logo1.jpeg" alt="Logo" class="logo-img-lux">
+      <span>SRC PULSE</span>
+    </a>
     <div class="nav-links-lux d-none d-md-flex">
       <a href="index.html" class="nav-link-lux">Collection</a>
       <a href="product.html" class="nav-link-lux">Store</a>
@@ -463,12 +512,14 @@
     });
 
     let orders = [];
+    let filteredOrders = []; // NEW: Added for search
     let currentPage = 1;
     const itemsPerPage = 10;
 
     async function loadDashboard() {
       try {
-        orders = await getAllOrders(); // Fixed function name
+        orders = await getAllOrders();
+        filteredOrders = [...orders]; // Initialise with all data
         renderStats();
         renderTable();
       } catch (err) {
@@ -540,16 +591,23 @@
         `).join('');
       }
 
-      document.getElementById('modalTotalItems').textContent = all.length;
-      const totalPaidRev = paid.reduce((s,o)=>s+o.total_price,0);
-      document.getElementById('modalAvgOrder').textContent = `GHS ${(totalPaidRev/paid.length || 0).toFixed(2)}`;
-      document.getElementById('modalTotalCaps').textContent = all.filter(o => o.cap_option).length;
+      const modalItems = document.getElementById('modalTotalItems');
+      if (modalItems) modalItems.textContent = all.length;
+
+      const modalAvg = document.getElementById('modalAvgOrder');
+      if (modalAvg) {
+        const totalPaidRev = paid.reduce((s,o)=>s+o.total_price,0);
+        modalAvg.textContent = `GHS ${(totalPaidRev/paid.length || 0).toFixed(2)}`;
+      }
+
+      const modalCaps = document.getElementById('modalTotalCaps');
+      if (modalCaps) modalCaps.textContent = all.filter(o => o.cap_option).length;
     }
 
     function renderTable() {
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
-      const results = orders.slice(start, end);
+      const results = filteredOrders.slice(start, end);
       
       const tbody = document.getElementById('ordersTable');
       tbody.innerHTML = results.map(o => `
@@ -575,30 +633,37 @@
           </td>
           <td class="small font-monospace opacity-50">${o.transaction_id || '---'}</td>
           <td>
-            ${o.payment_status === 'paid' ? `
-              <button onclick="handleFulfill('${o.transaction_id}')" class="btn-lux py-1 px-3" style="font-size: 10px; background: var(--lux-gold);">Fulfill</button>
-            ` : '---'}
+            <div class="d-flex gap-2">
+              ${o.payment_status === 'paid' ? `
+                <button onclick="handleFulfill('${o.transaction_id}')" class="btn-action-lux btn-fulfill-lux">Fulfill</button>
+              ` : ''}
+              ${o.payment_status === 'pending' ? `
+                <button onclick="handleConfirmManual('${o.transaction_id}')" class="btn-action-lux btn-confirm-lux">Confirm</button>
+                <button onclick="handleDeleteOrder('${o.transaction_id}')" class="btn-action-lux btn-cancel-lux">Cancel</button>
+              ` : ''}
+              ${(o.payment_status !== 'paid' && o.payment_status !== 'pending') ? '<span class="opacity-25">---</span>' : ''}
+            </div>
           </td>
         </tr>
-      `).join('') || '<tr><td colspan="9" class="text-center py-5 opacity-50">No records found.</td></tr>';
+      `).join('') || '<tr><td colspan="9" class="text-center py-5 opacity-50">No records found matching your audit.</td></tr>';
 
-      document.getElementById('pageInfo').textContent = `Showing ${Math.min(end, orders.length)} of ${orders.length} records`;
+      document.getElementById('pageInfo').textContent = `Showing ${Math.min(end, filteredOrders.length)} of ${filteredOrders.length} records`;
     }
 
     // Simplified search logic
     document.getElementById('orderSearch').addEventListener('input', e => {
       const query = e.target.value.toLowerCase();
-      const filtered = orders.filter(o => 
+      filteredOrders = orders.filter(o => 
         o.students?.name?.toLowerCase().includes(query) || 
         o.students?.phone?.includes(query) ||
         o.transaction_id?.toLowerCase().includes(query)
       );
-      // Re-render with filtered data (for simple prototype)
-      // Actual implementation should handle search in loadDashboard
+      currentPage = 1; // Reset to first page
+      renderTable();
     });
 
     document.getElementById('nextPage').addEventListener('click', () => { 
-      if(currentPage * itemsPerPage < orders.length) { currentPage++; renderTable(); } 
+      if(currentPage * itemsPerPage < filteredOrders.length) { currentPage++; renderTable(); } 
     });
     document.getElementById('prevPage').addEventListener('click', () => { 
       if(currentPage > 1) { currentPage--; renderTable(); } 
@@ -613,6 +678,31 @@
       } catch (err) {
         console.error("Fulfillment Failed:", err);
         alert("Failed to update status.");
+      }
+    }
+
+    async function handleConfirmManual(txId) {
+      if(!confirm("Confirm manual payment for this order? This will mark it as PAID.")) return;
+      try {
+        await updatePaymentStatus(txId, 'paid');
+        alert("Payment Confirmed Successfully");
+        loadDashboard();
+      } catch (err) {
+        console.error("Confirmation Failed:", err);
+        alert("Failed to confirm payment.");
+      }
+    }
+
+    async function handleDeleteOrder(txId) {
+      if(!confirm("Are you sure you want to cancel and DELETE this order record? This cannot be undone.")) return;
+      try {
+        const adminName = AdminAuth.getUser()?.username || 'System';
+        await deleteOrder(txId, adminName);
+        alert("Order Cancelled and Deleted");
+        loadDashboard();
+      } catch (err) {
+        console.error("Deletion Failed:", err);
+        alert("Failed to delete order.");
       }
     }
 

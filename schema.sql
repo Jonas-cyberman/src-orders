@@ -57,9 +57,31 @@ create table if not exists admin_users (
   created_at timestamptz default now()
 );
 
--- Insert initial admin users
+-- Initial admin users
 insert into admin_users (username, password, full_name, role) 
 values 
   ('finsec', 'admin123', 'Financial Secretary', 'Finance'),
   ('J Cole', 'admin123', 'Jonas Coleman', 'PRO')
 on conflict (username) do nothing;
+
+-- Create deleted_orders table (Audit Log)
+create table if not exists deleted_orders (
+  id uuid primary key default uuid_generate_v4(),
+  order_id uuid,
+  created_at timestamptz,
+  student_id uuid,
+  shirt_color text,
+  shirt_size text,
+  shirt_texture text,
+  cap_option boolean,
+  nickname_option boolean,
+  nickname_text text,
+  total_price numeric,
+  payment_status text,
+  transaction_id text,
+  deleted_at timestamptz default now(),
+  deleted_by text
+);
+
+alter table deleted_orders enable row level security;
+create policy "Allow admins to read/insert deleted_orders" on deleted_orders for all using (true);

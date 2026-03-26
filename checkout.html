@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout | SRC Pulse Luxury</title>
-  
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  
+
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/checkout.css">
 </head>
+
 <body>
 
   <!-- LUXURY NAVBAR -->
@@ -19,7 +21,10 @@
       <a href="product.html" class="back-link-lux" title="Go Back">
         <i class="ph ph-arrow-left"></i>
       </a>
-      <a href="index.html" class="logo-text text-decoration-none" style="color: inherit;">SRC PULSE</a>
+      <a href="index.html" class="logo-lux">
+        <img src="img/Flyer/logo1.jpeg" alt="Logo" class="logo-img-lux">
+        <span>SRC PULSE</span>
+      </a>
     </div>
     <div class="breadcrumb-nav d-none d-md-flex">
       <a href="product.html" class="step link-step">Design</a>
@@ -38,31 +43,56 @@
       display: flex;
       align-items: center;
     }
-    .back-link-lux:hover { opacity: 1; color: var(--lux-gold); }
-    
+
+    .back-link-lux:hover {
+      opacity: 1;
+      color: var(--lux-gold);
+    }
+
     @media (min-width: 992px) {
-      .back-link-lux { display: none; }
+      .back-link-lux {
+        display: none;
+      }
+    }
+    .logo-img-lux {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 1px solid var(--lux-border);
+    }
+    .logo-lux {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--lux-ink);
+      font-family: var(--font-serif);
+      font-weight: 700;
+      letter-spacing: 0.1em;
     }
   </style>
 
   <div class="checkout-container">
     <form id="checkoutForm" novalidate>
       <div class="row gx-lg-5">
-        
+
         <!-- LEFT COLUMN: FORM -->
         <div class="col-lg-7 left-column">
           <span class="label-eyebrow">Contact & Identity</span>
           <h1 class="section-title">Your Details</h1>
-          
+
           <div class="row g-4 lux-form-group">
             <div class="col-md-6">
               <label class="lux-label">Full Name</label>
-              <input type="text" id="fullName" name="fullName" class="lux-input" placeholder="Enter your full name" required>
+              <input type="text" id="fullName" name="fullName" class="lux-input" placeholder="Enter your full name"
+                required>
             </div>
             <div class="col-md-6">
               <label class="lux-label">Phone Number</label>
-              <input type="tel" id="phone" name="phone" class="lux-input" placeholder="0XXXXXXXXX" required 
-                     pattern="^0\d{9}$" maxlength="10" title="Please enter a valid 10-digit Ghana phone number starting with 0">
+              <input type="tel" id="phone" name="phone" class="lux-input" placeholder="0XXXXXXXXX" required
+                pattern="^0\d{9}$" maxlength="10"
+                title="Please enter a valid 10-digit Ghana phone number starting with 0">
             </div>
           </div>
 
@@ -75,6 +105,7 @@
               <option value="Nightingale Hostel">Nightingale Hostel</option>
               <option value="Royal Hostel">Royal Hostel</option>
               <option value="DBS Hostel">DBS Hostel</option>
+              <option value="Harmony Hostel">Harmony Hostel</option>
               <option value="Males Hostel">Males Hostel</option>
             </select>
           </div>
@@ -137,52 +168,132 @@
         </div>
       </div>
     </form>
-  <footer class="footer-lux" style="background: var(--lux-ink); color: var(--lux-white); padding: 80px 0; text-align: center; margin-top: 80px;">
+  </div> <!-- End checkout-container -->
+
+  <footer class="footer-lux"
+    style="background: var(--lux-ink); color: var(--lux-white); padding: 50px 0; text-align: center; margin-top: 60px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
     <div class="container">
-      <div class="logo-lux" style="color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 20px; margin-bottom: 40px; display: inline-block;">SRC PULSE</div>
-      <p class="opacity-50 small text-uppercase tracking-widest mb-2">&copy; 2026 Dunkwa-On-Offin Nursing & Midwifery College</p>
-      <p class="small text-uppercase tracking-widest opacity-25" style="font-size: 10px; letter-spacing: 0.2em;">Created by Jonas Coleman, SRC PRO</p>
+      <div class="footer-logos-lux d-flex justify-content-center gap-4 mb-4">
+        <img src="img/Flyer/logo1.jpeg" alt="DNMTC Logo" class="footer-logo-img">
+        <img src="img/Flyer/logo2.jpeg" alt="SRC Logo" class="footer-logo-img">
+      </div>
+      <div class="logo-lux"
+        style="color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 20px; margin-bottom: 25px; display: flex; justify-content: center;">
+        SRC PULSE</div>
+      <p class="opacity-30 small text-uppercase tracking-widest mb-1" style="font-size: 11px;">&copy; 2026 Dunkwa-On-Offin Nursing & Midwifery
+        College</p>
+      <p class="small text-uppercase tracking-widest opacity-20" style="font-size: 9px; letter-spacing: 0.25em;">
+        Created by Jonas Coleman, SRC PRO</p>
     </div>
   </footer>
 
-  <!-- SCRIPTS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="https://js.paystack.co/v1/inline.js"></script>
-  <script src="js/app.js?v=1.0.1"></script>
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <script src="js/app.js?v=1.0.1"></script>
 
-  <script>
-    const orderData = JSON.parse(localStorage.getItem('srcWeekOrder') || '{}');
-    if (!orderData.totalPrice) window.location.href = 'product.html';
+    <script>
+      const orderData = JSON.parse(localStorage.getItem('srcWeekOrder') || '{}');
+      if (!orderData.totalPrice) window.location.href = 'product.html';
 
-    const DOM = {
-      form: document.getElementById('checkoutForm'),
-      programme: document.getElementById('programme'),
-      classWrap: document.getElementById('classWrapper'),
-      classSelect: document.getElementById('class'),
-      totalDisplay: document.getElementById('total-price-display'),
-      payBtn: document.getElementById('payBtn')
-    };
+      const DOM = {
+        form: document.getElementById('checkoutForm'),
+        programme: document.getElementById('programme'),
+        classWrap: document.getElementById('classWrapper'),
+        classSelect: document.getElementById('class'),
+        totalDisplay: document.getElementById('total-price-display'),
+        payBtn: document.getElementById('payBtn')
+      };
 
-    const classMapping = {
-      'RGN': ['RGN13 A', 'RGN13 B', 'RGN14 A', 'RGN14 B', 'RGN15'],
-      'RM': ['RM10A', 'RM10B', 'RM11', 'RM12'],
-      'NAC': ['NAC17', 'NAC18']
-    };
+      const classMapping = {
+        'RGN': ['RGN13 A', 'RGN13 B', 'RGN14 A', 'RGN14 B', 'RGN15'],
+        'RM': ['RM10A', 'RM10B', 'RM11', 'RM12'],
+        'NAC': ['NAC17', 'NAC18']
+      };
 
-    const processingFee = 1.95;
+      const processingFee = 1.95;
 
-    function init() {
-      document.getElementById('summary-swatch').style.backgroundColor = orderData.colorHex || '#1C2E4A';
-      document.getElementById('summary-color-name').textContent = orderData.colorName || 'Navy Blue';
-      document.getElementById('summary-size').textContent = `Size ${orderData.size || 'XL'}`;
-      
-      const grandTotalDisplay = Number(orderData.totalPrice);
-      
-      DOM.totalDisplay.textContent = `GH₵ ${grandTotalDisplay.toFixed(2)}`;
-      DOM.payBtn.querySelector('.pay-label').textContent = `Pay GH₵ ${grandTotalDisplay.toFixed(2)}`;
+      // CUSTOM SELECT LOGIC
+      function setupCustomSelects() {
+        const selects = document.querySelectorAll('select.lux-input');
 
-      let itemsHtml = `
+        function updateOptions(sel, list, trig, wrap) {
+          list.innerHTML = '';
+          Array.from(sel.options).forEach((opt, index) => {
+            if (opt.disabled && index === 0) return;
+            const item = document.createElement('div');
+            item.className = 'lux-select-option' + (index === sel.selectedIndex ? ' selected' : '');
+            item.textContent = opt.text;
+            item.addEventListener('click', (e) => {
+              e.stopPropagation();
+              sel.selectedIndex = index;
+              trig.querySelector('span').textContent = opt.text;
+              sel.dispatchEvent(new Event('change'));
+              wrap.classList.remove('open');
+              updateOptions(sel, list, trig, wrap);
+            });
+            list.appendChild(item);
+          });
+        }
+
+        selects.forEach(select => {
+          if (select.parentElement.classList.contains('lux-select')) {
+            const wrapper = select.parentElement;
+            const trigger = wrapper.querySelector('.lux-select-trigger');
+            const optionsList = wrapper.querySelector('.lux-select-options');
+            trigger.querySelector('span').textContent = select.options[select.selectedIndex]?.text || 'Select...';
+            updateOptions(select, optionsList, trigger, wrapper);
+            return;
+          }
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'lux-select';
+          select.parentNode.insertBefore(wrapper, select);
+          wrapper.appendChild(select);
+
+          const trigger = document.createElement('div');
+          trigger.className = 'lux-select-trigger';
+          trigger.innerHTML = `<span>${select.options[select.selectedIndex]?.text || 'Select...'}</span><i class="ph ph-caret-down"></i>`;
+          wrapper.appendChild(trigger);
+
+          const optionsList = document.createElement('div');
+          optionsList.className = 'lux-select-options';
+          wrapper.appendChild(optionsList);
+
+          updateOptions(select, optionsList, trigger, wrapper);
+
+          trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.lux-select').forEach(ls => {
+              if (ls !== wrapper) ls.classList.remove('open');
+            });
+            wrapper.classList.toggle('open');
+          });
+
+          select.addEventListener('change', () => {
+            trigger.querySelector('span').textContent = select.options[select.selectedIndex]?.text || 'Select...';
+            updateOptions(select, optionsList, trigger, wrapper);
+          });
+        });
+      }
+
+      window.addEventListener('click', () => {
+        document.querySelectorAll('.lux-select').forEach(ls => ls.classList.remove('open'));
+      });
+
+      function init() {
+        setupCustomSelects();
+        document.getElementById('summary-swatch').style.backgroundColor = orderData.colorHex || '#1C2E4A';
+        document.getElementById('summary-color-name').textContent = orderData.colorName || 'Navy Blue';
+        document.getElementById('summary-size').textContent = `Size ${orderData.size || 'XL'}`;
+
+        const grandTotalDisplay = Number(orderData.totalPrice);
+
+        DOM.totalDisplay.textContent = `GH₵ ${grandTotalDisplay.toFixed(2)}`;
+        DOM.payBtn.querySelector('.pay-label').textContent = `Pay GH₵ ${grandTotalDisplay.toFixed(2)}`;
+
+        let itemsHtml = `
         <div class="summary-item">
           <div class="summary-item-left">
             <i class="ph ph-t-shirt"></i>
@@ -191,8 +302,8 @@
           <span class="summary-item-price">GH₵ 45.00</span>
         </div>
       `;
-      if(orderData.package === 'bundle') {
-        itemsHtml += `
+        if (orderData.package === 'bundle') {
+          itemsHtml += `
           <div class="summary-item">
             <div class="summary-item-left">
               <i class="ph ph-baseball-cap"></i>
@@ -201,9 +312,9 @@
             <span class="summary-item-price">GH₵ 25.00</span>
           </div>
         `;
-      }
-      if(orderData.nickname) {
-        itemsHtml += `
+        }
+        if (orderData.nickname) {
+          itemsHtml += `
           <div class="summary-item">
             <div class="summary-item-left">
               <i class="ph ph-pencil-simple"></i>
@@ -212,112 +323,126 @@
             <span class="summary-item-price">GH₵ 5.00</span>
           </div>
         `;
-      }
-      
-      document.getElementById('summary-items').innerHTML = itemsHtml;
-    }
+        }
 
-    DOM.programme.addEventListener('change', (e) => {
-      const p = e.target.value;
-      DOM.classSelect.innerHTML = '<option value="" disabled selected>Select class</option>';
-      if (classMapping[p]) {
-        classMapping[p].forEach(c => {
-          DOM.classSelect.innerHTML += `<option value="${c}">${c}</option>`;
-        });
-        DOM.classSelect.disabled = false;
-        DOM.classWrap.style.display = 'block';
+        document.getElementById('summary-items').innerHTML = itemsHtml;
       }
-    });
 
-    DOM.form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      let isValid = true;
-      const inputs = DOM.form.querySelectorAll('input[required], select[required]');
-      inputs.forEach(input => {
-        if (!input.value.trim()) {
-          input.style.borderColor = 'var(--lux-gold)'; /* Highlight invalid */
-          isValid = false;
-        } else {
-          input.style.borderColor = '';
+      DOM.programme.addEventListener('change', (e) => {
+        const p = e.target.value;
+        DOM.classSelect.innerHTML = '<option value="" disabled selected>Select class</option>';
+        if (classMapping[p]) {
+          classMapping[p].forEach(c => {
+            DOM.classSelect.innerHTML += `<option value="${c}">${c}</option>`;
+          });
+          DOM.classSelect.disabled = false;
+          DOM.classWrap.style.display = 'block';
+          setupCustomSelects(); // REFRESH THE CUSTOM DROPDOWNS
         }
       });
 
-      if (!isValid) return;
+      DOM.form.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-      const phone = document.getElementById('phone').value;
-      if (!/^0\d{9}$/.test(phone)) {
-        alert('Invalid phone number. Please enter exactly 10 digits starting with 0.');
-        document.getElementById('phone').style.borderColor = 'var(--lux-gold)';
-        return;
-      }
-
-      DOM.payBtn.disabled = true;
-      DOM.payBtn.textContent = 'Processing...';
-
-      try {
-        const fullName = document.getElementById('fullName').value;
-        localStorage.setItem('lastStudentName', fullName);
-
-        const studentId = await insertStudent({
-          name: fullName,
-          phone: document.getElementById('phone').value,
-          hostel: document.getElementById('hostel').value,
-          programme: document.getElementById('programme').value,
-          class: document.getElementById('class').value
-        });
-
-        const transactionId = generateTransactionId();
-        const finalTotal = Number(orderData.totalPrice) + processingFee;
-
-        await insertOrder({
-          student_id: studentId,
-          shirt_color: orderData.colorName,
-          shirt_size: orderData.size,
-          shirt_texture: orderData.texture,
-          cap_option: orderData.package === 'bundle',
-          nickname_option: !!orderData.nickname,
-          nickname_text: orderData.nickText || null,
-          total_price: finalTotal,
-          payment_status: 'pending',
-          transaction_id: transactionId
-        });
-
-        const handler = PaystackPop.setup({
-          key: CONFIG.PAYSTACK_KEY,
-          email: (document.getElementById('fullName').value.trim().replace(/\s+/g, '_').toLowerCase() + 
-                  '+' + 
-                  document.getElementById('class').value.trim().replace(/\s+/g, '_').toLowerCase() + 
-                  '@order.net'),
-          amount: Math.round(finalTotal * 100),
-          currency: 'GHS',
-          ref: transactionId,
-          callback: function(response) {
-            updatePaymentStatus(transactionId, 'paid').then(function() {
-              localStorage.removeItem('srcWeekOrder');
-              window.location.href = 'confirmation.html?ref=' + transactionId;
-            }).catch(function(err) {
-              console.error('Payment update failed:', err);
-              // Still redirect but maybe with an error flag? No, let's just go to confirmation.
-              localStorage.removeItem('srcWeekOrder');
-              window.location.href = 'confirmation.html?ref=' + transactionId;
-            });
-          },
-          onClose: function() {
-            DOM.payBtn.disabled = false;
-            init();
+        let isValid = true;
+        const inputs = DOM.form.querySelectorAll('input[required], select[required]');
+        inputs.forEach(input => {
+          if (!input.value.trim()) {
+            input.style.borderColor = 'var(--lux-gold)'; /* Highlight invalid */
+            isValid = false;
+          } else {
+            input.style.borderColor = '';
           }
         });
-        handler.openIframe();
-      } catch (err) {
-        console.error(err);
-        alert('An error occurred: ' + (err.message || err.details || 'Check console for details'));
-        DOM.payBtn.disabled = false;
-        init();
-      }
-    });
 
-    init();
-  </script>
+        if (!isValid) return;
+
+        const phone = document.getElementById('phone').value;
+        if (!/^0\d{9}$/.test(phone)) {
+          alert('Invalid phone number. Please enter exactly 10 digits starting with 0.');
+          document.getElementById('phone').style.borderColor = 'var(--lux-gold)';
+          return;
+        }
+
+        DOM.payBtn.disabled = true;
+        DOM.payBtn.textContent = 'Processing...';
+
+        try {
+          const fullName = document.getElementById('fullName').value;
+          localStorage.setItem('lastStudentName', fullName);
+
+          const studentId = await insertStudent({
+            name: fullName,
+            phone: document.getElementById('phone').value,
+            hostel: document.getElementById('hostel').value,
+            programme: document.getElementById('programme').value,
+            class: document.getElementById('class').value
+          });
+
+          const transactionId = generateTransactionId();
+          const finalTotal = Number(orderData.totalPrice) + processingFee;
+
+          await insertOrder({
+            student_id: studentId,
+            shirt_color: orderData.colorName,
+            shirt_size: orderData.size,
+            shirt_texture: orderData.texture,
+            cap_option: orderData.package === 'bundle',
+            nickname_option: !!orderData.nickname,
+            nickname_text: orderData.nickText || null,
+            total_price: finalTotal,
+            payment_status: 'pending',
+            transaction_id: transactionId
+          });
+
+          const handler = PaystackPop.setup({
+            key: CONFIG.PAYSTACK_KEY,
+            email: (document.getElementById('fullName').value.trim().replace(/\s+/g, '_').toLowerCase() +
+              '+' +
+              document.getElementById('class').value.trim().replace(/\s+/g, '_').toLowerCase() +
+              '@order.net'),
+            amount: Math.round(finalTotal * 100),
+            currency: 'GHS',
+            ref: transactionId,
+            callback: function (response) {
+              updatePaymentStatus(transactionId, 'paid').then(function () {
+                localStorage.removeItem('srcWeekOrder');
+                window.location.href = 'confirmation.html?ref=' + transactionId;
+              }).catch(function (err) {
+                console.error('Payment update failed:', err);
+                // Still redirect but maybe with an error flag? No, let's just go to confirmation.
+                localStorage.removeItem('srcWeekOrder');
+                window.location.href = 'confirmation.html?ref=' + transactionId;
+              });
+            },
+            onClose: function () {
+              DOM.payBtn.disabled = false;
+              init();
+            }
+          });
+          handler.openIframe();
+        } catch (err) {
+          console.error(err);
+          alert('An error occurred: ' + (err.message || err.details || 'Check console for details'));
+          DOM.payBtn.disabled = false;
+          init();
+        }
+      });
+
+      init();
+    </script>
+
+  <style>
+    .footer-logo-img {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: white;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 8px;
+    }
+  </style>
 </body>
+
 </html>

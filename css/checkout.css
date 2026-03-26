@@ -144,29 +144,131 @@ h1, h2, h3, h4, .logo-text, .step {
 
 .lux-input {
   width: 100%;
-  height: 48px;
+  height: 54px; /* Slightly more substantial */
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--lux-border);
   font-family: var(--font-sans);
   font-size: 16px;
   color: var(--lux-ink);
-  padding: 0;
-  transition: all 0.3s ease;
+  padding: 0 8px;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
   border-radius: 0;
 }
 
 .lux-input:focus {
   outline: none;
+  border-bottom: 2px solid var(--lux-gold);
+  background-color: var(--lux-gold-light);
+}
+
+/* Custom Select Specific Styling */
+select.lux-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%23b8933f' viewBox='0 0 256 256'%3E%3Cpath d='M216.49,104.49l-83.32,83.32a8,8,0,0,1-11.32,0l-83.32-83.32a8,8,0,0,1,11.32-11.32L128,171.32l78.49-78.49a8,8,0,0,1,11.32,11.32Z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px;
+  padding-right: 48px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+select.lux-input:hover {
+  background-color: var(--lux-gold-light);
   border-bottom-color: var(--lux-gold);
 }
 
-/* Custom Select */
-select.lux-input {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23b8933f' viewBox='0 0 256 256'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80a8,8,0,0,1,11.32-11.32L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0 center;
+select.lux-input option {
+  padding: 16px;
+  background-color: var(--lux-white);
+  color: var(--lux-ink);
+}
+
+/* ── Custom Luxury Dropdown Component ────────────────── */
+.lux-select {
+  position: relative;
+  width: 100%;
+}
+
+.lux-select select {
+  display: none !important; /* Fully hide native */
+}
+
+.lux-select-trigger {
+  width: 100%;
+  height: 56px;
+  background: transparent;
+  border-bottom: 1px solid var(--lux-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--lux-ink);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.lux-select-trigger:hover {
+  background-color: var(--lux-gold-light);
+  border-bottom-color: var(--lux-gold);
+}
+
+.lux-select-trigger i {
+  color: var(--lux-gold);
+  transition: transform 0.3s ease;
+}
+
+.lux-select.open .lux-select-trigger i {
+  transform: rotate(180deg);
+}
+
+.lux-select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--lux-white);
+  border: 1px solid var(--lux-border);
+  box-shadow: 0 30px 60px rgba(15, 14, 13, 0.08);
+  z-index: 1001;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  max-height: 280px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.lux-select.open .lux-select-options {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+.lux-select-option {
+  padding: 16px 20px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(15, 14, 13, 0.03);
+}
+
+.lux-select-option:last-child { border-bottom: none; }
+
+.lux-select-option:hover {
+  background-color: var(--lux-bg);
+  color: var(--lux-gold);
+  padding-left: 24px; /* Subtle indent on hover */
+}
+
+.lux-select-option.selected {
+  background-color: var(--lux-gold-light);
+  color: var(--lux-gold);
+  font-weight: 600;
 }
 
 /* ── Summary Card ───────────────────────────────────────── */

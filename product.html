@@ -70,6 +70,28 @@
       border-color: var(--lux-ink);
     }
 
+    .cart-btn:hover {
+      background: var(--lux-gold);
+      color: var(--lux-white);
+      border-color: var(--lux-gold);
+    }
+    .logo-img-lux {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 1px solid var(--lux-border);
+    }
+    .logo-lux {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--lux-ink);
+      font-family: var(--font-serif);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
     .package-card-lux {
       border: 1px solid var(--lux-border);
       padding: 20px;
@@ -104,7 +126,10 @@
       <a href="index.html" class="back-link-lux" title="Go Back">
         <i class="ph ph-arrow-left"></i>
       </a>
-      <a href="index.html" class="logo-lux text-decoration-none" style="color: inherit; border: none;">SRC PULSE</a>
+      <a href="index.html" class="logo-lux">
+        <img src="img/Flyer/logo1.jpeg" alt="Logo" class="logo-img-lux">
+        <span>SRC PULSE</span>
+      </a>
     </div>
     <div class="nav-links-lux d-none d-md-flex">
       <a href="index.html" class="nav-link-lux">Collection</a>
@@ -127,10 +152,16 @@
       align-items: center;
       text-decoration: none;
     }
-    .back-link-lux:hover { opacity: 1; color: var(--lux-gold); }
-    
+
+    .back-link-lux:hover {
+      opacity: 1;
+      color: var(--lux-gold);
+    }
+
     @media (min-width: 992px) {
-      .back-link-lux { display: none; }
+      .back-link-lux {
+        display: none;
+      }
     }
   </style>
 
@@ -141,8 +172,9 @@
         <div class="product-details-essentials">
           <span class="hero-eyebrow d-block mb-1">Essentials</span>
           <h1 class="product-title-lux serif" style="font-size: 42px;">The Celebration Shirt</h1>
-          <p class="product-description-lux mb-4" style="max-width: 380px; margin: 0 auto; opacity: 0.6; font-size: 15px; line-height: 1.6;">
-            The official attire for the 17th Annual SRC Week. 
+          <p class="product-description-lux mb-4"
+            style="max-width: 380px; margin: 0 auto; opacity: 0.6; font-size: 15px; line-height: 1.6;">
+            The official attire for the 17th Annual SRC Week.
             A minimal design featuring a chest emblem and celebratory typography on the rear.
           </p>
         </div>
@@ -159,7 +191,8 @@
               alt="Collection Piece" class="img-fluid can-popout"
               style="max-height: 600px; transition: opacity 0.4s ease;">
           </div>
-          <p class="text-center mt-3 text-muted small text-uppercase tracking-widest">Premium Cotton Blend · Sustainable Dye</p>
+          <p class="text-center mt-3 text-muted small text-uppercase tracking-widest">Premium Cotton Blend · Sustainable
+          </p>
         </div>
       </div>
 
@@ -170,9 +203,9 @@
           <span class="hero-eyebrow d-block mb-1">Essentials</span>
           <h1 class="product-title-lux serif">The Celebration Shirt</h1>
           <div class="price-tag-lux product-price-lux mb-4">GHS 45.00</div>
-          
+
           <p class="product-description-lux mb-5">
-            The official attire for the 17th Annual SRC Week. 
+            The official attire for the 17th Annual SRC Week.
             A minimal design featuring a chest emblem and celebratory typography on the rear.
           </p>
         </div>
@@ -183,13 +216,17 @@
               text-align: center;
               padding-top: 0;
             }
-            #color-swatches, .size-selection-lux {
+
+            #color-swatches,
+            .size-selection-lux {
               justify-content: center !important;
             }
+
             .product-info-column .product-details-essentials {
               display: none;
             }
           }
+
           .product-description-lux {
             font-size: 16px;
             line-height: 1.8;
@@ -198,7 +235,8 @@
         </style>
 
         <!-- MOBILE-ONLY PRICE TAG -->
-        <div class="price-tag-lux product-price-lux d-lg-none mb-4" style="font-size: 32px; font-weight: 700;">GHS 45.00</div>
+        <div class="price-tag-lux product-price-lux d-lg-none mb-4" style="font-size: 32px; font-weight: 700;">GHS 45.00
+        </div>
 
         <!-- SELECT COLOR (Options follow below) -->
 
@@ -301,6 +339,42 @@
 
     </div>
   </div>
+
+  <!-- LOOKBOOK GALLERY -->
+  <footer class="footer-lux mt-5">
+    <div class="container text-center">
+      <div class="footer-logos-lux d-flex justify-content-center gap-3 mb-4">
+        <img src="img/Flyer/logo1.jpeg" alt="DNMTC Logo" class="footer-logo-img">
+        <img src="img/Flyer/logo2.jpeg" alt="SRC Logo" class="footer-logo-img">
+      </div>
+      <div class="logo-lux">SRC PULSE</div>
+      <p class="opacity-50 small text-uppercase tracking-widest mb-2">&copy; 2026 Dunkwa-On-Offin Nursing & Midwifery
+        College</p>
+      <p class="small text-uppercase tracking-widest opacity-25" style="font-size: 10px; letter-spacing: 0.2em;">Created
+        by Jonas Coleman, SRC PRO</p>
+    </div>
+  </footer>
+
+  <style>
+    .footer-lux {
+      padding: 60px 0;
+      border-top: 1px solid var(--lux-border);
+    }
+
+    .footer-logo-img {
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: white;
+      border: 1px solid var(--lux-border);
+      padding: 5px;
+    }
+    .footer-lux .logo-lux {
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+  </style>
 
   <script src="js/app.js"></script>
   <script src="js/product.js"></script>

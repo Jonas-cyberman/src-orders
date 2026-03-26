@@ -7,7 +7,7 @@
 const CONFIG = {
   SUPABASE_URL: 'https://uzlcleseoxfifrdehdvs.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_gCwbopHregwqci0_l8TXZQ_TzcM7fcR',
-  PAYSTACK_KEY: 'pk_test_9fd8a8a914b6c89fb2849c5b4eaf39690600033b',
+  PAYSTACK_KEY: 'pk_live_d6206c1e1d4b8e20bf0d0a9e81b87ff2b9ffe697',
   ADMIN_PASSWORD: 'srcadmin2024',
   PRICES: {
     shirt: 45,   // GHS
@@ -120,6 +120,38 @@ async function updatePaymentStatus(transaction_id, status) {
   if (error) throw error;
 }
 
+async function deleteOrder(transaction_id, admin_username) {
+  const db = getSupabase();
+  if (!db) throw new Error('Supabase not initialised');
+
+  // 1. Fetch the full order record
+  const { data: order, error: fetchError } = await db
+    .from('orders')
+    .select('*')
+    .eq('transaction_id', transaction_id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  // 2. Insert into deleted_orders table
+  const { error: archiveError } = await db
+    .from('deleted_orders')
+    .insert([{
+      ...order,
+      deleted_by: admin_username || 'Unknown Admin'
+    }]);
+
+  if (archiveError) throw archiveError;
+
+  // 3. Delete from original orders table
+  const { error: deleteError } = await db
+    .from('orders')
+    .delete()
+    .eq('transaction_id', transaction_id);
+
+  if (deleteError) throw deleteError;
+}
+
 async function getAllOrders() {
   const db = getSupabase();
   if (!db) throw new Error('Supabase not initialised');
@@ -135,13 +167,14 @@ async function getAllOrders() {
 // ── Admin Auth ─────────────────────────────────────────────
 const AdminAuth = {
   KEY: 'srcAdminAuth',
-  isAuthenticated() { 
-    return sessionStorage.getItem(this.KEY) !== null; 
+  DURATION: 2 * 60 * 60 * 1000, // 2 Hours in ms
+  isAuthenticated() {
+    return this.getUser() !== null;
   },
   async login(username, password) {
     const db = getSupabase();
     if (!db) return false;
-    
+
     try {
       const { data, error } = await db
         .from('admin_users')
@@ -149,24 +182,30 @@ const AdminAuth = {
         .eq('username', username)
         .eq('password', password)
         .single();
-        
+
       if (error || !data) {
         // Fallback for initial setup/legacy
         if (username === 'admin' && password === 'admin123') {
-          const fallbackUser = { username: 'admin', full_name: 'Administrator', role: 'Super Admin' };
+          const fallbackUser = { 
+            username: 'admin', 
+            full_name: 'Administrator', 
+            role: 'Super Admin',
+            login_at: Date.now()
+          };
           sessionStorage.setItem(this.KEY, JSON.stringify(fallbackUser));
           return true;
         }
         return false;
       }
-      
+
       const sessionData = {
         username: data.username,
         full_name: data.full_name,
         role: data.role,
-        token: btoa(data.username + '_' + Date.now())
+        token: btoa(data.username + '_' + Date.now()),
+        login_at: Date.now() // NEW: Track login time
       };
-      
+
       sessionStorage.setItem(this.KEY, JSON.stringify(sessionData));
       return true;
     } catch (err) {
@@ -176,10 +215,27 @@ const AdminAuth = {
   },
   getUser() {
     const data = sessionStorage.getItem(this.KEY);
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    
+    try {
+      const session = JSON.parse(data);
+      const now = Date.now();
+      
+      // Check for expiration
+      if (session.login_at && (now - session.login_at > this.DURATION)) {
+        console.warn("Admin session expired.");
+        this.logout();
+        return null;
+      }
+      
+      return session;
+    } catch(e) {
+      this.logout();
+      return null;
+    }
   },
-  logout() { 
-    sessionStorage.removeItem(this.KEY); 
+  logout() {
+    sessionStorage.removeItem(this.KEY);
   },
 };
 

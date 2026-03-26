@@ -69,7 +69,9 @@
 
     .lux-card img {
       width: 100%;
-      height: auto;
+      height: 420px;
+      object-fit: contain;
+      background: #fff;
       transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -109,7 +111,25 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       padding-bottom: 20px;
       margin-bottom: 40px;
-      display: inline-block;
+      display: flex;
+      justify-content: center;
+    }
+    .logo-img-lux {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 1px solid var(--lux-border);
+    }
+    .logo-lux {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--lux-ink);
+      font-family: var(--font-serif);
+      font-weight: 700;
+      letter-spacing: 0.1em;
     }
   </style>
 </head>
@@ -128,7 +148,10 @@
 
   <!-- LUXURY NAVBAR -->
   <nav class="lux-navbar">
-    <a href="index.html" class="logo-lux">SRC PULSE</a>
+    <a href="index.html" class="logo-lux">
+      <img src="img/Flyer/logo1.jpeg" alt="Logo" class="logo-img-lux">
+      <span>SRC PULSE</span>
+    </a>
     <div class="nav-links-lux d-none d-md-flex">
       <a href="index.html" class="nav-link-lux active">Collection</a>
       <a href="product.html" class="nav-link-lux">Store</a>
@@ -148,24 +171,59 @@
         <div class="col-lg-7">
           <span class="hero-eyebrow fade-up">The 17th Annual SRC Week</span>
           <h1 class="hero-title-lux serif fade-up delay-1">A Legacy <br>of Excellence.</h1>
-          <p class="hero-sub-lux fade-up delay-2">Experience the official 2026 Collection. Crafted for the Nursing and
-            midwifery Training College, Dunkwa On Offin , reimagined for the modern student.</p>
+          <p class="hero-sub-lux fade-up delay-2">Preparing for the 17th Annual SRC Celebration. We invite the DNMTC family to embody our collective excellence with pieces designed for prestige and performance.</p>
           <div class="d-flex gap-4 fade-up delay-3">
             <a href="product.html" class="btn-lux">Shop the Collection <i class="ph ph-arrow-right"></i></a>
             <a href="#gallery" class="btn-lux btn-lux-outline">View Lookbook</a>
           </div>
         </div>
         <div class="col-lg-5 d-none d-lg-block fade-up delay-4">
-          <div class="lux-card" style="border:none; background:transparent;">
-            <img src="img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.37 (1).jpeg" alt="Feature Piece"
-              class="img-fluid rounded-0" style="max-height: 600px; width: 100%; object-fit: cover;">
+          <div class="hero-slider-lux">
+            <img src="img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.37 (1).jpeg" class="hero-slide active" alt="Navy Edition">
+            <img src="img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.36.jpeg" class="hero-slide" alt="Burgundy Edition">
+            <img src="img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.37 (2).jpeg" class="hero-slide" alt="Green Edition">
+            <img src="img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.37.jpeg" class="hero-slide" alt="Black Edition">
+            <img src="img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.38 (1).jpeg" class="hero-slide" alt="Royal Blue">
+            <img src="img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.38.jpeg" class="hero-slide" alt="Yellow Edition">
+            <img src="img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.39 (1).jpeg" class="hero-slide" alt="White Edition">
+            <img src="img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.39.jpeg" class="hero-slide" alt="Pink Edition">
           </div>
+          <style>
+            .hero-slider-lux {
+              position: relative;
+              width: 100%;
+              height: 600px;
+              overflow: hidden;
+            }
+            .hero-slide {
+              position: absolute;
+              top: 0; left: 0;
+              width: 100%; height: 100%;
+              object-fit: contain;
+              opacity: 0;
+              transition: opacity 1.5s ease-in-out;
+              background: #fff;
+            }
+            .hero-slide.active { opacity: 1; }
+          </style>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              const slides = document.querySelectorAll('.hero-slide');
+              let current = 0;
+              if (slides.length > 0) {
+                setInterval(() => {
+                  slides[current].classList.remove('active');
+                  current = (current + 1) % slides.length;
+                  slides[current].classList.add('active');
+                }, 5000);
+              }
+            });
+          </script>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- LOOKBOOK GALLERY -->
   <section id="gallery" class="gallery-section-lux">
     <div class="container">
       <div class="text-center mb-5">
@@ -225,7 +283,7 @@
         </div>
         <div class="col-md-6 col-lg-4">
           <div class="lux-card" onclick="window.location.href='product.html'"
-            style="display:flex; align-items:center; justify-content:center; min-height: 100%; padding: 40px; background: var(--lux-ink); color: #fff;">
+            style="display:flex; align-items:center; justify-content:center; height: 100%; min-height: 520px; padding: 40px; background: var(--lux-ink); color: #fff;">
             <div class="text-center">
               <h3 class="serif mb-4">Ready to Order?</h3>
               <a href="product.html" class="btn-lux" style="background: var(--lux-gold);">Shop Now</a>
@@ -238,12 +296,31 @@
 
   <!-- LOGO FOOTER -->
   <footer class="footer-lux">
-    <div class="container">
+    <div class="container text-center">
+      <div class="footer-logos-lux d-flex justify-content-center gap-3 mb-4">
+        <img src="img/Flyer/logo1.jpeg" alt="DNMTC Logo" class="footer-logo-img">
+        <img src="img/Flyer/logo2.jpeg" alt="SRC Logo" class="footer-logo-img">
+      </div>
       <div class="logo-lux">SRC PULSE</div>
-      <p class="opacity-50 small text-uppercase tracking-widest mb-2">&copy; 2026 Dunkwa-On-Offin Nursing & Midwifery College</p>
-      <p class="small text-uppercase tracking-widest opacity-25" style="font-size: 10px; letter-spacing: 0.2em;">Created by Jonas Coleman, SRC PRO</p>
+      <p class="opacity-50 small text-uppercase tracking-widest mb-2">&copy; 2026 Dunkwa-On-Offin Nursing & Midwifery
+        College</p>
+      <p class="small text-uppercase tracking-widest opacity-25" style="font-size: 10px; letter-spacing: 0.2em;">Created
+        by Jonas Coleman, SRC PRO</p>
     </div>
   </footer>
+
+  <style>
+    .footer-lux { padding: 40px 0; border-top: 1px solid var(--lux-border); }
+    .footer-logo-img {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: white;
+      border: 1px solid var(--lux-border);
+      padding: 8px;
+    }
+  </style>
 
   <script src="js/app.js?v=1.0.1"></script>
 </body>

@@ -103,6 +103,7 @@ function attachEvents() {
       state.package = card.getAttribute('data-pkg');
       DOM.pkgCards.forEach(c => c.classList.toggle('active', c === card));
       updateUI();
+      selectColor(state.color.id); // Refresh preview for new package
     });
   });
 
@@ -141,7 +142,20 @@ function selectColor(id) {
   DOM.previewImg.style.opacity = '0';
 
   setTimeout(() => {
-    DOM.previewImg.src = state.color.img;
+    let imgSrc = state.color.img;
+    // Map to "WITH CAP" images if bundle is selected
+    if (state.package === 'bundle') {
+      const idx = COLORS.findIndex(c => c.id === id);
+      let num = idx + 1;
+      
+      // Fix for interchanged images in the WITH CAP folder (1 and 2)
+      if (num === 1) num = 2;
+      else if (num === 2) num = 1;
+
+      imgSrc = `img/WITH CAP/${num}.jpeg`;
+    }
+    
+    DOM.previewImg.src = imgSrc;
     DOM.previewImg.style.opacity = '1';
     DOM.colorName.textContent = state.color.name;
     document.querySelectorAll('.lux-swatch').forEach(s => {

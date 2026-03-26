@@ -105,20 +105,14 @@
       margin-bottom: 40px;
     }
 
-    .logo-icon {
+    .logo-img-lux {
       width: 64px;
       height: 64px;
-      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-family: var(--font-sans);
-      font-weight: 700;
-      font-size: 20px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 1px solid var(--lux-border);
       margin-bottom: 12px;
-      box-shadow: 0 8px 16px rgba(220, 38, 38, 0.2);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
     }
 
     .logo-text {
@@ -164,7 +158,18 @@
     .form-group {
       margin-bottom: 24px;
       text-align: left;
+      position: relative; /* Added for eye icon */
     }
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 38px;
+      cursor: pointer;
+      opacity: 0.4;
+      transition: opacity 0.3s;
+      font-size: 20px;
+    }
+    .password-toggle:hover { opacity: 1; }
 
     .form-label {
       display: block;
@@ -296,8 +301,8 @@
   <div class="login-card">
     <!-- LOGO ITEM -->
     <div class="logo-container">
-      <div class="logo-icon">SRC</div>
-      <div class="logo-text">Pulse</div>
+      <img src="img/Flyer/logo1.jpeg" alt="Logo" class="logo-img-lux">
+      <div class="logo-text">Pulse Registry</div>
     </div>
 
     <div class="portal-label">Secure Administrator Portal</div>
@@ -313,6 +318,7 @@
       <div class="form-group">
         <label for="password" class="form-label">Admin Password</label>
         <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+        <i class="ph ph-eye password-toggle" id="togglePassword"></i>
       </div>
 
       <button type="submit" id="loginBtn" class="btn-submit">
@@ -343,6 +349,15 @@
     const btnIcon = loginBtn.querySelector('i');
     const spinner = document.getElementById('btnSpinner');
     const errorBanner = document.getElementById('errorBanner');
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+
+    togglePassword.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      togglePassword.classList.toggle('ph-eye', !isPassword);
+      togglePassword.classList.toggle('ph-eye-closed', isPassword);
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
