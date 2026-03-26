@@ -18,11 +18,20 @@
   <script src="js/app.js?v=1.0.3"></script>
   <script>
     (function() {
-      const user = AdminAuth.getCurrentUser();
-      if (!user) {
-        window.location.replace('admin-login.html');
-      } else {
-        // Auth OK, show content once body exists
+      try {
+        const user = AdminAuth.getUser();
+        if (!user) {
+          window.location.replace('admin-login.html');
+        } else {
+          // Auth OK, show content once body exists
+          document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.visibility = 'visible';
+            document.body.style.opacity = '1';
+          });
+        }
+      } catch (e) {
+        console.error("Auth Shield Error:", e);
+        // Fail-safe: if script fails, show content to avoid blank screen
         document.addEventListener('DOMContentLoaded', () => {
           document.body.style.visibility = 'visible';
           document.body.style.opacity = '1';
