@@ -19,6 +19,11 @@
   
   --radius-sm: 4px;
   --radius-md: 8px;
+
+  /* Responsive tokens */
+  --lux-gutter: clamp(1.25rem, 5vw, 2.5rem);
+  --h1-fluid: clamp(2.5rem, 8vw, 6rem);
+  --h2-fluid: clamp(2rem, 6vw, 4rem);
 }
 
 /* ── Global Base ────────────────────────────────────────── */
@@ -154,7 +159,7 @@ h1, h2, h3, h4, .serif {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 40px;
+  padding: 0 var(--lux-gutter);
   background: var(--lux-bg);
   position: sticky;
   top: 0;
@@ -173,7 +178,7 @@ h1, h2, h3, h4, .serif {
 
 .nav-links-lux {
   display: flex;
-  gap: 32px;
+  gap: clamp(1rem, 3vw, 2rem);
 }
 
 .nav-link-lux {

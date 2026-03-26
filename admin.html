@@ -203,6 +203,25 @@
       font-weight: 700;
       letter-spacing: 0.1em;
     }
+
+    /* Table Responsiveness — Horizontal Scroll */
+    @media (max-width: 768px) {
+      .admin-header-lux h1 { font-size: 32px !important; }
+      
+      .table-lux th, .table-lux td {
+        white-space: nowrap;
+      }
+      
+      /* Ensure the programme cell can wrap if too long, or keep it nowrap for consistency */
+      .table-lux td[data-label="Programme"] {
+        min-width: 200px;
+        white-space: normal;
+      }
+
+      .table-lux td[data-label="Student"] {
+        min-width: 150px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -306,7 +325,7 @@
           <tbody id="ordersTable">
             <!-- Data rows injected via JS -->
             <tr>
-              <td colspan="7" class="text-center py-5 opacity-50 italic">Synchronizing with registry...</td>
+              <td colspan="7" class="text-center py-5 opacity-50 italic no-records-td">Synchronizing with registry...</td>
             </tr>
           </tbody>
         </table>
@@ -486,8 +505,10 @@
     // Populate User Details
     const currentUser = AdminAuth.getUser();
     if (currentUser) {
-      document.getElementById('userDisplayName').textContent = currentUser.full_name || currentUser.username;
-      document.getElementById('userRoleName').textContent = currentUser.role || 'Administrator';
+      const uId = document.getElementById('userDisplayName');
+      const rId = document.getElementById('userRoleName');
+      if (uId) uId.textContent = currentUser.full_name || currentUser.username;
+      if (rId) rId.textContent = currentUser.role || 'Administrator';
     }
 
     // Custom Logout Logic
@@ -534,15 +555,20 @@
       const revenue = paid.reduce((sum, o) => sum + (o.total_price || 0), 0);
       const bundles = orders.filter(o => o.cap_option).length;
 
-      document.getElementById('statTotalOrders').textContent = total;
-      document.getElementById('statTotalRevenue').textContent = `GHS ${revenue.toFixed(2)}`;
-      document.getElementById('statBundles').textContent = bundles;
+      const sOrders = document.getElementById('statTotalOrders');
+      const sRev = document.getElementById('statTotalRevenue');
+      const sBundles = document.getElementById('statBundles');
+      
+      if (sOrders) sOrders.textContent = total;
+      if (sRev) sRev.textContent = `GHS ${revenue.toFixed(2)}`;
+      if (sBundles) sBundles.textContent = bundles;
 
       // Analytics: Top Color
       const colors = {};
       orders.forEach(o => { if(o.shirt_color) colors[o.shirt_color] = (colors[o.shirt_color] || 0) + 1; });
       const topColor = Object.entries(colors).sort((a,b)=>b[1]-a[1])[0];
-      document.getElementById('statTopColor').textContent = topColor ? topColor[0] : '---';
+      const sColor = document.getElementById('statTopColor');
+      if (sColor) sColor.textContent = topColor ? topColor[0] : '---';
 
       // Analytics: Top Class
       const classes = {};
@@ -551,7 +577,8 @@
         classes[cls] = (classes[cls] || 0) + o.total_price; 
       });
       const topClass = Object.entries(classes).sort((a,b)=>b[1]-a[1])[0];
-      document.getElementById('statTopClass').textContent = topClass ? topClass[0] : '---';
+      const sClass = document.getElementById('statTopClass');
+      if (sClass) sClass.textContent = topClass ? topClass[0] : '---';
 
       renderAnalytics(paid, orders);
     }
@@ -612,28 +639,28 @@
       const tbody = document.getElementById('ordersTable');
       tbody.innerHTML = results.map(o => `
         <tr>
-          <td>${new Date(o.created_at).toLocaleDateString()}</td>
-          <td>
+          <td data-label="Date">${new Date(o.created_at).toLocaleDateString()}</td>
+          <td data-label="Student">
             <div class="fw-bold">${o.students?.name || 'Unknown'}</div>
             <div class="small opacity-50">${o.students?.phone || ''}</div>
           </td>
-          <td class="small text-uppercase">
+          <td data-label="Programme" class="small text-uppercase">
             <div class="fw-bold">${o.students?.programme || ''}</div>
             <div class="opacity-50">${o.students?.class || ''}</div>
           </td>
-          <td class="small">${o.students?.hostel || '---'}</td>
-          <td>
+          <td data-label="Hostel" class="small">${o.students?.hostel || '---'}</td>
+          <td data-label="Order">
             <div class="small opacity-75">${o.shirt_color} (${o.shirt_size})</div>
             <div class="small fw-bold text-uppercase opacity-50">${o.shirt_texture || 'Cotton'}</div>
             ${o.cap_option ? '<div class="small text-gold text-uppercase tracking-tighter">+ Cap Included</div>' : ''}
           </td>
-          <td class="fw-bold">GHS ${o.total_price ? o.total_price.toFixed(2) : '0.00'}</td>
-          <td>
+          <td data-label="Price" class="fw-bold">GHS ${o.total_price ? o.total_price.toFixed(2) : '0.00'}</td>
+          <td data-label="Status">
             <span class="status-badge-lux status-${o.payment_status}">${o.payment_status}</span>
           </td>
-          <td class="small font-monospace opacity-50">${o.transaction_id || '---'}</td>
-          <td>
-            <div class="d-flex gap-2">
+          <td data-label="ID" class="small font-monospace opacity-50">${o.transaction_id || '---'}</td>
+          <td data-label="Action">
+            <div class="d-flex gap-2 flex-wrap">
               ${o.payment_status === 'paid' ? `
                 <button onclick="handleFulfill('${o.transaction_id}')" class="btn-action-lux btn-fulfill-lux">Fulfill</button>
               ` : ''}
@@ -645,9 +672,10 @@
             </div>
           </td>
         </tr>
-      `).join('') || '<tr><td colspan="9" class="text-center py-5 opacity-50">No records found matching your audit.</td></tr>';
+      `).join('') || '<tr><td colspan="9" class="text-center py-5 opacity-50 no-records-td">No records found matching your audit.</td></tr>';
 
-      document.getElementById('pageInfo').textContent = `Showing ${Math.min(end, filteredOrders.length)} of ${filteredOrders.length} records`;
+      const pInfo = document.getElementById('pageInfo');
+      if (pInfo) pInfo.textContent = `Showing ${Math.min(end, filteredOrders.length)} of ${filteredOrders.length} records`;
     }
 
     // Simplified search logic

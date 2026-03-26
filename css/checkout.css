@@ -36,7 +36,7 @@ h1, h2, h3, h4, .logo-text, .step {
 .checkout-container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 80px 24px;
+  padding: 80px var(--lux-gutter);
 }
 
 /* ── Refined Top Nav ─────────────────────────────────────── */
@@ -47,7 +47,7 @@ h1, h2, h3, h4, .logo-text, .step {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 40px;
+  padding: 0 var(--lux-gutter);
   background: var(--lux-bg);
   position: sticky;
   top: 0;
