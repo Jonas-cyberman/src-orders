@@ -6,6 +6,7 @@
   <title>Admin Dashboard | SRC Pulse Luxury</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   
   <!-- EXTERNAL LIBRARIES -->
@@ -122,6 +123,40 @@
       font-size: 15px;
     }
     .search-input-lux:focus { outline: none; }
+
+    .btn-analytics-lux, .btn-export-lux {
+      height: 48px;
+      padding: 0 24px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--lux-ink);
+      cursor: pointer;
+    }
+    .btn-analytics-lux {
+      background: transparent;
+      color: var(--lux-ink);
+    }
+    .btn-analytics-lux:hover {
+      background: var(--lux-ink);
+      color: var(--lux-white);
+    }
+    .btn-export-lux {
+      background: var(--lux-ink);
+      color: var(--lux-white);
+    }
+    .btn-export-lux:hover {
+      background: #1a2a3a;
+      transform: translateY(-2px);
+    }
+
+    .admin-header-lux { margin-bottom: 64px; }
   </style>
 </head>
 <body>
@@ -147,14 +182,17 @@
     
     <!-- DASHBOARD HEADER -->
     <header class="admin-header-lux">
-      <div class="row align-items-end">
-        <div class="col-md-8">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4">
+        <div>
           <span class="label-eyebrow">Registry</span>
           <h1 class="serif m-0" style="font-size: 48px;">Order Intelligence</h1>
         </div>
-        <div class="col-md-4 text-md-end mt-4 mt-md-0">
-          <button id="exportCsv" class="btn-lux">
-            <i class="ph ph-file-csv"></i> Export Records
+        <div class="d-flex gap-2">
+          <button class="btn-analytics-lux" data-bs-toggle="modal" data-bs-target="#insightsModal">
+            <i class="ph ph-chart-line"></i> Insights
+          </button>
+          <button id="exportCsv" class="btn-export-lux">
+            <i class="ph ph-file-csv"></i> Export
           </button>
         </div>
       </div>
@@ -162,7 +200,7 @@
 
     <!-- METRICS -->
     <div class="row g-4 mb-5">
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="metric-card-lux text-center">
           <span class="metric-label-lux">Global Orders</span>
           <div id="statTotalOrders" class="metric-value-lux">0</div>
@@ -174,10 +212,16 @@
           <div id="statTotalRevenue" class="metric-value-lux">GHS 0</div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="metric-card-lux text-center">
-          <span class="metric-label-lux">Pending Settlement</span>
-          <div id="statPendingOrders" class="metric-value-lux">0</div>
+          <span class="metric-label-lux">Popular Color</span>
+          <div id="statTopColor" class="metric-value-lux" style="font-size: 18px; height: 40px; display: flex; align-items: center; justify-content: center;">-</div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="metric-card-lux text-center">
+          <span class="metric-label-lux">Leading Class</span>
+          <div id="statTopClass" class="metric-value-lux" style="font-size: 18px; height: 40px; display: flex; align-items: center; justify-content: center;">-</div>
         </div>
       </div>
       <div class="col-md-3">
@@ -437,13 +481,69 @@
       const total = orders.length;
       const paid = orders.filter(o => o.payment_status === 'paid');
       const revenue = paid.reduce((sum, o) => sum + (o.total_price || 0), 0);
-      const pending = orders.filter(o => o.payment_status === 'pending').length;
       const bundles = orders.filter(o => o.cap_option).length;
 
       document.getElementById('statTotalOrders').textContent = total;
       document.getElementById('statTotalRevenue').textContent = `GHS ${revenue.toFixed(2)}`;
-      document.getElementById('statPendingOrders').textContent = pending;
       document.getElementById('statBundles').textContent = bundles;
+
+      // Analytics: Top Color
+      const colors = {};
+      orders.forEach(o => { if(o.shirt_color) colors[o.shirt_color] = (colors[o.shirt_color] || 0) + 1; });
+      const topColor = Object.entries(colors).sort((a,b)=>b[1]-a[1])[0];
+      document.getElementById('statTopColor').textContent = topColor ? topColor[0] : '---';
+
+      // Analytics: Top Class
+      const classes = {};
+      paid.forEach(o => { 
+        const cls = o.students?.class || 'Unknown';
+        classes[cls] = (classes[cls] || 0) + o.total_price; 
+      });
+      const topClass = Object.entries(classes).sort((a,b)=>b[1]-a[1])[0];
+      document.getElementById('statTopClass').textContent = topClass ? topClass[0] : '---';
+
+      renderAnalytics(paid, orders);
+    }
+
+    function renderAnalytics(paid, all) {
+      const colors = {};
+      all.forEach(o => { if(o.shirt_color) colors[o.shirt_color] = (colors[o.shirt_color] || 0) + 1; });
+      const sortedColors = Object.entries(colors).sort((a,b)=>b[1]-a[1]);
+      const colorEl = document.getElementById('analyticsColors');
+      if(colorEl) {
+        colorEl.innerHTML = sortedColors.map(([name, count]) => `
+          <div class="d-flex justify-content-between mb-1">
+            <span>${name}</span> <span>${count}</span>
+          </div>
+          <div class="progress mb-3" style="height:4px; border-radius:0;">
+            <div class="progress-bar bg-dark" style="width:${(count/all.length)*100}%"></div>
+          </div>
+        `).join('');
+      }
+
+      const classes = {};
+      paid.forEach(o => {
+        const cls = o.students?.class || 'Other';
+        classes[cls] = (classes[cls] || 0) + o.total_price;
+      });
+      const sortedClasses = Object.entries(classes).sort((a,b)=>b[1]-a[1]);
+      const maxRev = sortedClasses.length ? sortedClasses[0][1] : 1;
+      const classEl = document.getElementById('analyticsClasses');
+      if(classEl) {
+        classEl.innerHTML = sortedClasses.slice(0, 5).map(([name, rev]) => `
+          <div class="d-flex justify-content-between mb-1">
+            <span>${name}</span> <span>GHS ${rev.toFixed(2)}</span>
+          </div>
+          <div class="progress mb-3" style="height:4px; border-radius:0;">
+            <div class="progress-bar" style="background:var(--lux-gold); width:${(rev/maxRev)*100}%"></div>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('modalTotalItems').textContent = all.length;
+      const totalPaidRev = paid.reduce((s,o)=>s+o.total_price,0);
+      document.getElementById('modalAvgOrder').textContent = `GHS ${(totalPaidRev/paid.length || 0).toFixed(2)}`;
+      document.getElementById('modalTotalCaps').textContent = all.filter(o => o.cap_option).length;
     }
 
     function renderTable() {
@@ -664,5 +764,50 @@
 
     loadDashboard();
   </script>
+  <!-- INSIGHTS MODAL -->
+  <div class="modal fade" id="insightsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 bg-white" style="border-radius: 0;">
+        <div class="modal-header border-0 p-4 pb-0">
+          <h2 class="serif mb-0" style="font-size: 32px;">Sales Intelligence</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <h6 class="small text-uppercase tracking-widest opacity-50 mb-3">Popularity by Color</h6>
+              <div id="analyticsColors" class="small">
+                <!-- Color Breakdown -->
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h6 class="small text-uppercase tracking-widest opacity-50 mb-3">Revenue by Class</h6>
+              <div id="analyticsClasses" class="small">
+                <!-- Class Breakdown -->
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-5 p-4" style="background: #f9f9f9; border: 1px solid var(--lux-border);">
+            <div class="row text-center">
+              <div class="col-4">
+                <div class="small opacity-50 text-uppercase mb-1">Total Items</div>
+                <div id="modalTotalItems" class="h4 serif mb-0">-</div>
+              </div>
+              <div class="col-4">
+                <div class="small opacity-50 text-uppercase mb-1">Avg Order</div>
+                <div id="modalAvgOrder" class="h4 serif mb-0">-</div>
+              </div>
+              <div class="col-4">
+                <div class="small opacity-50 text-uppercase mb-1">Caps Sold</div>
+                <div id="modalTotalCaps" class="h4 serif mb-0">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

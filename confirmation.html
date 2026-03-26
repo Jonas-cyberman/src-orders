@@ -79,22 +79,32 @@
 <body>
 
   <div class="conf-container">
-    <div class="conf-card shadow-sm">
+    <div class="conf-card shadow-lg">
       <div class="check-outer">
         <i class="ph ph-check check-inner"></i>
       </div>
       
-      <h1 class="conf-title">Your Order is Confirmed</h1>
-      <p class="opacity-75 mb-5">Thank you for your purchase. We have received your order and it is being processed for the SRC Week celebration.</p>
+      <h1 class="conf-title">Payment Successful</h1>
+      <p class="opacity-75 mb-4">Your order for the SRC Week Celebration Shirt has been confirmed.</p>
+
+      <!-- SCREENSHOT INSTRUCTION -->
+      <div class="screenshot-alert mb-5">
+        <i class="ph ph-camera"></i>
+        <span><strong>IMPORTANT:</strong> Please take a screenshot of this page now and keep it as your official proof of payment.</span>
+      </div>
       
       <div class="conf-details">
         <div class="detail-row">
-          <span class="detail-label">Reference</span>
-          <span id="conf-ref" class="detail-value">---</span>
+          <span class="detail-label">Student Name</span>
+          <span id="conf-name" class="detail-value">---</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Reference ID</span>
+          <span id="conf-ref" class="detail-value" style="color: var(--lux-gold); font-weight: 700;">---</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Status</span>
-          <span class="detail-value text-success">Paid</span>
+          <span class="detail-value" style="color: #27ae60; font-weight: 700;">CONFIRMED</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Date</span>
@@ -102,27 +112,59 @@
         </div>
       </div>
 
-      <p class="small opacity-50 mb-5">A digital receipt has been simulated and sent to your generated institutional address.</p>
+      <p class="small opacity-50 mb-5">Your order will be ready for pickup at the SRC office upon presentation of your screenshot confirmation.</p>
 
-      <a href="index.html" class="btn-lux w-100 py-3 text-center d-block mb-4">
+      <a href="index.html" class="btn-lux w-100 py-3 text-center d-block mb-2" style="background: var(--lux-navy); color: white; border: none; text-decoration: none; font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.05em; transition: 0.3s; padding: 16px;">
         Return to Collection
       </a>
 
-      <p class="small text-uppercase tracking-widest opacity-25 mt-5" style="font-size: 10px; letter-spacing: 0.2em;">Created by Jonas Coleman, SRC PRO</p>
+      <p class="small text-uppercase tracking-widest opacity-25 mt-5" style="font-size: 10px; letter-spacing: 0.2em;">Official SRC Pulse Confirmation</p>
     </div>
   </div>
+
+  <style>
+    .screenshot-alert {
+      background: #fff9e6;
+      border: 1px solid #ffeeba;
+      color: #856404;
+      padding: 16px 20px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      line-height: 1.4;
+    }
+    .screenshot-alert i { font-size: 24px; opacity: 0.8; }
+    
+    .btn-lux:hover { background: #1a2a3a !important; transform: translateY(-2px); }
+
+    @media (max-width: 576px) {
+      .conf-card { padding: 48px 24px; }
+      .conf-title { font-size: 28px; }
+    }
+  </style>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const ref = params.get('ref') || 'N/A';
       
+      // We can try to pull the name from a temporary session item or just rely on the reference
+      // Since it's a redirect, we might have lost the name unless we passed it or saved it
+      // Let's check localStorage where we might have stored it briefly
+      const orderData = JSON.parse(localStorage.getItem('srcWeekOrder') || '{}');
+      
       document.getElementById('conf-ref').textContent = ref;
+      document.getElementById('conf-name').textContent = localStorage.getItem('lastStudentName') || 'Valued Student';
       document.getElementById('conf-date').textContent = new Date().toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
       });
+      
+      // Cleanup
+      localStorage.removeItem('srcWeekOrder'); 
     });
   </script>
 </body>

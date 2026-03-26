@@ -100,20 +100,56 @@
 
   <!-- LUXURY NAVBAR -->
   <nav class="lux-navbar">
-    <a href="index.html" class="logo-lux">SRC PULSE</a>
+    <div class="d-flex align-items-center gap-3">
+      <a href="index.html" class="back-link-lux" title="Go Back">
+        <i class="ph ph-arrow-left"></i>
+      </a>
+      <a href="index.html" class="logo-lux text-decoration-none" style="color: inherit; border: none;">SRC PULSE</a>
+    </div>
     <div class="nav-links-lux d-none d-md-flex">
       <a href="index.html" class="nav-link-lux">Collection</a>
       <a href="product.html" class="nav-link-lux active">Store</a>
-      <a href="admin.html" class="nav-link-lux">Management</a>
     </div>
     <div class="d-flex align-items-center gap-4">
-      <i class="ph ph-shopping-bag" style="font-size: 24px; cursor: pointer;"></i>
+      <a href="admin.html" class="nav-link-lux" title="Management">
+        <i class="ph ph-user-gear" style="font-size: 24px; cursor: pointer;"></i>
+      </a>
     </div>
   </nav>
 
-  <div class="container py-5">
-    <div class="row g-5">
+  <style>
+    .back-link-lux {
+      font-size: 24px;
+      color: var(--lux-ink);
+      opacity: 0.6;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+    }
+    .back-link-lux:hover { opacity: 1; color: var(--lux-gold); }
+    
+    @media (min-width: 992px) {
+      .back-link-lux { display: none; }
+    }
+  </style>
 
+  <div class="container py-5">
+    <!-- MOBILE TOP TEXT (Essentials Style) -->
+    <div class="row d-lg-none mb-4">
+      <div class="col-12 text-center">
+        <div class="product-details-essentials">
+          <span class="hero-eyebrow d-block mb-1">Essentials</span>
+          <h1 class="product-title-lux serif" style="font-size: 42px;">The Celebration Shirt</h1>
+          <p class="product-description-lux mb-4" style="max-width: 380px; margin: 0 auto; opacity: 0.6; font-size: 15px; line-height: 1.6;">
+            The official attire for the 17th Annual SRC Week. 
+            A minimal design featuring a chest emblem and celebratory typography on the rear.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-5">
       <!-- PRODUCT PREVIEW -->
       <div class="col-lg-6">
         <div class="sticky-top" style="top: 100px;">
@@ -123,19 +159,48 @@
               alt="Collection Piece" class="img-fluid can-popout"
               style="max-height: 600px; transition: opacity 0.4s ease;">
           </div>
-          <p class="text-center mt-3 text-muted small text-uppercase tracking-widest">Premium Cotton Blend · Sustainable
-            Dye</p>
+          <p class="text-center mt-3 text-muted small text-uppercase tracking-widest">Premium Cotton Blend · Sustainable Dye</p>
         </div>
       </div>
 
-      <!-- PRODUCT DETAILS -->
-      <div class="col-lg-6">
-        <span class="hero-eyebrow">Essentials</span>
-        <h1 class="product-title-lux serif">The Celebration Shirt</h1>
-        <div id="price-tag" class="product-price-lux">GHS 45.00</div>
+      <!-- PRODUCT DETAILS & OPTIONS -->
+      <div class="col-lg-6 product-info-column">
+        <!-- DESKTOP ONLY TEXT -->
+        <div class="product-details-essentials d-none d-lg-block">
+          <span class="hero-eyebrow d-block mb-1">Essentials</span>
+          <h1 class="product-title-lux serif">The Celebration Shirt</h1>
+          <div class="price-tag-lux product-price-lux mb-4">GHS 45.00</div>
+          
+          <p class="product-description-lux mb-5">
+            The official attire for the 17th Annual SRC Week. 
+            A minimal design featuring a chest emblem and celebratory typography on the rear.
+          </p>
+        </div>
 
-        <p class="mb-5 opacity-75">The official attire for the 17th Annual SRC Week. A minimal design featuring a chest
-          emblem and celebratory typography on the rear.</p>
+        <style>
+          @media (max-width: 991px) {
+            .product-info-column {
+              text-align: center;
+              padding-top: 0;
+            }
+            #color-swatches, .size-selection-lux {
+              justify-content: center !important;
+            }
+            .product-info-column .product-details-essentials {
+              display: none;
+            }
+          }
+          .product-description-lux {
+            font-size: 16px;
+            line-height: 1.8;
+            opacity: 0.6;
+          }
+        </style>
+
+        <!-- MOBILE-ONLY PRICE TAG -->
+        <div class="price-tag-lux product-price-lux d-lg-none mb-4" style="font-size: 32px; font-weight: 700;">GHS 45.00</div>
+
+        <!-- SELECT COLOR (Options follow below) -->
 
         <!-- SELECT COLOR -->
         <div class="mb-5">
@@ -149,7 +214,7 @@
         <!-- SELECT SIZE -->
         <div class="mb-5">
           <span class="option-label-lux">Select Silhouette</span>
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-2 size-selection-lux">
             <button class="size-btn-lux" data-size="XS">XS</button>
             <button class="size-btn-lux active" data-size="S">S</button>
             <button class="size-btn-lux" data-size="M">M</button>

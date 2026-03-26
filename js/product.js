@@ -41,7 +41,7 @@ const DOM = {
   nickToggle: document.getElementById('addNickname'),
   nickGroup: document.getElementById('nicknameInputGroup'),
   nickField: document.getElementById('nicknameText'),
-  priceTag: document.getElementById('price-tag'),
+  priceTags: document.querySelectorAll('.price-tag-lux'),
   checkoutBtn: document.getElementById('checkoutBtn')
 };
 
@@ -49,6 +49,13 @@ function init() {
   renderSwatches();
   attachEvents();
   updateUI();
+
+  // Handle color query parameter
+  const params = new URLSearchParams(window.location.search);
+  const colorId = params.get('color');
+  if (colorId && COLORS.some(c => c.id === colorId)) {
+    selectColor(colorId);
+  }
 }
 
 function renderSwatches() {
@@ -152,7 +159,9 @@ function calculateTotal() {
 
 function updateUI() {
   const total = calculateTotal();
-  DOM.priceTag.textContent = `GHS ${total.toFixed(2)}`;
+  DOM.priceTags.forEach(tag => {
+    tag.textContent = `GHS ${total.toFixed(2)}`;
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);

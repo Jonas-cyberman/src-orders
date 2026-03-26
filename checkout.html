@@ -15,14 +15,35 @@
 
   <!-- LUXURY NAVBAR -->
   <nav class="lux-navbar">
-    <div class="logo-text">SRC PULSE</div>
+    <div class="d-flex align-items-center gap-3">
+      <a href="product.html" class="back-link-lux" title="Go Back">
+        <i class="ph ph-arrow-left"></i>
+      </a>
+      <a href="index.html" class="logo-text text-decoration-none" style="color: inherit;">SRC PULSE</a>
+    </div>
     <div class="breadcrumb-nav d-none d-md-flex">
-      <span class="step">Design</span>
+      <a href="product.html" class="step link-step">Design</a>
       <span class="step active">Details</span>
       <span class="step">Payment</span>
     </div>
-    <a href="#" class="help-link-lux">Need help?</a>
+    <a href="https://wa.me/233540000000" class="help-link-lux">Need help?</a>
   </nav>
+
+  <style>
+    .back-link-lux {
+      font-size: 24px;
+      color: var(--lux-ink);
+      opacity: 0.6;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+    }
+    .back-link-lux:hover { opacity: 1; color: var(--lux-gold); }
+    
+    @media (min-width: 992px) {
+      .back-link-lux { display: none; }
+    }
+  </style>
 
   <div class="checkout-container">
     <form id="checkoutForm" novalidate>
@@ -81,8 +102,10 @@
           <div class="lux-summary-card">
             <div class="swatch-row">
               <div id="summary-swatch" class="swatch-circle" style="background-color: #1C2E4A;"></div>
-              <span id="summary-color-name" style="font-family: var(--font-serif); font-size: 24px;">Navy Blue</span>
-              <span id="summary-size" class="lux-badge">Size XL</span>
+              <div class="swatch-info">
+                <span id="summary-color-name" style="font-family: var(--font-serif); font-size: 24px;">Navy Blue</span>
+                <span id="summary-size" class="lux-badge">Size XL</span>
+              </div>
             </div>
 
             <div id="summary-items">
@@ -147,40 +170,50 @@
       'NAC': ['NAC17', 'NAC18']
     };
 
+    const processingFee = 1.95;
+
     function init() {
       document.getElementById('summary-swatch').style.backgroundColor = orderData.colorHex || '#1C2E4A';
       document.getElementById('summary-color-name').textContent = orderData.colorName || 'Navy Blue';
       document.getElementById('summary-size').textContent = `Size ${orderData.size || 'XL'}`;
       
-      const priceStr = `GH₵ ${Number(orderData.totalPrice).toFixed(2)}`;
-      DOM.totalDisplay.textContent = priceStr;
-      DOM.payBtn.querySelector('.pay-label').textContent = `Pay ${priceStr}`;
+      const grandTotalDisplay = Number(orderData.totalPrice);
+      
+      DOM.totalDisplay.textContent = `GH₵ ${grandTotalDisplay.toFixed(2)}`;
+      DOM.payBtn.querySelector('.pay-label').textContent = `Pay GH₵ ${grandTotalDisplay.toFixed(2)}`;
 
       let itemsHtml = `
         <div class="summary-item">
-          <i class="ph ph-t-shirt"></i>
-          <span class="summary-item-text">Celebration Shirt (${orderData.texture || 'Cotton'})</span>
+          <div class="summary-item-left">
+            <i class="ph ph-t-shirt"></i>
+            <span class="summary-item-text">Celebration Shirt <br><small class="opacity-50">${orderData.texture || 'Cotton'}</small></span>
+          </div>
           <span class="summary-item-price">GH₵ 45.00</span>
         </div>
       `;
       if(orderData.package === 'bundle') {
         itemsHtml += `
           <div class="summary-item">
-            <i class="ph ph-baseball-cap"></i>
-            <span class="summary-item-text">SRC Cap</span>
-            <span class="summary-item-price">GH₵ 10.00</span>
+            <div class="summary-item-left">
+              <i class="ph ph-baseball-cap"></i>
+              <span class="summary-item-text">SRC Cap</span>
+            </div>
+            <span class="summary-item-price">GH₵ 25.00</span>
           </div>
         `;
       }
       if(orderData.nickname) {
         itemsHtml += `
           <div class="summary-item">
-            <i class="ph ph-pencil-simple"></i>
-            <span class="summary-item-text">Nickname (${orderData.nickText})</span>
+            <div class="summary-item-left">
+              <i class="ph ph-pencil-simple"></i>
+              <span class="summary-item-text">Custom Nickname <br><small class="opacity-50">"${orderData.nickText}"</small></span>
+            </div>
             <span class="summary-item-price">GH₵ 5.00</span>
           </div>
         `;
       }
+      
       document.getElementById('summary-items').innerHTML = itemsHtml;
     }
 
@@ -223,8 +256,11 @@
       DOM.payBtn.textContent = 'Processing...';
 
       try {
+        const fullName = document.getElementById('fullName').value;
+        localStorage.setItem('lastStudentName', fullName);
+
         const studentId = await insertStudent({
-          name: document.getElementById('fullName').value,
+          name: fullName,
           phone: document.getElementById('phone').value,
           hostel: document.getElementById('hostel').value,
           programme: document.getElementById('programme').value,
@@ -232,6 +268,8 @@
         });
 
         const transactionId = generateTransactionId();
+        const finalTotal = Number(orderData.totalPrice) + processingFee;
+
         await insertOrder({
           student_id: studentId,
           shirt_color: orderData.colorName,
@@ -240,7 +278,7 @@
           cap_option: orderData.package === 'bundle',
           nickname_option: !!orderData.nickname,
           nickname_text: orderData.nickText || null,
-          total_price: Number(orderData.totalPrice),
+          total_price: finalTotal,
           payment_status: 'pending',
           transaction_id: transactionId
         });
@@ -251,7 +289,7 @@
                   '+' + 
                   document.getElementById('class').value.trim().replace(/\s+/g, '_').toLowerCase() + 
                   '@order.net'),
-          amount: Number(orderData.totalPrice) * 100,
+          amount: Math.round(finalTotal * 100),
           currency: 'GHS',
           ref: transactionId,
           callback: function(response) {
