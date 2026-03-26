@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | SRC Pulse Luxury</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/theme.css">
+
+  <style>
+    /* Admin Luxury Dashboard */
+    .admin-header-lux {
+      padding: 64px 0 48px;
+      border-bottom: 1px solid var(--lux-border);
+      margin-bottom: 64px;
+    }
+    .metric-card-lux {
+      background: var(--lux-white);
+      border: 1px solid var(--lux-border);
+      padding: 32px;
+      height: 100%;
+    }
+    .metric-value-lux {
+      font-family: var(--font-serif);
+      font-size: 48px;
+      font-weight: 500;
+      color: var(--lux-gold);
+      line-height: 1;
+      margin-top: 8px;
+    }
+    .metric-label-lux {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      opacity: 0.5;
+    }
+    
+    .table-lux {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--lux-white);
+      border: 1px solid var(--lux-border);
+    }
+    .table-lux th {
+      background: var(--lux-bg);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 20px;
+      border-bottom: 1px solid var(--lux-border);
+    }
+    .table-lux td {
+      padding: 20px;
+      border-bottom: 1px solid var(--lux-border);
+      font-size: 14px;
+    }
+    .table-lux tr:last-child td { border-bottom: none; }
+    
+    .status-badge-lux {
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid var(--lux-border);
+    }
+    .status-paid { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+    .status-pending { background: #fff3e0; color: #ef6c00; border-color: #ffe0b2; }
+
+    .search-bar-lux {
+      height: 56px;
+      border: 1px solid var(--lux-border);
+      background: var(--lux-white);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      margin-bottom: 32px;
+    }
+    .search-input-lux {
+      border: none;
+      background: transparent;
+      width: 100%;
+      height: 100%;
+      padding-left: 12px;
+      font-family: var(--font-sans);
+      font-size: 15px;
+    }
+    .search-input-lux:focus { outline: none; }
+  </style>
+</head>
+<body>
+
+  <!-- LUXURY NAVBAR -->
+  <nav class="lux-navbar">
+    <a href="index.html" class="logo-lux">SRC PULSE</a>
+    <div class="nav-links-lux d-none d-md-flex">
+      <a href="index.html" class="nav-link-lux">Collection</a>
+      <a href="product.html" class="nav-link-lux">Store</a>
+      <a href="admin.html" class="nav-link-lux active">Management</a>
+    </div>
+    <div class="d-flex align-items-center gap-4">
+      <div class="text-end d-none d-sm-block">
+        <div id="userDisplayName" class="small fw-bold text-uppercase tracking-widest" style="font-size: 11px;">Admin</div>
+        <div id="userRoleName" class="small opacity-50 text-uppercase tracking-widest" style="font-size: 9px;">Registry Access</div>
+      </div>
+      <i class="ph ph-sign-out" id="logoutBtn" style="font-size: 24px; cursor: pointer;" title="Logout"></i>
+    </div>
+  </nav>
+
+  <div class="container pb-5">
+    
+    <!-- DASHBOARD HEADER -->
+    <header class="admin-header-lux">
+      <div class="row align-items-end">
+        <div class="col-md-8">
+          <span class="label-eyebrow">Registry</span>
+          <h1 class="serif m-0" style="font-size: 48px;">Order Intelligence</h1>
+        </div>
+        <div class="col-md-4 text-md-end mt-4 mt-md-0">
+          <button id="exportCsv" class="btn-lux">
+            <i class="ph ph-file-csv"></i> Export Records
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- METRICS -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-3">
+        <div class="metric-card-lux text-center">
+          <span class="metric-label-lux">Global Orders</span>
+          <div id="statTotalOrders" class="metric-value-lux">0</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card-lux text-center">
+          <span class="metric-label-lux">Settled Revenue</span>
+          <div id="statTotalRevenue" class="metric-value-lux">GHS 0</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card-lux text-center">
+          <span class="metric-label-lux">Pending Settlement</span>
+          <div id="statPendingOrders" class="metric-value-lux">0</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card-lux text-center">
+          <span class="metric-label-lux">Package Bundles</span>
+          <div id="statBundles" class="metric-value-lux">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA TABLE -->
+    <div class="table-container-lux">
+      <div class="search-bar-lux">
+        <i class="ph ph-magnifying-glass opacity-50"></i>
+        <input type="text" id="orderSearch" class="search-input-lux" placeholder="Audit by name, phone or ID...">
+      </div>
+
+      <div class="table-responsive">
+        <table class="table-lux">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Student / Contact</th>
+              <th>Programme & Class</th>
+              <th>Hostel</th>
+              <th>Order Details</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Transaction ID</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTable">
+            <!-- Data rows injected via JS -->
+            <tr>
+              <td colspan="7" class="text-center py-5 opacity-50 italic">Synchronizing with registry...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <span class="small opacity-50 text-uppercase tracking-widest" id="pageInfo">Showing 0 of 0 records</span>
+        <div class="nav-links-lux">
+          <button id="prevPage" class="nav-link-lux" style="background:transparent; border:none; padding:0;">Prev</button>
+          <button id="nextPage" class="nav-link-lux" style="background:transparent; border:none; padding:0;">Next</button>
+        </div>
+      </div>
+    </div>
+
+  <footer class="footer-lux" style="background: var(--lux-ink); color: var(--lux-white); padding: 80px 0; text-align: center; margin-top: 80px;">
+    <div class="container">
+      <div class="logo-lux" style="color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 20px; margin-bottom: 40px; display: inline-block;">SRC PULSE</div>
+      <p class="opacity-50 small text-uppercase tracking-widest mb-2">&copy; 2026 Dunkwa-On-Offin Nursing & Midwifery College</p>
+      <p class="small text-uppercase tracking-widest opacity-25" style="font-size: 10px; letter-spacing: 0.2em;">Created by Jonas Coleman, SRC PRO</p>
+    </div>
+  </footer>
+
+  <!-- CUSTOM LOGOUT MODAL -->
+  <div id="logoutModal" class="lux-modal-overlay">
+    <div class="lux-modal-card">
+      <div class="mb-4">
+        <i class="ph ph-sign-out opacity-25" style="font-size: 40px; color: var(--lux-gold);"></i>
+      </div>
+      <h3 class="serif mb-2" style="font-size: 28px;">End Session?</h3>
+      <p class="small opacity-50 mb-5" style="max-width: 240px; margin: 0 auto 32px; line-height: 1.6;">Are you sure you want to sign out of the administrator registry?</p>
+      
+      <div class="d-flex flex-column gap-3">
+        <button id="confirmLogout" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff; padding: 18px; font-size: 11px; letter-spacing: 0.2em;">CONFIRM SIGN OUT</button>
+        <button id="cancelLogout" class="btn-lux w-100 btn-outline-lux" style="padding: 16px; font-size: 11px; letter-spacing: 0.2em; border-color: rgba(15, 25, 35, 0.1);">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .lux-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 25, 35, 0.6);
+      backdrop-filter: blur(12px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.4s ease;
+    }
+    .lux-modal-overlay.active { display: flex; }
+    .lux-modal-card {
+      background: #fff;
+      padding: 60px 48px;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.15);
+      border: 1px solid rgba(184, 147, 63, 0.1);
+      transform: scale(0.9) translateY(40px);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0;
+    }
+    .lux-modal-overlay.active .lux-modal-card { 
+      transform: scale(1) translateY(0); 
+      opacity: 1;
+    }
+    .btn-outline-lux {
+      background: transparent;
+      border: 1px solid var(--lux-border);
+      color: var(--lux-ink);
+    }
+    .btn-outline-lux:hover {
+      background: rgba(15, 25, 35, 0.03);
+      border-color: var(--lux-ink);
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+
+  <!-- EXTERNAL LIBRARIES -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- EXPORT SETTINGS MODAL -->
+  <div id="exportModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 500px; text-align: left; padding: 48px;">
+      <h3 class="serif mb-2" style="font-size: 28px;">Export Settings</h3>
+      <p class="small opacity-50 mb-4">Select format and columns for your intelligence report.</p>
+      
+      <div class="mb-4">
+        <label class="small fw-bold text-uppercase tracking-widest mb-3 d-block" style="font-size: 10px;">Output Format</label>
+        <div class="d-flex gap-2">
+          <button class="format-btn active" data-format="pdf">
+            <i class="ph ph-file-pdf"></i> PDF Document
+          </button>
+          <button class="format-btn" data-format="excel">
+            <i class="ph ph-file-xls"></i> Excel Sheet
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-5">
+        <label class="small fw-bold text-uppercase tracking-widest mb-3 d-block" style="font-size: 10px;">Select Columns</label>
+        <div class="row g-2" id="columnPicker">
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="date" checked> Date</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="name" checked> Student Name</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="hostel" checked> Hostel</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="items" checked> Order Items</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="total" checked> Total Amount</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="status" checked> Payment Status</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-3">
+        <button id="runExport" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff;">Generate Report</button>
+        <button id="closeExport" class="btn-lux w-100 btn-outline-lux">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .format-btn {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid var(--lux-border);
+      background: transparent;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--lux-ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .format-btn.active {
+      background: var(--lux-ink);
+      color: #fff;
+      border-color: var(--lux-ink);
+    }
+    .column-opt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .column-opt:hover { background: rgba(15, 25, 35, 0.03); }
+    .column-opt input {
+      accent-color: var(--lux-gold);
+      width: 18px; height: 18px;
+    }
+  </style>
+  <script src="js/app.js?v=1.0.1"></script>
+  
+  <script>
+    // ── Authentication Guard (Immediate) ───────────────────────
+    if (!AdminAuth.isAuthenticated()) {
+      window.location.href = "admin-login.html";
+    }
+
+    // Populate User Details
+    const currentUser = AdminAuth.getUser();
+    if (currentUser) {
+      document.getElementById('userDisplayName').textContent = currentUser.full_name || currentUser.username;
+      document.getElementById('userRoleName').textContent = currentUser.role || 'Administrator';
+    }
+
+    // Custom Logout Logic
+    const logoutModal = document.getElementById('logoutModal');
+    
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      logoutModal.classList.add('active');
+    });
+
+    document.getElementById('cancelLogout').addEventListener('click', () => {
+      logoutModal.classList.remove('active');
+    });
+
+    document.getElementById('confirmLogout').addEventListener('click', () => {
+      AdminAuth.logout();
+      window.location.href = 'index.html';
+    });
+
+    // Close on overlay click
+    logoutModal.addEventListener('click', (e) => {
+      if (e.target === logoutModal) logoutModal.classList.remove('active');
+    });
+
+    let orders = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    async function loadDashboard() {
+      try {
+        orders = await getAllOrders(); // Fixed function name
+        renderStats();
+        renderTable();
+      } catch (err) {
+        console.error("Dashboard Sync Failed:", err);
+        alert("Failed to synchronize with registry: " + (err.message || "Unknown error") + ". Please ensure schema.sql has been executed in Supabase.");
+      }
+    }
+
+    function renderStats() {
+      const total = orders.length;
+      const paid = orders.filter(o => o.payment_status === 'paid');
+      const revenue = paid.reduce((sum, o) => sum + (o.total_price || 0), 0);
+      const pending = orders.filter(o => o.payment_status === 'pending').length;
+      const bundles = orders.filter(o => o.cap_option).length;
+
+      document.getElementById('statTotalOrders').textContent = total;
+      document.getElementById('statTotalRevenue').textContent = `GHS ${revenue.toFixed(2)}`;
+      document.getElementById('statPendingOrders').textContent = pending;
+      document.getElementById('statBundles').textContent = bundles;
+    }
+
+    function renderTable() {
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const results = orders.slice(start, end);
+      
+      const tbody = document.getElementById('ordersTable');
+      tbody.innerHTML = results.map(o => `
+        <tr>
+          <td>${new Date(o.created_at).toLocaleDateString()}</td>
+          <td>
+            <div class="fw-bold">${o.students?.name || 'Unknown'}</div>
+            <div class="small opacity-50">${o.students?.phone || ''}</div>
+          </td>
+          <td class="small text-uppercase">
+            <div class="fw-bold">${o.students?.programme || ''}</div>
+            <div class="opacity-50">${o.students?.class || ''}</div>
+          </td>
+          <td class="small">${o.students?.hostel || '---'}</td>
+          <td>
+            <div class="small opacity-75">${o.shirt_color} (${o.shirt_size})</div>
+            <div class="small fw-bold text-uppercase opacity-50">${o.shirt_texture || 'Cotton'}</div>
+            ${o.cap_option ? '<div class="small text-gold text-uppercase tracking-tighter">+ Cap Included</div>' : ''}
+          </td>
+          <td class="fw-bold">GHS ${o.total_price ? o.total_price.toFixed(2) : '0.00'}</td>
+          <td>
+            <span class="status-badge-lux status-${o.payment_status}">${o.payment_status}</span>
+          </td>
+          <td class="small font-monospace opacity-50">${o.transaction_id || '---'}</td>
+          <td>
+            ${o.payment_status === 'paid' ? `
+              <button onclick="handleFulfill('${o.transaction_id}')" class="btn-lux py-1 px-3" style="font-size: 10px; background: var(--lux-gold);">Fulfill</button>
+            ` : '---'}
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="9" class="text-center py-5 opacity-50">No records found.</td></tr>';
+
+      document.getElementById('pageInfo').textContent = `Showing ${Math.min(end, orders.length)} of ${orders.length} records`;
+    }
+
+    // Simplified search logic
+    document.getElementById('orderSearch').addEventListener('input', e => {
+      const query = e.target.value.toLowerCase();
+      const filtered = orders.filter(o => 
+        o.students?.name?.toLowerCase().includes(query) || 
+        o.students?.phone?.includes(query) ||
+        o.transaction_id?.toLowerCase().includes(query)
+      );
+      // Re-render with filtered data (for simple prototype)
+      // Actual implementation should handle search in loadDashboard
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => { 
+      if(currentPage * itemsPerPage < orders.length) { currentPage++; renderTable(); } 
+    });
+    document.getElementById('prevPage').addEventListener('click', () => { 
+      if(currentPage > 1) { currentPage--; renderTable(); } 
+    });
+
+    async function handleFulfill(txId) {
+      if(!confirm("Mark this order as fulfilled?")) return;
+      try {
+        await updatePaymentStatus(txId, 'fulfilled');
+        alert("Order Fulfilled Successfully");
+        loadDashboard();
+      } catch (err) {
+        console.error("Fulfillment Failed:", err);
+        alert("Failed to update status.");
+      }
+    }
+
+    // ── Advanced Export Logic ────────────────────────────────
+    const exportModal = document.getElementById('exportModal');
+    let exportFormat = 'pdf'; // default
+
+    document.getElementById('exportCsv').addEventListener('click', () => {
+      exportModal.classList.add('active');
+    });
+
+    document.getElementById('closeExport').addEventListener('click', () => {
+      exportModal.classList.remove('active');
+    });
+
+    // Handle Format Selection
+    document.querySelectorAll('.format-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        exportFormat = btn.dataset.format;
+      });
+    });
+
+    document.getElementById('runExport').addEventListener('click', async () => {
+      const selectedColumns = Array.from(document.querySelectorAll('#columnPicker input:checked')).map(cb => cb.value);
+      
+      if (selectedColumns.length === 0) {
+        alert("Please select at least one column to export.");
+        return;
+      }
+
+      if (orders.length === 0) {
+        alert("No data available to export.");
+        return;
+      }
+
+      try {
+        if (exportFormat === 'pdf') {
+          generatePdfReport(orders, selectedColumns);
+        } else {
+          generateExcelReport(orders, selectedColumns);
+        }
+      } catch (err) {
+        console.error("Export Error:", err);
+        alert("Export failed: " + err.message);
+      }
+      
+      exportModal.classList.remove('active');
+    });
+
+    function generatePdfReport(data, cols) {
+      const { jsPDF } = window.jspdf || window; // Fallback for different builds
+      if (!jsPDF) throw new Error("PDF library (jspdf) not loaded. Please refresh.");
+      
+      const doc = new jsPDF('l', 'mm', 'a4');
+      
+      // Luxury Header
+      doc.setFont("serif", "bold");
+      doc.setFontSize(24);
+      doc.setTextColor(15, 25, 35);
+      doc.text("SRC PULSE | ORDER INTELLIGENCE", 14, 20);
+      
+      doc.setFontSize(10);
+      doc.setFont("sans", "normal");
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Generated on ${new Date().toLocaleString()} | Dunkwa-On-Offin NMTC`, 14, 28);
+
+      const tableHeaders = [];
+      const tableData = [];
+
+      // Map columns
+      const colMap = {
+        date: { label: 'DATE', key: 'created_at', fmt: v => new Date(v).toLocaleDateString() },
+        name: { label: 'STUDENT', key: 'students.name' },
+        hostel: { label: 'HOSTEL', key: 'students.hostel' },
+        items: { label: 'ITEMS', key: 'items', fmt: v => (v && Array.isArray(v)) ? v.map(i => `${i.qty}x ${i.color} ${i.type}`).join(', ') : '---' },
+        total: { label: 'TOTAL (GHS)', key: 'total_amount', fmt: v => Number(v).toFixed(2) },
+        status: { label: 'STATUS', key: 'payment_status', fmt: v => v.toUpperCase() }
+      };
+
+      cols.forEach(c => tableHeaders.push(colMap[c].label));
+
+      data.forEach(order => {
+        const row = [];
+        cols.forEach(c => {
+          const config = colMap[c];
+          let val = '';
+          if (config.key.includes('.')) {
+            const keys = config.key.split('.');
+            val = order[keys[0]] ? order[keys[0]][keys[1]] : '---';
+          } else {
+            val = order[config.key] || '---';
+          }
+          row.push(config.fmt ? config.fmt(val) : val);
+        });
+        tableData.push(row);
+      });
+
+      doc.autoTable({
+        head: [tableHeaders],
+        body: tableData,
+        startY: 35,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 25, 35], textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        styles: { fontSize: 9, cellPadding: 4 },
+        margin: { top: 35 }
+      });
+
+      doc.save(`src-intelligence-${Date.now()}.pdf`);
+    }
+
+    function generateExcelReport(data, cols) {
+      if (typeof XLSX === 'undefined') throw new Error("Excel library (xlsx) not loaded. Please refresh.");
+      
+      const colMap = {
+        date: { label: 'Date', key: 'created_at', fmt: v => new Date(v).toLocaleDateString() },
+        name: { label: 'Student Name', key: 'students.name' },
+        hostel: { label: 'Hostel', key: 'students.hostel' },
+        items: { label: 'Order Items', key: 'items', fmt: v => (v && Array.isArray(v)) ? v.map(i => `${i.qty}x ${i.color} ${i.type}`).join(', ') : '---' },
+        total: { label: 'Total (GHS)', key: 'total_amount', fmt: v => Number(v).toFixed(2) },
+        status: { label: 'Payment Status', key: 'payment_status', fmt: v => v.toUpperCase() }
+      };
+
+      const excelRows = data.map(order => {
+        const row = {};
+        cols.forEach(c => {
+          const config = colMap[c];
+          let val = '';
+          if (config.key.includes('.')) {
+            const keys = config.key.split('.');
+            val = order[keys[0]] ? order[keys[0]][keys[1]] : '---';
+          } else {
+            val = order[config.key] || '---';
+          }
+          row[config.label] = config.fmt ? config.fmt(val) : val;
+        });
+        return row;
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+      
+      // Style columns (auto-width)
+      XLSX.writeFile(workbook, `src-registry-${Date.now()}.xlsx`);
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

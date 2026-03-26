@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registry Login | SRC Pulse</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <style>
+    :root {
+      --bg-warm: #f5f3ef;
+      --lux-ink: #0f1923;
+      --lux-gold: #b8933f;
+      --lux-white: #ffffff;
+      --lux-border: rgba(15, 25, 35, 0.1);
+      --font-serif: 'Cormorant Garamond', serif;
+      --font-sans: 'DM Sans', sans-serif;
+      --error-bg: #fde8e8;
+      --error-text: #9b1c1c;
+      --gradient-start: #f97316;
+      --gradient-end: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-warm);
+      font-family: var(--font-sans);
+      color: var(--lux-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 24px;
+    }
+
+    /* BACKGROUND ANIMATION */
+    .lux-atmosphere {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: drift 20s infinite alternate ease-in-out;
+    }
+
+    .blob-1 {
+      width: 600px; height: 600px;
+      background: var(--lux-gold);
+      top: -10%; left: -10%;
+    }
+
+    .blob-2 {
+      width: 500px; height: 500px;
+      background: var(--gradient-start);
+      bottom: -10%; right: -10%;
+      animation-delay: -5s;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to { transform: translate(100px, 50px) scale(1.1); }
+    }
+
+    /* LOGIN CARD */
+    .login-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--lux-white);
+      padding: 56px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+      z-index: 10;
+      animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* LOGO SECTION */
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .logo-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 16px rgba(220, 38, 38, 0.2);
+    }
+
+    .logo-text {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      color: var(--lux-ink);
+      text-transform: uppercase;
+    }
+
+    /* LABELS & HEADINGS */
+    .portal-label {
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      color: rgba(15, 25, 35, 0.5);
+      text-transform: uppercase;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    /* ERROR BANNER */
+    .error-banner {
+      background-color: var(--error-bg);
+      color: var(--error-text);
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 24px;
+      display: none;
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* FORM ELEMENTS */
+    .form-group {
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      color: var(--lux-ink);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--lux-border);
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 15px;
+      transition: all 0.3s ease;
+      outline: none;
+      background: #fafaf9;
+    }
+
+    .form-input:focus {
+      border-color: var(--lux-gold);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(184, 147, 63, 0.1);
+    }
+
+    /* BUTTON */
+    .btn-submit {
+      width: 100%;
+      background-color: var(--lux-ink);
+      color: white;
+      border: none;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(15, 25, 35, 0.2);
+    }
+
+    /* SHIMMER EFFECT */
+    .btn-submit::after {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: linear-gradient(
+        45deg,
+        transparent 0%,
+        rgba(184, 147, 63, 0.1) 50%,
+        transparent 100%
+      );
+      transform: rotate(45deg);
+      transition: 0.5s;
+    }
+
+    .btn-submit:hover::after {
+      left: 100%;
+    }
+
+    /* LINKS */
+    .return-link {
+      display: block;
+      text-align: center;
+      margin-top: 24px;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: rgba(15, 25, 35, 0.4);
+      text-decoration: none;
+      text-transform: uppercase;
+      font-weight: 700;
+      transition: color 0.3s ease;
+    }
+
+    .return-link:hover {
+      color: var(--lux-gold);
+    }
+
+    /* FOOTER */
+    .card-footer {
+      margin-top: 48px;
+      text-align: center;
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: rgba(15, 25, 35, 0.25);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    /* SPINNER */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lux-atmosphere">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+
+  <div class="login-card">
+    <!-- LOGO ITEM -->
+    <div class="logo-container">
+      <div class="logo-icon">SRC</div>
+      <div class="logo-text">Pulse</div>
+    </div>
+
+    <div class="portal-label">Secure Administrator Portal</div>
+
+    <div id="errorBanner" class="error-banner">Invalid credentials. Access denied.</div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username" class="form-label">Username</label>
+        <input type="text" id="username" class="form-input" placeholder="e.g. finsec" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Admin Password</label>
+        <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" id="loginBtn" class="btn-submit">
+        <span>Enter Registry</span>
+        <i class="ph ph-arrow-right"></i>
+        <div class="spinner" id="btnSpinner"></div>
+      </button>
+
+      <a href="index.html" class="return-link">Return to Home</a>
+    </form>
+
+    <footer class="card-footer">
+      Created by Jonas Coleman, SRC PRO
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="js/app.js?v=1.0.1"></script>
+  <script>
+    // Redirect if already logged in
+    if (AdminAuth.isAuthenticated()) {
+      window.location.href = 'admin.html';
+    }
+
+    const form = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const btnText = loginBtn.querySelector('span');
+    const btnIcon = loginBtn.querySelector('i');
+    const spinner = document.getElementById('btnSpinner');
+    const errorBanner = document.getElementById('errorBanner');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      // UX State
+      loginBtn.disabled = true;
+      btnText.textContent = 'Verifying';
+      btnIcon.style.display = 'none';
+      spinner.style.display = 'block';
+      errorBanner.style.display = 'none';
+
+      try {
+        const success = await AdminAuth.login(username, password);
+        if (success) {
+          window.location.href = 'admin.html';
+        } else {
+          showError('Invalid credentials. Please try again.');
+        }
+      } catch (err) {
+        console.error(err);
+        showError('Connection error. Please check your network.');
+      }
+    });
+
+    function showError(msg) {
+      errorBanner.textContent = msg;
+      errorBanner.style.display = 'block';
+      loginBtn.disabled = false;
+      btnText.textContent = 'Enter Registry';
+      btnIcon.style.display = 'inline-block';
+      spinner.style.display = 'none';
+      document.getElementById('password').value = '';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+/* 
+  Global Luxury Theme — SRC Pulse
+  Shared variables and core components
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
+:root {
+  --lux-bg: #f5f3ef;
+  --lux-ink: #0f0e0d;
+  --lux-gold: #b8933f;
+  --lux-gold-light: rgba(184, 147, 63, 0.15);
+  --lux-border: rgba(15, 14, 13, 0.1);
+  --lux-white: #ffffff;
+  --lux-navy: #0f1923;
+  
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-sans: 'DM Sans', sans-serif;
+  
+  --radius-sm: 4px;
+  --radius-md: 8px;
+}
+
+/* ── Global Base ────────────────────────────────────────── */
+body {
+  background-color: var(--lux-bg);
+  color: var(--lux-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  position: relative;
+}
+
+h1, h2, h3, h4, .serif {
+  font-family: var(--font-serif);
+}
+
+/* ── Atmospheric Liveliness ─────────────────────────────── */
+.lux-atmosphere {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+/* 1. Grain Texture */
+.lux-grain {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* 2. Drifting Gradients */
+.lux-blob {
+  position: absolute;
+  width: 80vw;
+  height: 80vw;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.55;
+  z-index: -2;
+}
+
+.blob-1 {
+  background: radial-gradient(circle, #e8d9b5 0%, transparent 70%);
+  top: -10%;
+  left: -20%;
+  animation: drift-1 40s linear infinite alternate;
+}
+
+.blob-2 {
+  background: radial-gradient(circle, #ede8dc 0%, transparent 70%);
+  bottom: -20%;
+  right: -10%;
+  animation: drift-2 45s linear infinite alternate;
+}
+
+@keyframes drift-1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(15%, 10%) scale(1.1); }
+  100% { transform: translate(-5%, 20%) scale(0.9); }
+}
+
+@keyframes drift-2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-10%, -15%) scale(1.05); }
+  100% { transform: translate(10%, 5%) scale(0.95); }
+}
+
+/* 3. Shimmer Lines */
+.lux-shimmer-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lux-shimmer-line {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 45%,
+    rgba(184, 147, 63, 0.15) 50%,
+    transparent 55%
+  );
+  animation: sweep 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes sweep {
+  0% { transform: translate(-20%, -20%) rotate(-15deg); opacity: 0; }
+  20% { opacity: 1; }
+  50% { transform: translate(20%, 20%) rotate(-15deg); opacity: 1; }
+  70% { opacity: 0; }
+  100% { transform: translate(20%, 20%) rotate(-15deg); opacity: 0; }
+}
+
+/* 4. Entrance Animations */
+.fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fade-up-anim 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fade-up-anim {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.delay-1 { animation-delay: 120ms; }
+.delay-2 { animation-delay: 240ms; }
+.delay-3 { animation-delay: 360ms; }
+.delay-4 { animation-delay: 480ms; }
+
+/* ── Shared Navbar ──────────────────────────────────────── */
+.lux-navbar {
+  width: 100%;
+  height: 72px;
+  border-bottom: 1px solid var(--lux-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  background: var(--lux-bg);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.logo-lux {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lux-ink);
+  text-decoration: none;
+}
+
+.nav-links-lux {
+  display: flex;
+  gap: 32px;
+}
+
+.nav-link-lux {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(15, 14, 13, 0.4);
+  text-decoration: none;
+  transition: color 0.3s;
+  position: relative;
+}
+
+.nav-link-lux:hover, .nav-link-lux.active {
+  color: var(--lux-ink);
+}
+
+.nav-link-lux.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--lux-gold);
+}
+
+/* ── Shared Buttons ─────────────────────────────────────── */
+.btn-lux {
+  height: 56px;
+  background: var(--lux-navy);
+  color: var(--lux-white);
+  border: none;
+  padding: 0 40px;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  text-decoration: none;
+}
+
+.btn-lux::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(184, 147, 63, 0.2), transparent);
+  transition: all 0.6s ease;
+}
+
+.btn-lux:hover::before {
+  left: 100%;
+}
+
+.btn-lux:hover {
+  background: #1a2a3a;
+  transform: translateY(-2px);
+}
+
+.btn-lux-outline {
+  background: transparent;
+  border: 1px solid var(--lux-border);
+  color: var(--lux-ink);
+}
+
+.btn-lux-outline:hover {
+  background: rgba(0,0,0,0.02);
+  border-color: var(--lux-ink);
+}
+
+/* ── Form Elements ──────────────────────────────────────── */
+.lux-input-group {
+  margin-bottom: 24px;
+}
+
+.lux-label-global {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 8px;
+  color: var(--lux-gold);
+}
+
+.lux-input-global {
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--lux-border);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--lux-ink);
+  padding: 0;
+  border-radius: 0;
+  transition: border-color 0.3s;
+}
+
+.lux-input-global:focus {
+  outline: none;
+  border-bottom-color: var(--lux-gold);
+}

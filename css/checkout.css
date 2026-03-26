@@ -1,0 +1,323 @@
+/* 
+  Luxury/Refined Checkout Styles — SRC Pulse
+  Design: Editorial, Quiet Luxury
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
+:root {
+  --lux-bg: #f5f3ef;
+  --lux-ink: #0f0e0d;
+  --lux-gold: #b8933f;
+  --lux-gold-light: rgba(184, 147, 63, 0.15);
+  --lux-border: rgba(15, 14, 13, 0.1);
+  --lux-white: #ffffff;
+  --lux-navy: #0f1923;
+  
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-sans: 'DM Sans', sans-serif;
+  
+  --radius-sm: 4px; /* More refined, smaller radius for luxury */
+  --radius-md: 8px;
+}
+
+body {
+  background-color: var(--lux-bg);
+  color: var(--lux-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, .logo-text, .step {
+  font-family: var(--font-serif);
+}
+
+.checkout-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+
+/* ── Refined Top Nav ─────────────────────────────────────── */
+.lux-navbar {
+  width: 100%;
+  height: 72px;
+  border-bottom: 1px solid var(--lux-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  background: var(--lux-bg);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.logo-text {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.breadcrumb-nav {
+  display: flex;
+  gap: 32px;
+}
+
+.step {
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(15, 14, 13, 0.4);
+  text-decoration: none;
+  transition: color 0.3s;
+  position: relative;
+}
+
+.step.active {
+  color: var(--lux-ink);
+}
+
+.step.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--lux-gold);
+}
+
+.help-link-lux {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--lux-gold);
+  text-decoration: none;
+}
+
+/* ── Layout ────────────────────────────────────────────── */
+.left-column {
+  padding-right: 64px;
+}
+
+/* ── Form Design ───────────────────────────────────────── */
+.label-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--lux-gold);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 48px;
+  font-weight: 500;
+  margin-bottom: 48px;
+}
+
+.lux-form-group {
+  margin-bottom: 32px;
+}
+
+.lux-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  color: var(--lux-ink);
+}
+
+.lux-input {
+  width: 100%;
+  height: 48px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--lux-border);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--lux-ink);
+  padding: 0;
+  transition: all 0.3s ease;
+  border-radius: 0;
+}
+
+.lux-input:focus {
+  outline: none;
+  border-bottom-color: var(--lux-gold);
+}
+
+/* Custom Select */
+select.lux-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23b8933f' viewBox='0 0 256 256'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80a8,8,0,0,1,11.32-11.32L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0 center;
+}
+
+/* ── Summary Card ───────────────────────────────────────── */
+.lux-summary-card {
+  border: 1px solid var(--lux-border);
+  padding: 40px;
+  background: var(--lux-white);
+  position: sticky;
+  top: 100px;
+}
+
+.swatch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.swatch-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.lux-badge {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  border: 1px solid var(--lux-border);
+  padding: 4px 16px;
+  border-radius: 20px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-item i {
+  font-size: 20px;
+  color: var(--lux-gold);
+}
+
+.summary-item-text {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  flex-grow: 1;
+}
+
+.summary-item-price {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.lux-divider {
+  border-top: 1px solid var(--lux-border);
+  margin: 32px 0;
+}
+
+.lux-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 32px;
+}
+
+.lux-total-label {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 500;
+}
+
+.lux-total-value {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 32px;
+  color: var(--lux-gold);
+}
+
+.total-includes {
+  font-size: 13px;
+  color: rgba(15, 14, 13, 0.5);
+  font-style: italic;
+  margin-top: -24px;
+  margin-bottom: 32px;
+  display: block;
+}
+
+/* ── Pay Button ─────────────────────────────────────────── */
+.lux-pay-btn {
+  width: 100%;
+  height: 64px;
+  background: var(--lux-navy);
+  color: var(--lux-white);
+  border: none;
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+}
+
+/* Gold Shimmer Effect */
+.lux-pay-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(184, 147, 63, 0.2),
+    transparent
+  );
+  transition: all 0.6s ease;
+}
+
+.lux-pay-btn:hover::before {
+  left: 100%;
+}
+
+.lux-pay-btn:hover {
+  background: #1a2a3a;
+  padding-right: 40px;
+}
+
+.lux-pay-btn i {
+  font-size: 24px;
+  color: var(--lux-gold);
+}
+
+.lux-trust-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(15, 14, 13, 0.5);
+  margin-top: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ── Mobile ────────────────────────────────────────────── */
+@media (max-width: 991px) {
+  .checkout-container { padding: 48px 20px; }
+  .left-column { padding-right: 0; order: 2; margin-top: 60px; }
+  .lux-summary-card { position: relative; top: 0; order: 1; }
+  .lux-navbar { padding: 0 20px; }
+}
