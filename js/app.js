@@ -8,13 +8,13 @@ const CONFIG = {
   SUPABASE_URL: 'https://uzlcleseoxfifrdehdvs.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_gCwbopHregwqci0_l8TXZQ_TzcM7fcR',
   PAYSTACK_KEY: 'pk_live_d6206c1e1d4b8e20bf0d0a9e81b87ff2b9ffe697',
-  ADMIN_PASSWORD: 'srcadmin2024',
   PRICES: {
     shirt: 45,   // GHS
     cap: 25,   // GHS
   },
   DEADLINE: new Date('2026-04-18T23:59:59'),
   SCHOOL: 'Dunkwa-On-Offin Nursing & Midwifery Training College',
+  WHATSAPP_NUMBER: '233501962247 ',
 };
 
 // ── Supabase Client ────────────────────────────────────────
@@ -41,11 +41,13 @@ const STATE_KEY = 'srcOrderState';
 
 const AppState = {
   get() {
-    try { return JSON.parse(sessionStorage.getItem(STATE_KEY)) || { cart: [], student: {} }; }
+    try { return JSON.parse(localStorage.getItem(STATE_KEY)) || { cart: [], student: {} }; }
     catch { return { cart: [], student: {} }; }
   },
   save(state) {
-    sessionStorage.setItem(STATE_KEY, JSON.stringify(state));
+    localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    // Dispatch event for UI updates (like cart count)
+    window.dispatchEvent(new Event('cartUpdated'));
   },
   getCart() { return this.get().cart; },
   getStudent() { return this.get().student; },
@@ -55,7 +57,7 @@ const AppState = {
   setStudent(student) {
     const s = this.get(); s.student = student; this.save(s);
   },
-  clearAll() { sessionStorage.removeItem(STATE_KEY); },
+  clearAll() { localStorage.removeItem(STATE_KEY); },
 
   // Cart helpers
   addOrUpdateItem(item) {
@@ -124,22 +126,24 @@ async function deleteOrder(transaction_id, admin_username) {
   const db = getSupabase();
   if (!db) throw new Error('Supabase not initialised');
 
-  // 1. Fetch the full order record
-  const { data: order, error: fetchError } = await db
+  // 1. Fetch all order records for this transaction
+  const { data: orders, error: fetchError } = await db
     .from('orders')
     .select('*')
-    .eq('transaction_id', transaction_id)
-    .single();
+    .eq('transaction_id', transaction_id);
 
   if (fetchError) throw fetchError;
+  if (!orders || orders.length === 0) return;
 
   // 2. Insert into deleted_orders table
+  const archiveData = orders.map(order => ({
+    ...order,
+    deleted_by: admin_username || 'Unknown Admin'
+  }));
+
   const { error: archiveError } = await db
     .from('deleted_orders')
-    .insert([{
-      ...order,
-      deleted_by: admin_username || 'Unknown Admin'
-    }]);
+    .insert(archiveData);
 
   if (archiveError) throw archiveError;
 
@@ -155,11 +159,18 @@ async function deleteOrder(transaction_id, admin_username) {
 async function getAllOrders() {
   const db = getSupabase();
   if (!db) throw new Error('Supabase not initialised');
-  // Fetch orders and join with students
+
+  // Fetch orders and join twice with students: once for recipient, once for buyer
+  // We use the foreign key column names as aliases/identifiers
   const { data, error } = await db
     .from('orders')
-    .select(`*, students ( name, phone, hostel, programme, class )`)
+    .select(`
+      *,
+      student:students!student_id(name, phone, hostel, programme, class),
+      buyer:students!buyer_id(name, phone)
+    `)
     .order('created_at', { ascending: false });
+
   if (error) throw error;
   return data;
 }
@@ -184,17 +195,6 @@ const AdminAuth = {
         .single();
 
       if (error || !data) {
-        // Fallback for initial setup/legacy
-        if (username === 'admin' && password === 'admin123') {
-          const fallbackUser = { 
-            username: 'admin', 
-            full_name: 'Administrator', 
-            role: 'Super Admin',
-            login_at: Date.now()
-          };
-          sessionStorage.setItem(this.KEY, JSON.stringify(fallbackUser));
-          return true;
-        }
         return false;
       }
 
@@ -216,20 +216,20 @@ const AdminAuth = {
   getUser() {
     const data = sessionStorage.getItem(this.KEY);
     if (!data) return null;
-    
+
     try {
       const session = JSON.parse(data);
       const now = Date.now();
-      
+
       // Check for expiration
       if (session.login_at && (now - session.login_at > this.DURATION)) {
         console.warn("Admin session expired.");
         this.logout();
         return null;
       }
-      
+
       return session;
-    } catch(e) {
+    } catch (e) {
       this.logout();
       return null;
     }
@@ -270,6 +270,132 @@ function initNavbar() {
     navLinks.querySelectorAll('a').forEach(a => {
       a.addEventListener('click', () => navLinks.classList.remove('open'));
     });
+  }
+}
+
+// ── Side Cart Drawer ───────────────────────────────────────
+function initSideCart() {
+  // Prevent showing on admin pages
+  if (window.location.pathname.includes('admin')) return;
+  if (document.getElementById('sideCartDrawer')) return;
+
+  const drawerHtml = `
+    <div id="sideCartOverlay" class="lux-drawer-overlay"></div>
+    <div id="sideCartDrawer" class="lux-drawer">
+      <div class="lux-drawer-header">
+        <h2 class="lux-drawer-title">Your Order</h2>
+        <button class="lux-drawer-close" id="closeSideCart"><i class="ph ph-x"></i></button>
+      </div>
+      <div id="sideCartBody" class="lux-drawer-body">
+        <!-- Items will be injected here -->
+      </div>
+      <div class="lux-drawer-footer">
+        <div class="drawer-total-row">
+          <span class="drawer-total-label">Subtotal</span>
+          <span id="drawerTotalValue" class="drawer-total-value">GHS 0.00</span>
+        </div>
+        <button id="goToCheckoutBtn" class="btn-lux w-100">
+          Proceed to Checkout <i class="ph ph-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', drawerHtml);
+
+  // Event Listeners
+  const overlay = document.getElementById('sideCartOverlay');
+  const drawer = document.getElementById('sideCartDrawer');
+  const closeBtn = document.getElementById('closeSideCart');
+  const checkoutBtn = document.getElementById('goToCheckoutBtn');
+
+  const toggle = (open) => {
+    if (open) {
+      overlay.classList.add('active');
+      drawer.classList.add('active');
+      updateCartUI();
+    } else {
+      overlay.classList.remove('active');
+      drawer.classList.remove('active');
+    }
+  };
+
+  overlay.addEventListener('click', () => toggle(false));
+  closeBtn.addEventListener('click', () => toggle(false));
+  checkoutBtn.addEventListener('click', () => {
+    if (AppState.getCart().length > 0) {
+      window.location.href = 'checkout.html';
+    } else {
+      alert('Your cart is empty.');
+    }
+  });
+
+  // Global trigger for any .cart-trigger
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('.cart-trigger');
+    if (trigger) {
+      e.preventDefault();
+      toggle(true);
+    }
+  });
+
+  // Listen for state changes
+  window.addEventListener('cartUpdated', () => {
+    updateCartUI();
+  });
+
+  // Initial update
+  updateCartUI();
+}
+
+function updateCartUI() {
+  const cart = AppState.getCart();
+  const count = AppState.getItemCount();
+  const counter = document.getElementById('cartCounter');
+  const body = document.getElementById('sideCartBody');
+  const totalDisplay = document.getElementById('drawerTotalValue');
+
+  // Update Badge
+  if (counter) {
+    counter.textContent = count;
+    counter.classList.remove('pop');
+    void counter.offsetWidth; // Trigger reflow
+    counter.classList.add('pop');
+  }
+
+  // Update Drawer Body
+  if (body) {
+    if (cart.length === 0) {
+      body.innerHTML = `
+        <div class="drawer-empty-state">
+          <i class="ph ph-shopping-bag-open" style="font-size: 64px; opacity: 0.2; margin-bottom: 24px; display: block;"></i>
+          <p class="serif" style="font-size: 20px; opacity: 0.5;">Your cart is empty</p>
+          <button class="btn-lux btn-lux-outline mt-3" onclick="document.getElementById('sideCartOverlay').click()">Continue Shopping</button>
+        </div>
+      `;
+    } else {
+      let itemsHtml = '';
+      let total = 0;
+      cart.forEach(item => {
+        total += item.unitPrice * (item.qty || 1);
+        itemsHtml += `
+          <div class="drawer-item">
+            <div class="drawer-item-img" style="background: ${item.colorHex || '#eee'};"></div>
+            <div class="drawer-item-info">
+              <div class="drawer-item-title">${item.color} Shirt · ${item.size}</div>
+              <div class="drawer-item-meta">${item.texture} · ${item.package === 'bundle' ? 'Bundle' : 'Shirt'}</div>
+              ${item.hasNickname ? `<div class="drawer-item-meta" style="color: var(--lux-gold);">"${item.nickname}"</div>` : ''}
+              ${item.isGift ? `<div class="drawer-item-meta" style="color: var(--lux-gold); font-weight: 600;">Gift: ${item.recipient.name}</div>` : ''}
+              <div class="fw-bold mt-1" style="font-size: 14px;">GHS ${(item.unitPrice * (item.qty || 1)).toFixed(2)}</div>
+            </div>
+            <button class="drawer-item-remove" onclick="AppState.removeItem('${item.id}')">
+              <i class="ph ph-trash"></i>
+            </button>
+          </div>
+        `;
+      });
+      body.innerHTML = itemsHtml;
+      if (totalDisplay) totalDisplay.textContent = `GHS ${total.toFixed(2)}`;
+    }
   }
 }
 
@@ -348,4 +474,5 @@ function onReady(fn) {
 // Auto-init shared components
 onReady(() => {
   initNavbar();
+  initSideCart();
 });

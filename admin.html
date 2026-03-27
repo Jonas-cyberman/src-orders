@@ -233,8 +233,41 @@
 
       .table-lux td[data-label="Student"] {
         min-width: 150px;
-      }
     }
+  }
+
+    /* Sales History Styling */
+    .status-select-lux {
+      border: none;
+      background: var(--lux-bg);
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      outline: none;
+    }
+    
+    .customer-avatar-lux {
+      width: 32px;
+      height: 32px;
+      background: var(--lux-bg);
+      color: var(--lux-ink);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      margin-right: 12px;
+      border: 1px solid var(--lux-border);
+    }
+    
+    .status-paid-alt { color: #2e7d32; }
+    .status-pending-alt { color: #ef6c00; }
+    .status-fulfilled-alt { color: var(--lux-gold); }
   </style>
 </head>
 <body>
@@ -267,7 +300,7 @@
       <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4">
         <div>
           <span class="label-eyebrow">Registry</span>
-          <h1 class="serif m-0" style="font-size: 48px;">Order Intelligence</h1>
+          <h1 class="serif m-0" style="font-size: 48px;">Sales History</h1>
         </div>
         <div class="d-flex gap-2">
           <button class="btn-analytics-lux" data-bs-toggle="modal" data-bs-target="#insightsModal">
@@ -316,9 +349,22 @@
 
     <!-- DATA TABLE -->
     <div class="table-container-lux">
-      <div class="search-bar-lux">
-        <i class="ph ph-magnifying-glass opacity-50"></i>
-        <input type="text" id="orderSearch" class="search-input-lux" placeholder="Audit by name, phone or ID...">
+      <div class="search-bar-lux d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center flex-grow-1">
+          <i class="ph ph-magnifying-glass opacity-50"></i>
+          <input type="text" id="orderSearch" class="search-input-lux" placeholder="Audit by name, phone or ID...">
+        </div>
+        <div class="d-flex gap-3 align-items-center">
+          <div class="d-none d-md-block text-uppercase small opacity-50 tracking-widest" style="font-size: 10px;">Filter:</div>
+          <select id="statusFilter" class="status-select-lux">
+            <option value="paid" selected>Paid Only</option>
+            <option value="pending">Pending</option>
+            <option value="all">All Status</option>
+          </select>
+          <div class="small opacity-50 text-uppercase tracking-widest d-none d-lg-block" style="font-size: 10px;">
+            Transactions: <span id="transactionCount" class="fw-bold text-dark">0</span>
+          </div>
+        </div>
       </div>
 
       <div class="table-responsive">
@@ -330,6 +376,7 @@
               <th>Programme & Class</th>
               <th>Hostel</th>
               <th>Order Details</th>
+              <th>Nickname</th>
               <th>Price</th>
               <th>Status</th>
               <th>Transaction ID</th>
@@ -460,6 +507,9 @@
             <label class="column-opt"><input type="checkbox" value="items" checked> Order Items</label>
           </div>
           <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="nickname" checked> Nickname</label>
+          </div>
+          <div class="col-6">
             <label class="column-opt"><input type="checkbox" value="total" checked> Total Amount</label>
           </div>
           <div class="col-6">
@@ -547,27 +597,58 @@
     });
 
     let orders = [];
-    let filteredOrders = []; // NEW: Added for search
+    let filteredOrders = []; 
     let currentPage = 1;
     const itemsPerPage = 10;
+    let currentStatusFilter = 'paid';
 
     async function loadDashboard() {
       try {
         orders = await getAllOrders();
-        filteredOrders = [...orders]; // Initialise with all data
+        applyFilters(); 
         renderStats();
-        renderTable();
+        // renderTable is called inside applyFilters
       } catch (err) {
         console.error("Dashboard Sync Failed:", err);
         alert("Failed to synchronize with registry: " + (err.message || "Unknown error") + ". Please ensure schema.sql has been executed in Supabase.");
       }
     }
 
+    function applyFilters() {
+      const query = document.getElementById('orderSearch').value.toLowerCase();
+      
+      filteredOrders = orders.filter(o => {
+        // Status Filter
+        let matchesStatus = true;
+        if (currentStatusFilter === 'paid') {
+          matchesStatus = (o.payment_status === 'paid' || o.payment_status === 'fulfilled');
+        } else if (currentStatusFilter === 'pending') {
+          matchesStatus = (o.payment_status === 'pending');
+        }
+
+        // Search Filter
+        const matchesSearch = !query || 
+          o.student?.name?.toLowerCase().includes(query) || 
+          o.student?.phone?.includes(query) ||
+          o.buyer?.name?.toLowerCase().includes(query) ||
+          o.transaction_id?.toLowerCase().includes(query) ||
+          (o.nickname_text && o.nickname_text.toLowerCase().includes(query));
+
+        return matchesStatus && matchesSearch;
+      });
+
+      const countEl = document.getElementById('transactionCount');
+      if (countEl) countEl.textContent = filteredOrders.length;
+      
+      currentPage = 1;
+      renderTable();
+    }
+
     function renderStats() {
-      const total = orders.length;
-      const paid = orders.filter(o => o.payment_status === 'paid');
+      const paid = orders.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled');
+      const total = paid.length;
       const revenue = paid.reduce((sum, o) => sum + (o.total_price || 0), 0);
-      const bundles = orders.filter(o => o.cap_option).length;
+      const bundles = paid.filter(o => o.cap_option).length;
 
       const sOrders = document.getElementById('statTotalOrders');
       const sRev = document.getElementById('statTotalRevenue');
@@ -579,7 +660,7 @@
 
       // Analytics: Top Color
       const colors = {};
-      orders.forEach(o => { if(o.shirt_color) colors[o.shirt_color] = (colors[o.shirt_color] || 0) + 1; });
+      paid.forEach(o => { if(o.shirt_color) colors[o.shirt_color] = (colors[o.shirt_color] || 0) + 1; });
       const topColor = Object.entries(colors).sort((a,b)=>b[1]-a[1])[0];
       const sColor = document.getElementById('statTopColor');
       if (sColor) sColor.textContent = topColor ? topColor[0] : '---';
@@ -587,17 +668,18 @@
       // Analytics: Top Class
       const classes = {};
       paid.forEach(o => { 
-        const cls = o.students?.class || 'Unknown';
+        const cls = o.student?.class || 'Unknown';
         classes[cls] = (classes[cls] || 0) + o.total_price; 
       });
       const topClass = Object.entries(classes).sort((a,b)=>b[1]-a[1])[0];
       const sClass = document.getElementById('statTopClass');
       if (sClass) sClass.textContent = topClass ? topClass[0] : '---';
-
-      renderAnalytics(paid, orders);
+      
+      renderAnalytics(paid);
     }
 
-    function renderAnalytics(paid, all) {
+    function renderAnalytics(paid) {
+      const all = paid; // Redefine all as paid for intelligence context
       const colors = {};
       all.forEach(o => { if(o.shirt_color) colors[o.shirt_color] = (colors[o.shirt_color] || 0) + 1; });
       const sortedColors = Object.entries(colors).sort((a,b)=>b[1]-a[1]);
@@ -615,8 +697,8 @@
 
       const classes = {};
       paid.forEach(o => {
-        const cls = o.students?.class || 'Other';
-        classes[cls] = (classes[cls] || 0) + o.total_price;
+        const cls = o.student?.class || 'Other';
+        classes[cls] = (classes[cls] || 0) + (o.total_price || 0);
       });
       const sortedClasses = Object.entries(classes).sort((a,b)=>b[1]-a[1]);
       const maxRev = sortedClasses.length ? sortedClasses[0][1] : 1;
@@ -651,57 +733,83 @@
       const results = filteredOrders.slice(start, end);
       
       const tbody = document.getElementById('ordersTable');
-      tbody.innerHTML = results.map(o => `
+      tbody.innerHTML = results.map(o => {
+        const initials = o.student?.name ? o.student.name.split(' ').map(n => n[0]).join('').substring(0,2) : '?';
+        const formattedDate = new Date(o.created_at).toLocaleString('en-GB', {
+          day: 'numeric', month: 'numeric', year: '2-digit', 
+          hour: 'numeric', minute: '2-digit', hour12: true
+        }).replace(/\//g, '/'); 
+
+        const giftIndicator = o.is_gift ? `
+          <div class="mt-1">
+            <span class="badge bg-gold-lux small text-dark" style="font-size:10px;">GIFT</span>
+            <span class="small opacity-50 ms-1">From: ${o.buyer?.name || 'Unknown'}</span>
+          </div>
+        ` : '';
+
+        return `
         <tr>
-          <td data-label="Date">${new Date(o.created_at).toLocaleDateString()}</td>
+          <td data-label="Date" class="small">${formattedDate}</td>
           <td data-label="Student">
-            <div class="fw-bold">${o.students?.name || 'Unknown'}</div>
-            <div class="small opacity-50">${o.students?.phone || ''}</div>
+            <div class="d-flex align-items-center">
+              <div class="customer-avatar-lux">${initials}</div>
+              <div>
+                <div class="fw-bold">${o.student?.name || 'Unknown'}</div>
+                <div class="small opacity-50">${o.student?.phone || ''}</div>
+                ${giftIndicator}
+              </div>
+            </div>
           </td>
           <td data-label="Programme" class="small text-uppercase">
-            <div class="fw-bold">${o.students?.programme || ''}</div>
-            <div class="opacity-50">${o.students?.class || ''}</div>
+            <div class="fw-bold">${o.student?.programme || ''}</div>
+            <div class="opacity-50">${o.student?.class || ''}</div>
           </td>
-          <td data-label="Hostel" class="small">${o.students?.hostel || '---'}</td>
+          <td data-label="Hostel" class="small">${o.student?.hostel || '---'}</td>
           <td data-label="Order">
             <div class="small opacity-75">${o.shirt_color} (${o.shirt_size})</div>
             <div class="small fw-bold text-uppercase opacity-50">${o.shirt_texture || 'Cotton'}</div>
             ${o.cap_option ? '<div class="small text-gold text-uppercase tracking-tighter">+ Cap Included</div>' : ''}
           </td>
+          <td data-label="Nickname" class="small fw-bold text-uppercase" style="color: var(--lux-gold);">
+            ${o.nickname_text || '<span class="opacity-25">---</span>'}
+          </td>
           <td data-label="Price" class="fw-bold">GHS ${o.total_price ? o.total_price.toFixed(2) : '0.00'}</td>
           <td data-label="Status">
-            <span class="status-badge-lux status-${o.payment_status}">${o.payment_status}</span>
+            <div class="d-flex align-items-center gap-2 status-${o.payment_status}-alt fw-bold small text-uppercase" style="letter-spacing:0.05em;">
+              <i class="ph ph-${o.payment_status === 'pending' ? 'clock' : (o.payment_status === 'paid' ? 'check-circle' : 'package')}"></i>
+              ${o.payment_status}
+            </div>
           </td>
           <td data-label="ID" class="small font-monospace opacity-50">${o.transaction_id || '---'}</td>
           <td data-label="Action">
             <div class="d-flex gap-2 flex-wrap">
               ${o.payment_status === 'paid' ? `
-                <button onclick="handleFulfill('${o.transaction_id}')" class="btn-action-lux btn-fulfill-lux">Fulfill</button>
+                <button onclick="handleFulfill('${o.transaction_id}')" class="btn-action-lux btn-fulfill-lux"><i class="ph ph-package"></i></button>
               ` : ''}
               ${o.payment_status === 'pending' ? `
-                <button onclick="handleConfirmManual('${o.transaction_id}')" class="btn-action-lux btn-confirm-lux">Confirm</button>
-                <button onclick="handleDeleteOrder('${o.transaction_id}')" class="btn-action-lux btn-cancel-lux">Cancel</button>
+                <button onclick="handleConfirmManual('${o.transaction_id}')" class="btn-action-lux btn-confirm-lux"><i class="ph ph-check"></i></button>
+                <button onclick="handleDeleteOrder('${o.transaction_id}')" class="btn-action-lux btn-cancel-lux"><i class="ph ph-trash"></i></button>
               ` : ''}
-              ${(o.payment_status !== 'paid' && o.payment_status !== 'pending') ? '<span class="opacity-25">---</span>' : ''}
+              ${(o.payment_status !== 'paid' && o.payment_status !== 'pending') ? `
+                <button onclick="handleDeleteOrder('${o.transaction_id}')" class="btn-action-lux btn-cancel-lux"><i class="ph ph-trash"></i></button>
+              ` : ''}
             </div>
           </td>
         </tr>
-      `).join('') || '<tr><td colspan="9" class="text-center py-5 opacity-50 no-records-td">No records found matching your audit.</td></tr>';
+      `}).join('') || '<tr><td colspan="10" class="text-center py-5 opacity-50 no-records-td">No records found matching your audit.</td></tr>';
 
       const pInfo = document.getElementById('pageInfo');
       if (pInfo) pInfo.textContent = `Showing ${Math.min(end, filteredOrders.length)} of ${filteredOrders.length} records`;
     }
 
-    // Simplified search logic
+    // New event listeners for filtering
+    document.getElementById('statusFilter').addEventListener('change', e => {
+      currentStatusFilter = e.target.value;
+      applyFilters();
+    });
+
     document.getElementById('orderSearch').addEventListener('input', e => {
-      const query = e.target.value.toLowerCase();
-      filteredOrders = orders.filter(o => 
-        o.students?.name?.toLowerCase().includes(query) || 
-        o.students?.phone?.includes(query) ||
-        o.transaction_id?.toLowerCase().includes(query)
-      );
-      currentPage = 1; // Reset to first page
-      renderTable();
+      applyFilters();
     });
 
     document.getElementById('nextPage').addEventListener('click', () => { 
@@ -821,9 +929,10 @@
         date: { label: 'DATE', key: 'created_at', fmt: v => new Date(v).toLocaleDateString() },
         name: { label: 'STUDENT', key: 'students.name' },
         hostel: { label: 'HOSTEL', key: 'students.hostel' },
-        items: { label: 'ITEMS', key: 'items', fmt: v => (v && Array.isArray(v)) ? v.map(i => `${i.qty}x ${i.color} ${i.type}`).join(', ') : '---' },
-        total: { label: 'TOTAL (GHS)', key: 'total_amount', fmt: v => Number(v).toFixed(2) },
-        status: { label: 'STATUS', key: 'payment_status', fmt: v => v.toUpperCase() }
+        items: { label: 'ITEMS', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
+        nickname: { label: 'NICKNAME', key: 'nickname_text' },
+        total: { label: 'TOTAL (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        status: { label: 'STATUS', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' }
       };
 
       cols.forEach(c => tableHeaders.push(colMap[c].label));
@@ -839,7 +948,7 @@
           } else {
             val = order[config.key] || '---';
           }
-          row.push(config.fmt ? config.fmt(val) : val);
+          row.push(config.fmt ? config.fmt(val, order) : val);
         });
         tableData.push(row);
       });
@@ -865,9 +974,10 @@
         date: { label: 'Date', key: 'created_at', fmt: v => new Date(v).toLocaleDateString() },
         name: { label: 'Student Name', key: 'students.name' },
         hostel: { label: 'Hostel', key: 'students.hostel' },
-        items: { label: 'Order Items', key: 'items', fmt: v => (v && Array.isArray(v)) ? v.map(i => `${i.qty}x ${i.color} ${i.type}`).join(', ') : '---' },
-        total: { label: 'Total (GHS)', key: 'total_amount', fmt: v => Number(v).toFixed(2) },
-        status: { label: 'Payment Status', key: 'payment_status', fmt: v => v.toUpperCase() }
+        items: { label: 'Order Items', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
+        nickname: { label: 'Nickname', key: 'nickname_text' },
+        total: { label: 'Total (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        status: { label: 'Payment Status', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' }
       };
 
       const excelRows = data.map(order => {
@@ -881,7 +991,7 @@
           } else {
             val = order[config.key] || '---';
           }
-          row[config.label] = config.fmt ? config.fmt(val) : val;
+          row[config.label] = config.fmt ? config.fmt(val, order) : val;
         });
         return row;
       });

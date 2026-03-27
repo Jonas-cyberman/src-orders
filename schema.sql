@@ -25,7 +25,9 @@ create table if not exists orders (
   nickname_text text,
   total_price numeric not null,
   payment_status text default 'pending' check (payment_status in ('pending', 'paid', 'fulfilled')),
-  transaction_id text unique
+  transaction_id text,
+  buyer_id uuid references students(id),
+  is_gift boolean default false
 );
 
 -- Enable RLS (Row Level Security)
@@ -79,6 +81,8 @@ create table if not exists deleted_orders (
   total_price numeric,
   payment_status text,
   transaction_id text,
+  buyer_id uuid,
+  is_gift boolean,
   deleted_at timestamptz default now(),
   deleted_by text
 );

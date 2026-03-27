@@ -20,6 +20,12 @@ const COLORS = [
   { id: 'pink', name: 'Dusty Pink', hex: '#F5B7B1', img: 'img/SRC SHIRTS/WhatsApp Image 2026-03-13 at 19.03.39.jpeg' }
 ];
 
+const classMapping = {
+  'RGN': ['RGN13 A', 'RGN13 B', 'RGN14 A', 'RGN14 B', 'RGN15'],
+  'RM': ['RM10A', 'RM10B', 'RM11', 'RM12'],
+  'NAC': ['NAC17', 'NAC18']
+};
+
 // State
 let state = {
   color: COLORS[0],
@@ -27,7 +33,9 @@ let state = {
   texture: 'Cotton',
   package: 'shirt',
   hasNickname: false,
-  nickname: ''
+  nickname: '',
+  isGift: false,
+  friend: { name: '', phone: '', hostel: '', programme: '', class: '' }
 };
 
 // DOM Elements (Luxury Selectors)
@@ -42,7 +50,18 @@ const DOM = {
   nickGroup: document.getElementById('nicknameInputGroup'),
   nickField: document.getElementById('nicknameText'),
   priceTags: document.querySelectorAll('.price-tag-lux'),
-  checkoutBtn: document.getElementById('checkoutBtn')
+  addToCartBtn: document.getElementById('addToCartBtn'),
+  checkoutBtn: document.getElementById('checkoutBtn'),
+  cartCount: document.getElementById('cartCounter'),
+  giftToggle: document.getElementById('giftToggle'),
+  giftForm: document.getElementById('giftForm'),
+  friendFields: {
+    name: document.getElementById('friendName'),
+    phone: document.getElementById('friendPhone'),
+    hostel: document.getElementById('friendHostel'),
+    programme: document.getElementById('friendProgramme'),
+    class: document.getElementById('friendClass')
+  }
 };
 
 function init() {
@@ -119,21 +138,109 @@ function attachEvents() {
     state.nickname = e.target.value.toUpperCase();
   });
 
-  // Checkout
-  DOM.checkoutBtn.addEventListener('click', () => {
+  // Gift Toggle
+  if (DOM.giftToggle) {
+    DOM.giftToggle.addEventListener('change', (e) => {
+      state.isGift = e.target.checked;
+      DOM.giftForm.style.display = state.isGift ? 'block' : 'none';
+      if (state.isGift) DOM.friendFields.name.focus();
+    });
+
+    // Friend Fields
+    Object.keys(DOM.friendFields).forEach(key => {
+      DOM.friendFields[key].addEventListener('input', (e) => {
+        state.friend[key] = e.target.value;
+        
+        // Handle dynamic class update
+        if (key === 'programme') {
+          const p = e.target.value;
+          const classSelect = DOM.friendFields.class;
+          classSelect.innerHTML = '<option value="" disabled selected>Select Class</option>';
+          if (classMapping[p]) {
+            classMapping[p].forEach(c => {
+              const opt = document.createElement('option');
+              opt.value = c; opt.textContent = c;
+              classSelect.appendChild(opt);
+            });
+            classSelect.disabled = false;
+          } else {
+            classSelect.disabled = true;
+          }
+        }
+      });
+    });
+  }
+
+  // Helper to build item
+  const buildItemData = () => {
     const finalPrice = calculateTotal();
-    const orderData = {
-      colorName: state.color.name,
+    return {
+      id: 'ITEM-' + Date.now(),
+      color: state.color.name,
       colorHex: state.color.hex,
       size: state.size,
       texture: state.texture,
       package: state.package,
-      nickname: state.hasNickname,
-      nickText: state.nickname,
-      totalPrice: finalPrice
+      hasNickname: state.hasNickname,
+      nickname: state.nickname,
+      unitPrice: finalPrice,
+      isGift: state.isGift,
+      recipient: state.isGift ? { ...state.friend } : null,
+      qty: 1
     };
-    localStorage.setItem('srcWeekOrder', JSON.stringify(orderData));
+  };
+
+  // Add to Cart
+  if (DOM.addToCartBtn) {
+    DOM.addToCartBtn.addEventListener('click', () => {
+      if (state.isGift && !state.friend.name) {
+        alert("Please enter your friend's name for the gift.");
+        return;
+      }
+      AppState.addOrUpdateItem(buildItemData());
+      alert(`${state.color.name} shirt added to order!`);
+    });
+  }
+
+  // WhatsApp Order
+  const waOrderBtn = document.getElementById('waOrderBtn');
+  if (waOrderBtn) {
+    waOrderBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const item = buildItemData();
+      let msg = `Hi SRC Pulse, I want to order:\n`;
+      msg += `- ${item.color} Shirt (${item.size})\n`;
+      msg += `- Style: ${item.texture}\n`;
+      msg += `- Package: ${item.package === 'bundle' ? 'Shirt + Cap' : 'Shirt Only'}\n`;
+      if (item.hasNickname) msg += `- Nickname: ${item.nickname}\n`;
+      if (item.isGift) {
+        msg += `\nGift for: ${item.recipient.name}\n`;
+        msg += `Phone: ${item.recipient.phone}\n`;
+        msg += `Hostel: ${item.recipient.hostel}\n`;
+      }
+      msg += `\nTotal: GHS ${item.unitPrice.toFixed(2)}`;
+      
+      const phone = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233541513262';
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    });
+  }
+
+  // Checkout (Immediate)
+  DOM.checkoutBtn.addEventListener('click', () => {
+    if (AppState.getItemCount() === 0) {
+      if (state.isGift && !state.friend.name) {
+        alert("Please enter your friend's name for the gift.");
+        return;
+      }
+      AppState.addOrUpdateItem(buildItemData());
+    }
     window.location.href = 'checkout.html';
+  });
+
+  // Listen for cart updates
+  window.addEventListener('cartUpdated', () => {
+    if (DOM.cartCount) DOM.cartCount.textContent = AppState.getItemCount();
   });
 }
 

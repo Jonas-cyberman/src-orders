@@ -150,6 +150,10 @@
       <a href="index.html#archive" class="nav-link-lux">Archive</a>
     </div>
     <div class="d-flex align-items-center gap-4">
+      <div class="cart-trigger position-relative" style="cursor: pointer;">
+        <i class="ph ph-shopping-cart" style="font-size: 24px;"></i>
+        <span id="cartCounter" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px;">0</span>
+      </div>
       <a href="admin.html" class="nav-link-lux" title="Management">
         <i class="ph ph-user-gear" style="font-size: 24px; cursor: pointer;"></i>
       </a>
@@ -328,10 +332,71 @@
           </div>
         </div>
 
+        <!-- BUY FOR A FRIEND (GIFT) -->
+        <div class="mb-5 p-4" style="background: var(--lux-bg); border: 1px dashed var(--lux-border); border-radius: 4px;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <label class="option-label-lux m-0">Gift This Item?</label>
+            <div class="form-check form-switch m-0">
+              <input class="form-check-input" type="checkbox" id="giftToggle">
+              <label class="form-check-label small" for="giftToggle">Buy for a Friend</label>
+            </div>
+          </div>
+          <div id="giftForm" style="display: none;">
+            <div class="row g-3">
+              <div class="col-12">
+                <input type="text" id="friendName" class="lux-input-global" placeholder="Friend's Full Name">
+              </div>
+              <div class="col-md-6">
+                <input type="text" id="friendPhone" class="lux-input-global" placeholder="Phone Number">
+              </div>
+              <div class="col-md-6">
+                <select id="friendHostel" class="lux-input-global" required>
+                  <option value="" disabled selected>Select Hostel</option>
+                  <option value="Virginia Henerdson">Virginia Henerdson</option>
+                  <option value="Queens Hostel">Queens Hostel</option>
+                  <option value="Nightingale Hostel">Nightingale Hostel</option>
+                  <option value="Royal Hostel">Royal Hostel</option>
+                  <option value="DBS Hostel">DBS Hostel</option>
+                  <option value="Harmony Hostel">Harmony Hostel</option>
+                  <option value="Males Hostel">Males Hostel</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <select id="friendProgramme" class="lux-input-global" required>
+                  <option value="" disabled selected>Select Programme</option>
+                  <option value="RGN">RGN (Nursing)</option>
+                  <option value="RM">RM (Midwifery)</option>
+                  <option value="NAC">NAC (Nursing Assistant Clinical)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <select id="friendClass" class="lux-input-global" required disabled>
+                  <option value="" disabled selected>Select Class</option>
+                </select>
+              </div>
+            </div>
+            <div class="small opacity-50 mt-3">All gift items will be delivered separately to your friends.</div>
+          </div>
+        </div>
+
         <!-- CTA -->
-        <button id="checkoutBtn" class="btn-lux w-100">
-          Add to Order & Checkout <i class="ph ph-arrow-right"></i>
-        </button>
+        <div class="d-flex flex-column gap-3">
+          <div class="row g-2">
+            <div class="col-8">
+              <button id="addToCartBtn" class="btn-lux w-100" style="background: transparent; color: var(--lux-ink); border: 2px solid var(--lux-ink); height: 55px;">
+                Add to Order
+              </button>
+            </div>
+            <div class="col-4">
+              <a id="waOrderBtn" href="#" class="btn-lux w-100 d-flex align-items-center justify-content-center" style="background: #25D366; color: #fff; border: none; height: 55px;">
+                <i class="ph-bold ph-whatsapp-logo" style="font-size: 24px;"></i>
+              </a>
+            </div>
+          </div>
+          <button id="checkoutBtn" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff; height: 55px;">
+            Order Now & Checkout
+          </button>
+        </div>
 
         <div class="mt-4 pt-4 border-top">
           <div class="row g-3">
