@@ -2,6 +2,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    { "source": "/api/verify", "destination": "/api/verify.js" },
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/login", "destination": "/admin-login.html" },
     { "source": "/checkout", "destination": "/checkout.html" },

@@ -486,6 +486,16 @@
     </div>
   </div>
 
+  <!-- LUXURY NOTIFICATION MODAL -->
+  <div id="notificationModal" class="lux-modal-overlay">
+    <div class="lux-modal-card text-center" style="max-width: 400px;">
+      <div id="notifIconContainer" class="mb-4 d-flex justify-content-center"></div>
+      <h3 id="notifTitle" class="serif mb-2" style="font-size: 24px; opacity: 1;">Notification</h3>
+      <p id="notifMessage" class="small opacity-50 mb-5" style="line-height: 1.6;"></p>
+      <button id="closeNotifBtn" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff; padding: 16px; font-size: 11px; letter-spacing: 0.2em;">OK</button>
+    </div>
+  </div>
+
   <style>
     .lux-modal-overlay {
       position: fixed;
@@ -980,10 +990,18 @@
                        <div class="small font-monospace opacity-50">${tx.id}</div>
                        <div class="d-flex align-items-center gap-3">
                           <div class="small opacity-75">${new Date(tx.date).toLocaleDateString()}</div>
-                          <div class="status-badge-lux status-${tx.status}-alt small fw-bold text-uppercase px-2" style="font-size: 9px; border-radius: 4px; padding: 4px;">
-                            ${tx.status}
-                          </div>
-                          <div class="fw-bold text-lux">GHS ${txDisplayTotal.toFixed(2)}</div>
+                           <div class="status-badge-lux status-${tx.status}-alt small fw-bold text-uppercase px-2" style="font-size: 9px; border-radius: 4px; padding: 4px;">
+                             ${tx.status}
+                           </div>
+                           ${tx.status === 'pending' ? `
+                             <button class="btn-action-lux btn-confirm-lux" onclick="handleVerifyPaystack('${tx.id}', this)" style="height: 24px; font-size: 8px;">
+                               <i class="ph ph-shield-check me-1"></i> Verify
+                             </button>
+                           ` : ''}
+                           <div class="fw-bold text-lux">GHS ${txDisplayTotal.toFixed(2)}</div>
+                           <a href="https://dashboard.paystack.com/#/transactions?q=${tx.id}" target="_blank" class="ms-2 opacity-50 hover-gold" title="View on Paystack Dashboard">
+                             <i class="ph ph-arrow-square-out" style="font-size: 14px;"></i>
+                           </a>
                        </div>
                     </div>
                     
@@ -1076,11 +1094,11 @@
       if(!confirm("Mark this order as fulfilled?")) return;
       try {
         await updatePaymentStatus(txId, 'fulfilled');
-        alert("Order Fulfilled Successfully");
+        showLuxNotification("Order Fulfilled", "Great! This order has been marked as fulfilled.", "success");
         loadDashboard();
       } catch (err) {
         console.error("Fulfillment Failed:", err);
-        alert("Failed to update status.");
+        showLuxNotification("Error", "Failed to update fulfillment status.", "error");
       }
     }
 
@@ -1088,13 +1106,68 @@
       if(!confirm("Confirm manual payment for this order? This will mark it as PAID.")) return;
       try {
         await updatePaymentStatus(txId, 'paid');
-        alert("Payment Confirmed Successfully");
+        showLuxNotification("Payment Confirmed", "Success! The manual payment has been recorded.", "success");
         loadDashboard();
       } catch (err) {
         console.error("Confirmation Failed:", err);
-        alert("Failed to confirm payment.");
+        showLuxNotification("Error", "Failed to confirm payment manually.", "error");
       }
     }
+
+    async function handleVerifyPaystack(txId, btn) {
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph ph-spinner-gap spinning"></i> Checking...';
+      
+      try {
+        // We call our Vercel API Route
+        const response = await fetch(`/api/verify?reference=${encodeURIComponent(txId)}`);
+        const result = await response.json();
+        
+        if (result && result.success && result.status === 'success') {
+          showLuxNotification("Verification Successful", result.message, "success");
+          loadDashboard();
+        } else {
+          showLuxNotification("Verification Result", result.message || "Not confirmed yet.", "info");
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
+      } catch (err) {
+        console.error("Verification Error:", err);
+        showLuxNotification("Gateway Error", "Could not reach the Vercel Verification API. Is the project deployed?", "error");
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+
+    // LUXURY NOTIFICATION SYSTEM 
+    function showLuxNotification(title, message, type = 'info') {
+      const modal = document.getElementById('notificationModal');
+      const titleEl = document.getElementById('notifTitle');
+      const msgEl = document.getElementById('notifMessage');
+      const iconContainer = document.getElementById('notifIconContainer');
+      
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      
+      let iconColor = 'var(--lux-gold)';
+      let iconClass = 'ph-fill ph-info';
+
+      if (type === 'success') {
+        iconColor = '#2e7d32';
+        iconClass = 'ph-fill ph-check-circle';
+      } else if (type === 'error') {
+        iconColor = '#c62828';
+        iconClass = 'ph-fill ph-x-circle';
+      }
+
+      iconContainer.innerHTML = `<i class="${iconClass}" style="font-size: 64px; color: ${iconColor};"></i>`;
+      modal.classList.add('active');
+    }
+
+    document.getElementById('closeNotifBtn').addEventListener('click', () => {
+       document.getElementById('notificationModal').classList.remove('active');
+    });
 
     
     let currentDoc = null;
