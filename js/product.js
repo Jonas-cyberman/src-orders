@@ -208,19 +208,20 @@ function attachEvents() {
     waOrderBtn.addEventListener('click', (e) => {
       e.preventDefault();
       const item = buildItemData();
-      let msg = `Hi SRC Pulse, I want to order:\n`;
-      msg += `- ${item.color} Shirt (${item.size})\n`;
-      msg += `- Style: ${item.texture}\n`;
-      msg += `- Package: ${item.package === 'bundle' ? 'Shirt + Cap' : 'Shirt Only'}\n`;
-      if (item.hasNickname) msg += `- Nickname: ${item.nickname}\n`;
+      let msg = `✅ *SRC PULSE ORDER*\n\n`;
+      msg += `*Item:* ${item.color} Shirt (${item.size})\n`;
+      msg += `*Style:* ${item.texture}\n`;
+      msg += `*Package:* ${item.package === 'bundle' ? 'Shirt + Cap' : 'Shirt Only'}\n`;
+      if (item.hasNickname) msg += `*Nickname:* ${item.nickname}\n`;
       if (item.isGift) {
-        msg += `\nGift for: ${item.recipient.name}\n`;
-        msg += `Phone: ${item.recipient.phone}\n`;
-        msg += `Hostel: ${item.recipient.hostel}\n`;
+        msg += `\n*Gift for:* ${item.recipient.name}\n`;
+        msg += `*Recipient Phone:* ${item.recipient.phone}\n`;
+        msg += `*Recipient Hostel:* ${item.recipient.hostel}\n`;
       }
-      msg += `\nTotal: GHS ${item.unitPrice.toFixed(2)}`;
+      msg += `\n*Total:* GHS ${item.unitPrice.toFixed(2)}`;
+      msg += `\n\nPlease help me process this.`;
       
-      const phone = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233541513262';
+      const phone = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233240064472';
       const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
       window.open(url, '_blank');
     });

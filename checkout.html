@@ -219,7 +219,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://js.paystack.co/v1/inline.js"></script>
-    <script src="js/app.js?v=1.0.1"></script>
+    <script src="js/app.js?v=1.1.0"></script>
 
     <script>
       let cart = AppState.getCart();
@@ -425,12 +425,13 @@
         try {
           // 1. Insert/Update Buyer
           const fullName = document.getElementById('fullName').value;
+          const hostel = document.getElementById('hostel').value;
           localStorage.setItem('lastStudentName', fullName);
 
           const buyerId = await insertStudent({
             name: fullName,
             phone: phone,
-            hostel: document.getElementById('hostel').value,
+            hostel: hostel,
             programme: document.getElementById('programme').value,
             class: document.getElementById('class').value
           });
@@ -445,15 +446,18 @@
             
             // If gift, create/get recipient student record
             if (item.isGift && item.recipient) {
+              console.log('Inserting recipient:', item.recipient.name);
               recipientId = await insertStudent({
                 name: item.recipient.name,
-                phone: item.recipient.phone || 'N/A', // fallback if empty
+                phone: item.recipient.phone || 'N/A',
                 hostel: item.recipient.hostel || 'N/A',
                 programme: item.recipient.programme || 'N/A',
                 class: item.recipient.class || 'N/A'
               });
+              console.log('Recipient inserted:', recipientId);
             }
 
+            console.log('Inserting order for transaction:', transactionId);
             await insertOrder({
               student_id: recipientId,
               buyer_id: buyerId,
@@ -464,21 +468,28 @@
               cap_option: item.package === 'bundle',
               nickname_option: item.hasNickname,
               nickname_text: item.nickname || null,
-              total_price: item.unitPrice, // Individual item price
+              total_price: item.unitPrice,
               payment_status: 'pending',
               transaction_id: transactionId
             });
+            console.log('Order record inserted.');
           }
 
           // 4. Paystack
           const orderSummaryText = cart.map(i => `${i.color} ${i.size}`).join(', ');
           
+          console.log('Initialising Paystack...', { email: CONFIG.SYSTEM_EMAIL, amount: grandTotal });
+          
           const handler = PaystackPop.setup({
             key: CONFIG.PAYSTACK_KEY,
-            email: (fullName.trim().replace(/\s+/g, '_').toLowerCase() + '@srcpulse.order'),
+            email: CONFIG.SYSTEM_EMAIL, // Admin receives the receipt
             amount: Math.round(grandTotal * 100),
             currency: 'GHS',
             ref: transactionId,
+            phone: phone, // Prefill phone for student
+            mobile_money: {
+              phone: phone // Prefill MoMo field
+            },
             metadata: {
               custom_fields: [
                 { display_name: "Customer Name", variable_name: "customer_name", value: fullName },
@@ -516,10 +527,12 @@
       if (waFinishBtn) {
         waFinishBtn.addEventListener('click', () => {
           const fullName = document.getElementById('fullName').value || '[Enter Name]';
+          const phoneInput = document.getElementById('phone').value || '[Enter Phone]';
           const hostel = document.getElementById('hostel').value || '[Enter Hostel]';
           
-          let msg = `Hi SRC Pulse, I want to place an order manually.\n\n`;
+          let msg = `✅ *SRC PULSE ORDER*\n\n`;
           msg += `*Customer:* ${fullName}\n`;
+          msg += `*Phone:* ${phoneInput}\n`;
           msg += `*Hostel:* ${hostel}\n\n`;
           msg += `*Items:* \n`;
           
@@ -536,8 +549,8 @@
           msg += `\n*Total:* GHS ${totalWithFee.toFixed(2)}`;
           msg += `\n\nPlease help me process this.`;
           
-          const phone = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233541513262';
-          const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+          const waNumber = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233240064472';
+          const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
           window.open(url, '_blank');
         });
       }

@@ -14,7 +14,8 @@ const CONFIG = {
   },
   DEADLINE: new Date('2026-04-18T23:59:59'),
   SCHOOL: 'Dunkwa-On-Offin Nursing & Midwifery Training College',
-  WHATSAPP_NUMBER: '233240064472 ',
+  WHATSAPP_NUMBER: '233240064472',
+  SYSTEM_EMAIL: 'dnmtcsrc25@gmail.com', // Admin receives receipts
 };
 
 // ── Supabase Client ────────────────────────────────────────
@@ -239,7 +240,12 @@ const AdminAuth = {
   },
 };
 
-// ── Shared Navbar Behaviour ────────────────────────────────
+// ── Global Initialisation ──────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const countEl = document.getElementById('cartCounter');
+  if (countEl) countEl.textContent = AppState.getItemCount();
+});
+
 function initNavbar() {
   const navbar = document.querySelector('.navbar-main');
   const toggle = document.querySelector('.nav-mobile-toggle');
