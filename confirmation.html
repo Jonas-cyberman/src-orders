@@ -127,6 +127,10 @@
 
       <p class="small opacity-50 mb-5">Your order will be ready for pickup at the SRC office upon presentation of your screenshot confirmation.</p>
 
+      <a id="wa-link" href="#" class="btn-lux w-100 py-3 text-center d-none mb-3" style="background: #25D366; color: white; border: none; text-decoration: none; font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.05em; transition: 0.3s; padding: 16px;">
+        <i class="ph ph-whatsapp-logo"></i> Send Details via WhatsApp
+      </a>
+
       <a href="index.html" class="btn-lux w-100 py-3 text-center d-block mb-2" style="background: var(--lux-navy); color: white; border: none; text-decoration: none; font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.05em; transition: 0.3s; padding: 16px;">
         Return to Collection
       </a>
@@ -176,6 +180,14 @@
         year: 'numeric'
       });
       
+      // Handle WhatsApp button
+      const waUrl = params.get('wa');
+      if (waUrl) {
+        const waLink = document.getElementById('wa-link');
+        waLink.href = waUrl;
+        waLink.classList.remove('d-none');
+      }
+
       // Cleanup
       localStorage.removeItem('srcWeekOrder'); 
     });

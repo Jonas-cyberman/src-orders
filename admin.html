@@ -144,6 +144,40 @@
     }
     .search-input-lux:focus { outline: none; }
 
+    /* Luxury Form Elements for Modals */
+    .lux-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--lux-ink);
+      margin-bottom: 8px;
+      display: block;
+      opacity: 0.6;
+    }
+    .lux-input {
+      width: 100%;
+      height: 48px;
+      padding: 0 16px;
+      background: var(--lux-white);
+      border: 1px solid var(--lux-border);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      color: var(--lux-ink);
+      transition: all 0.3s ease;
+      border-radius: 0; /* Sharp luxury look */
+    }
+    .lux-input:focus {
+      outline: none;
+      border-color: var(--lux-gold);
+      box-shadow: 0 4px 12px rgba(197, 160, 74, 0.1);
+    }
+    .lux-input:disabled {
+      background: #f9f9f9;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
     .btn-analytics-lux, .btn-export-lux {
       height: 48px;
       padding: 0 24px;
@@ -388,8 +422,16 @@
       </div>
       <div class="col-md-3">
         <div class="metric-card-lux text-center">
-          <span class="metric-label-lux">Settled Revenue</span>
+          <span class="metric-label-lux">Gross Revenue</span>
           <div id="statTotalRevenue" class="metric-value-lux">GHS 0</div>
+          <div class="small opacity-50" style="font-size: 8px;">TOTAL FROM STUDENTS</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card-lux text-center" style="border-bottom: 2px solid var(--lux-gold);">
+          <span class="metric-label-lux">Estimated Payout</span>
+          <div id="statTotalNet" class="metric-value-lux" style="color: var(--lux-gold);">GHS 0</div>
+          <div class="small opacity-50" style="font-size: 8px;">NET AFTER PAYSTACK FEES (1.95%)</div>
         </div>
       </div>
       <div class="col-md-2">
@@ -402,12 +444,6 @@
         <div class="metric-card-lux text-center">
           <span class="metric-label-lux">Leading Class</span>
           <div id="statTopClass" class="metric-value-lux" style="font-size: 18px; height: 40px; display: flex; align-items: center; justify-content: center;">-</div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="metric-card-lux text-center">
-          <span class="metric-label-lux">Package Bundles</span>
-          <div id="statBundles" class="metric-value-lux">0</div>
         </div>
       </div>
     </div>
@@ -426,6 +462,12 @@
             <option value="pending">Pending</option>
             <option value="all" selected>All Status</option>
           </select>
+          <button id="bulkAuditBtn" class="btn-action-lux" style="background: var(--lux-gold); color: #fff; height: 38px; padding: 0 15px; font-size: 10px;">
+            <i class="ph ph-shield-check me-1"></i> BULK PAYMENT AUDIT
+          </button>
+          <button id="addManualBtn" class="btn-action-lux" style="background: var(--lux-ink); color: #fff; height: 38px; padding: 0 15px; font-size: 10px;" onclick="openManualOrderModal()">
+            <i class="ph ph-plus-circle me-1"></i> ADD MANUAL ORDER
+          </button>
           <div class="small opacity-50 text-uppercase tracking-widest d-none d-lg-block" style="font-size: 10px;">
             Transactions: <span id="transactionCount" class="fw-bold text-dark">0</span>
           </div>
@@ -493,6 +535,25 @@
       <h3 id="notifTitle" class="serif mb-2" style="font-size: 24px; opacity: 1;">Notification</h3>
       <p id="notifMessage" class="small opacity-50 mb-5" style="line-height: 1.6;"></p>
       <button id="closeNotifBtn" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff; padding: 16px; font-size: 11px; letter-spacing: 0.2em;">OK</button>
+    </div>
+  </div>
+
+  <!-- BULK AUDIT MODAL -->
+  <div id="bulkAuditModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 500px;">
+      <i class="ph ph-x modal-close-lux" id="closeBulkAuditTop"></i>
+      <h3 class="serif mb-1" style="font-size: 28px;">Financial Audit</h3>
+      <p class="small opacity-50 mb-4">Verifying all pending orders against Paystack official records.</p>
+      
+      <div id="auditProgress" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--lux-border); border-radius: 8px; padding: 16px; background: #fafafa; margin-bottom: 24px;">
+        <div id="auditProgressList"></div>
+      </div>
+
+      <div id="auditSummary" class="small fw-bold mb-4 text-center d-none" style="background: #f0fdf4; padding: 12px; border-radius: 8px; color: #166534;">
+        AUDIT COMPLETE: <span id="auditCount" class="text-dark">0</span> Success(es). Registry updated.
+      </div>
+
+      <button id="closeBulkAudit" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff; padding: 16px; font-size: 11px; letter-spacing: 0.15em;">CLOSE REPORT</button>
     </div>
   </div>
 
@@ -635,10 +696,13 @@
           <div class="col-4">
             <label class="column-opt"><input type="checkbox" value="fee" checked> Service Fee</label>
           </div>
-          <div class="col-4">
+          <div class="col-6">
             <label class="column-opt"><input type="checkbox" value="total_paid" checked> Total Paid</label>
           </div>
-          <div class="col-4">
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="payout" checked> Est. Payout (Net)</label>
+          </div>
+          <div class="col-6">
             <label class="column-opt"><input type="checkbox" value="status" checked> Status</label>
           </div>
         </div>
@@ -651,7 +715,113 @@
     </div>
   </div>
 
-  <!-- RECEIPT PREVIEW MODAL -->
+  <!-- MANUAL ORDER MODAL -->
+  <div id="manualOrderModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 600px;">
+      <i class="ph ph-x modal-close-lux" onclick="closeManualOrderModal()"></i>
+      <h3 class="serif mb-2" style="font-size: 28px;">Create Manual Record</h3>
+      <p class="small opacity-50 mb-4">Record a transaction for WhatsApp or cash payments.</p>
+      
+      <form id="manualOrderForm" onsubmit="handleManualOrderSubmit(event)">
+        <div class="row g-3">
+          <!-- Student Section -->
+          <div class="col-md-6">
+            <label class="lux-label">Phone Number (Lookup)</label>
+            <input type="tel" id="manPhone" class="lux-input w-100" placeholder="0XXXXXXXXX" required maxlength="10" oninput="handleManualLookup(this.value)">
+          </div>
+          <div class="col-md-6">
+            <label class="lux-label">Student Name</label>
+            <input type="text" id="manName" class="lux-input w-100" placeholder="Full Name" required>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Programme</label>
+            <select id="manProg" class="lux-input w-100" required onchange="updateManualClasses(this.value)">
+              <option value="" disabled selected>Select</option>
+              <option value="RGN">RGN</option>
+              <option value="RM">RM</option>
+              <option value="NAC">NAC</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Class</label>
+            <select id="manClass" class="lux-input w-100" required disabled>
+               <option value="" disabled selected>Select</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Hostel</label>
+            <select id="manHostel" class="lux-input" required>
+              <option value="" disabled selected>Select</option>
+              <option value="Virginia Henerdson">Virginia Henerdson</option>
+              <option value="Queens Hostel">Queens Hostel</option>
+              <option value="Nightingale Hostel">Nightingale Hostel</option>
+              <option value="Royal Hostel">Royal Hostel</option>
+              <option value="DBS Hostel">DBS Hostel</option>
+              <option value="Harmony Hostel">Harmony Hostel</option>
+              <option value="Males Hostel">Males Hostel</option>
+              <option value="Town/Private">Town/Private</option>
+            </select>
+          </div>
+
+          <hr class="my-3 opacity-10">
+
+          <!-- Order Section -->
+          <div class="col-md-4">
+            <label class="lux-label">Shirt Color</label>
+            <select id="manColor" class="lux-input w-100" required>
+              <option value="Navy Tradition">Navy Tradition</option>
+              <option value="Royal Burgundy">Royal Burgundy</option>
+              <option value="Emerald Green">Emerald Green</option>
+              <option value="Midnight Black">Midnight Black</option>
+              <option value="Deep Royal">Deep Royal</option>
+              <option value="Heritage Gold">Heritage Gold</option>
+              <option value="Classic White">Classic White</option>
+              <option value="Dusty Pink">Dusty Pink</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Size</label>
+            <select id="manSize" class="lux-input w-100" required>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="2XL">2XL</option>
+              <option value="3XL">3XL</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Package</label>
+            <select id="manPkg" class="lux-input w-100" required onchange="updateManualPrice()">
+              <option value="shirt">Shirt Only</option>
+              <option value="bundle">Shirt + Cap</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="lux-label">Texture</label>
+            <div class="d-flex gap-2">
+              <label class="small opacity-75"><input type="radio" name="manTexture" value="Cotton" checked> Cotton</label>
+              <label class="small opacity-75"><input type="radio" name="manTexture" value="Jersey"> Jersey</label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="lux-label">Nickname (Optional)</label>
+            <input type="text" id="manNick" class="lux-input w-100" placeholder="e.g. CAPTAIN" oninput="updateManualPrice()">
+          </div>
+        </div>
+
+        <div class="mt-4 p-3 d-flex justify-content-between align-items-center" style="background: var(--lux-bg); border-radius: 8px;">
+           <div class="small opacity-50 fw-bold">ESTIMATED TOTAL:</div>
+           <div class="serif fw-bold" style="font-size: 20px; color: var(--lux-gold);">GHS <span id="manPriceDisplay">45.00</span></div>
+        </div>
+
+        <button type="submit" id="manSubmitBtn" class="btn-action-lux w-100 mt-3" style="background: var(--lux-gold); color: #fff; height: 50px;">
+          RECORD TRANSACTION
+        </button>
+      </form>
+    </div>
+  </div>
+
   <div id="receiptPreviewModal" class="lux-modal-overlay">
     <div class="lux-modal-card" style="max-width: 600px;">
       <i class="ph ph-x modal-close-lux" id="closeReceiptPreviewTop"></i>
@@ -855,17 +1025,20 @@
 
     function renderStats() {
       const paid = orders.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled');
-      const total = paid.length;
-      const revenue = paid.reduce((sum, o) => sum + (o.total_price || 0), 0);
-      const bundles = paid.filter(o => o.cap_option).length;
+      
+      // Revenue Logic (Gross vs Net)
+      const gross = paid.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+      const feeRate = 0.0195; // Paystack 1.95%
+      const net = gross * (1 - feeRate);
+
+      const sRevenue = document.getElementById('statTotalRevenue');
+      if (sRevenue) sRevenue.textContent = `GHS ${gross.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      
+      const sNet = document.getElementById('statTotalNet');
+      if (sNet) sNet.textContent = `GHS ${net.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
 
       const sOrders = document.getElementById('statTotalOrders');
-      const sRev = document.getElementById('statTotalRevenue');
-      const sBundles = document.getElementById('statBundles');
-      
-      if (sOrders) sOrders.textContent = total;
-      if (sRev) sRev.textContent = `GHS ${revenue.toFixed(2)}`;
-      if (sBundles) sBundles.textContent = bundles;
+      if (sOrders) sOrders.textContent = paid.length;
 
       // Analytics: Top Color
       const colors = {};
@@ -878,7 +1051,7 @@
       const classes = {};
       paid.forEach(o => { 
         const cls = o.student?.class || 'Unknown';
-        classes[cls] = (classes[cls] || 0) + o.total_price; 
+        classes[cls] = (classes[cls] || 0) + (Number(o.total_price) || 0); 
       });
       const topClass = Object.entries(classes).sort((a,b)=>b[1]-a[1])[0];
       const sClass = document.getElementById('statTopClass');
@@ -998,7 +1171,10 @@
                                <i class="ph ph-shield-check me-1"></i> Verify
                              </button>
                            ` : ''}
-                           <div class="fw-bold text-lux">GHS ${txDisplayTotal.toFixed(2)}</div>
+                           <div class="fw-bold text-dark">GHS ${txDisplayTotal.toFixed(2)}</div>
+                           <div class="small fw-bold text-lux ms-2" style="font-size: 9px; padding: 2px 6px; background: rgba(184, 147, 63, 0.1); border-radius: 4px;" title="Estimated Payout after Paystack fees">
+                             <i class="ph ph-hand-coins me-1"></i> GHS ${(txDisplayTotal * 0.9805).toFixed(2)}
+                           </div>
                            <a href="https://dashboard.paystack.com/#/transactions?q=${tx.id}" target="_blank" class="ms-2 opacity-50 hover-gold" title="View on Paystack Dashboard">
                              <i class="ph ph-arrow-square-out" style="font-size: 14px;"></i>
                            </a>
@@ -1120,7 +1296,6 @@
       btn.innerHTML = '<i class="ph ph-spinner-gap spinning"></i> Checking...';
       
       try {
-        // We call our Vercel API Route
         const response = await fetch(`/api/verify?reference=${encodeURIComponent(txId)}`);
         const result = await response.json();
         
@@ -1139,6 +1314,109 @@
         btn.innerHTML = originalHtml;
       }
     }
+    
+    async function handleConfirmManual(txId) {
+      if (!confirm("Confirm this transaction as PAID?")) return;
+      const db = getSupabase();
+      if (!db) return showLuxNotification("Config Error", "Supabase not initialized.", "error");
+      try {
+        const { error } = await db.from('orders').update({ payment_status: 'paid' }).eq('transaction_id', txId);
+        if (error) throw error;
+        showLuxNotification("Order Confirmed", `Transaction ${txId} marked as PAID.`, "success");
+        loadDashboard();
+      } catch (err) {
+        console.error("Confirmation Error:", err);
+        showLuxNotification("Update Failed", "Could not update transaction status.", "error");
+      }
+    }
+
+    async function handleDeleteOrder(txId) {
+      if (!confirm("Are you sure you want to PERMANENTLY DELETE this record?")) return;
+      const db = getSupabase();
+      if (!db) return showLuxNotification("Config Error", "Supabase not initialized.", "error");
+      try {
+        const { error } = await db.from('orders').delete().eq('transaction_id', txId);
+        if (error) throw error;
+        showLuxNotification("Order Deleted", `Transaction ${txId} removed from registry.`, "info");
+        loadDashboard();
+      } catch (err) {
+        console.error("Delete Error:", err);
+        showLuxNotification("Delete Failed", "Could not remove order record.", "error");
+      }
+    }
+
+    // BULK AUDIT SYSTEM
+    async function handleBulkAudit() {
+      console.log("Bulk Audit: Monitoring 29+ transactions...");
+      // Find unique pending transactions
+      const pendingOrders = orders.filter(o => o.payment_status === 'pending');
+      
+      // Get unique IDs to avoid double-verifying the same ref
+      const uniqueRefs = [...new Set(pendingOrders.map(o => o.transaction_id))];
+
+      if (uniqueRefs.length === 0) {
+        showLuxNotification("Audit Result", "No pending transactions found for auditing.", "info");
+        return;
+      }
+
+      const modal = document.getElementById('bulkAuditModal');
+      const list = document.getElementById('auditProgressList');
+      const summary = document.getElementById('auditSummary');
+      const countEl = document.getElementById('auditCount');
+      
+      list.innerHTML = '';
+      summary.classList.add('d-none');
+      modal.classList.add('active');
+      
+      let successCount = 0;
+      for (const refId of uniqueRefs) {
+        // Find a representative order for the name
+        const sampleOrder = pendingOrders.find(o => o.transaction_id === refId);
+        const studentName = sampleOrder?.student?.name || "Unknown";
+
+        const row = document.createElement('div');
+        row.className = 'd-flex justify-content-between align-items-center mb-2 pb-2 border-bottom';
+        row.style.fontSize = '12px';
+        row.innerHTML = `
+          <span class="opacity-75">${studentName} (${refId})</span>
+          <span id="audit-${refId}" class="fw-bold opacity-50">Processing...</span>
+        `;
+        list.appendChild(row);
+        list.scrollTop = list.scrollHeight;
+        
+        try {
+          const res = await fetch(`/api/verify?reference=${encodeURIComponent(refId)}`);
+          const result = await res.json();
+          const statusEl = document.getElementById(`audit-${refId}`);
+          
+          if (result && result.success && result.status === 'success') {
+            statusEl.innerHTML = '<span style="color: #2e7d32;">✓ PAID</span>';
+            successCount++;
+          } else {
+            statusEl.innerHTML = '<span style="color: #c62828;">UNPAID</span>';
+          }
+        } catch (err) {
+          document.getElementById(`audit-${refId}`).innerHTML = '<span class="text-danger">ERROR</span>';
+        }
+        // Small delay to prevent rate limit friction
+        await new Promise(r => setTimeout(r, 400));
+      }
+
+      countEl.textContent = successCount;
+      summary.classList.remove('d-none');
+      loadDashboard();
+    }
+
+    document.getElementById('bulkAuditBtn').addEventListener('click', handleBulkAudit);
+    document.getElementById('closeBulkAudit').addEventListener('click', () => document.getElementById('bulkAuditModal').classList.remove('active'));
+    document.getElementById('closeBulkAuditTop').addEventListener('click', () => document.getElementById('bulkAuditModal').classList.remove('active'));
+    
+    // Toggle Bulk Audit Visibility (Always visible now for better UX)
+    document.getElementById('statusFilter').addEventListener('change', (e) => {
+       // We keep it visible but could dim it if not pending
+       const btn = document.getElementById('bulkAuditBtn');
+       btn.style.opacity = (e.target.value === 'pending' || e.target.value === 'all') ? '1' : '0.5';
+    });
 
     // LUXURY NOTIFICATION SYSTEM 
     function showLuxNotification(title, message, type = 'info') {
@@ -1423,11 +1701,15 @@
         class: { label: 'CLASS', key: 'student.class' },
         items: { label: 'ITEMS', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
         nickname: { label: 'NICKNAME', key: 'nickname_text' },
-        total: { label: 'PRICE (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
-        fee: { label: 'FEE (GHS)', key: 'service_fee', fmt: v => Number(v || 0).toFixed(2) },
+        total: { label: 'BASE PRICE (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        fee: { label: 'PROCESSING FEE', key: 'service_fee', fmt: v => Number(v || 0).toFixed(2) },
         total_paid: { label: 'TOTAL PAID', key: 'total_paid', fmt: (v, row) => {
           const val = Number(v);
           return (val > 0 ? val : (Number(row.total_price) || 0)).toFixed(2);
+        }},
+        payout: { label: 'EST. SETTLEMENT', key: 'total_paid', fmt: (v, row) => {
+          const val = Number(v) > 0 ? Number(v) : (Number(row.total_price) || 0);
+          return (val * 0.9805).toFixed(2);
         }},
         status: { label: 'STATUS', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' }
       };
@@ -1480,11 +1762,15 @@
         class: { label: 'Class', key: 'student.class' },
         items: { label: 'Order Items', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
         nickname: { label: 'Nickname', key: 'nickname_text' },
-        total: { label: 'Price (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
-        fee: { label: 'Service Fee', key: 'service_fee', fmt: v => Number(v || 0).toFixed(2) },
+        total: { label: 'Base Price', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        fee: { label: 'Processing Fee', key: 'service_fee', fmt: v => Number(v || 0).toFixed(2) },
         total_paid: { label: 'Total Paid', key: 'total_paid', fmt: (v, row) => {
           const val = Number(v);
           return (val > 0 ? val : (Number(row.total_price) || 0)).toFixed(2);
+        }},
+        payout: { label: 'Est. Settlement', key: 'total_paid', fmt: (v, row) => {
+           const val = Number(v) > 0 ? Number(v) : (Number(row.total_price) || 0);
+           return (val * 0.9805).toFixed(2);
         }},
         status: { label: 'Payment Status', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' }
       };
@@ -1514,6 +1800,115 @@
       XLSX.writeFile(workbook, `${excelBaseName}.xlsx`);
       console.log("Excel Export Complete.");
     }
+
+    // MANUAL ORDER MANAGEMENT
+    window.openManualOrderModal = function() {
+      document.getElementById('manualOrderModal').classList.add('active');
+    };
+    window.closeManualOrderModal = function() {
+      document.getElementById('manualOrderModal').classList.remove('active');
+      document.getElementById('manualOrderForm').reset();
+      document.getElementById('manPriceDisplay').textContent = "45.00";
+    };
+
+    window.handleManualLookup = function(phone) {
+      if (phone.length < 10) return;
+      // Search existing orders for student data
+      const student = orders.find(o => o.student?.phone === phone)?.student;
+      if (student) {
+        document.getElementById('manName').value = student.name || '';
+        document.getElementById('manHostel').value = student.hostel || '';
+        document.getElementById('manProg').value = student.programme || '';
+        updateManualClasses(student.programme);
+        setTimeout(() => { document.getElementById('manClass').value = student.class || ''; }, 100);
+      }
+    };
+
+    window.updateManualClasses = function(prog) {
+      const clsSelect = document.getElementById('manClass');
+      clsSelect.innerHTML = '<option value="" disabled selected>Select</option>';
+      const mapping = {
+        'RGN': ['RGN13 A', 'RGN13 B', 'RGN14 A', 'RGN14 B', 'RGN15'],
+        'RM': ['RM10A', 'RM10B', 'RM11', 'RM12'],
+        'NAC': ['NAC17', 'NAC18']
+      };
+      if (mapping[prog]) {
+        mapping[prog].forEach(c => {
+          clsSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+        clsSelect.disabled = false;
+      }
+    };
+
+    window.updateManualPrice = function() {
+      let total = 45; // Shirt Base
+      if (document.getElementById('manPkg').value === 'bundle') total += 25; // Cap
+      if (document.getElementById('manNick').value.trim()) total += 5; // Nickname
+      document.getElementById('manPriceDisplay').textContent = total.toFixed(2);
+    };
+
+    window.handleManualOrderSubmit = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('manSubmitBtn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'SAVING RECORD...';
+
+      try {
+        const phone = document.getElementById('manPhone').value;
+        const name = document.getElementById('manName').value;
+        const prog = document.getElementById('manProg').value;
+        const cls = document.getElementById('manClass').value;
+        const hostel = document.getElementById('manHostel').value;
+        const color = document.getElementById('manColor').value;
+        const size = document.getElementById('manSize').value;
+        const pkg = document.getElementById('manPkg').value;
+        const texture = document.querySelector('input[name="manTexture"]:checked').value;
+        const nickname = (document.getElementById('manNick').value || '').toUpperCase();
+        
+        const price = Number(document.getElementById('manPriceDisplay').textContent);
+        const txId = 'MANUAL-' + Date.now().toString().slice(-8);
+
+        // 1. Process Student (Uses app.js helper for existence check/upsert)
+        const buyerId = await insertStudent({
+          name: name,
+          phone: phone,
+          programme: prog,
+          class: cls,
+          hostel: hostel
+        });
+        
+        if (!buyerId) throw new Error("Could not process student record.");
+
+        // 2. Insert Order (Uses app.js helper)
+        const orderId = await insertOrder({
+          transaction_id: txId,
+          buyer_id: buyerId,
+          student_id: buyerId,
+          is_gift: false,
+          shirt_color: color,
+          shirt_size: size,
+          shirt_texture: texture,
+          cap_option: pkg === 'bundle',
+          nickname_option: !!nickname,
+          nickname_text: nickname || null,
+          total_price: price,
+          payment_status: 'paid'
+        });
+
+        if (!orderId) throw new Error("Order registration returned empty ID.");
+
+        showLuxNotification("SUCCESS", "Manual order recorded successfully!", "success");
+        closeManualOrderModal();
+        loadDashboard(); // Refresh
+      } catch (err) {
+        console.error('Manual Order Error:', err);
+        showLuxNotification("ERROR", "Failed to save record: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    };
 
     loadDashboard();
   </script>

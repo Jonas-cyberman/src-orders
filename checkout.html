@@ -365,20 +365,23 @@
       document.getElementById('summary-items').innerHTML = itemsHtml;
       document.getElementById('summary-badge').textContent = `${cart.length} Item${cart.length > 1 ? 's' : ''}`;
 
-      const pFee = Number((grandTotal * 0.0195).toFixed(2));
-      const finalTotal = grandTotal + pFee;
-      DOM.summaryItems.innerHTML = itemsHtml;
-      DOM.totalDisplay.textContent = `GH₵ ${finalTotal.toFixed(2)}`;
-      DOM.payBtn.querySelector('.pay-label').textContent = `Pay GH₵ ${finalTotal.toFixed(2)}`;
+      const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
+      const fee = Number((subTotal * 0.02).toFixed(2)); // 2% Processing Fee
+      grandTotal = subTotal + fee;
 
-      // Add a line for the fee in summary if total > 0
+      // Add fee line to summary
       const feeHtml = `
           <div class="d-flex justify-content-between mt-3 px-1 small opacity-50">
-            <span>Processing Fee (1.95%)</span>
-            <span>GH₵ ${pFee.toFixed(2)}</span>
+            <span>Processing Fee (Paystack)</span>
+            <span>GHS ${fee.toFixed(2)}</span>
           </div>
         `;
       document.getElementById('summary-items').insertAdjacentHTML('beforeend', feeHtml);
+
+      DOM.totalDisplay.textContent = `GHS ${grandTotal.toFixed(2)}`;
+      if (DOM.payBtn.querySelector('.pay-label')) {
+        DOM.payBtn.querySelector('.pay-label').textContent = `Pay GHS ${grandTotal.toFixed(2)}`;
+      }
 
       // Add event listeners to remove buttons
       const removeButtons = document.querySelectorAll('.btn-remove-item');
@@ -434,9 +437,9 @@
 
       // 2. Prepare Transaction
       const transactionId = generateTransactionId();
-      const orderTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-      const processingFee = Number((orderTotal * 0.0195).toFixed(2));
-      const grandTotal = orderTotal + processingFee;
+      const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
+      const processingFee = Number((subTotal * 0.02).toFixed(2));
+      const grandTotal = subTotal + processingFee;
 
       // 3. Loop and Insert Orders
       console.log('Inserting', cart.length, 'order records...');
@@ -465,14 +468,44 @@
           nickname_option: item.hasNickname,
           nickname_text: item.nickname || null,
           total_price: item.unitPrice,
-          service_fee: (i === 0) ? processingFee : 0, // Track fee on first item of tx
-          total_paid: grandTotal, // Store full tx amount for reconciliation
           payment_status: 'pending',
           transaction_id: transactionId
         });
       }
       console.log('All order records saved as PENDING.');
-      return { transactionId, fullName, phone, hostel, className };
+      return { transactionId, fullName, phone, hostel, className, grandTotal, processingFee };
+    }
+
+    function getWhatsAppMessage(data) {
+      const { transactionId, fullName, phone, hostel, className, grandTotal, processingFee } = data;
+      const programme = document.getElementById('programme').value;
+
+      let msg = `✅ *SRC PULSE ORDER CONFIRMED* 🦁\n\n`;
+      msg += `*Ref:* ${transactionId}\n`;
+      msg += `*Customer:* ${fullName}\n`;
+      msg += `*Phone:* ${phone}\n`;
+      msg += `*Programme:* ${programme}\n`;
+      msg += `*Class:* ${className}\n`;
+      msg += `*Hostel:* ${hostel}\n\n`;
+      msg += `*--- ORDER ITEMS ---*\n\n`;
+
+      cart.forEach((item, index) => {
+        msg += `*${index + 1}. ${item.color} Shirt* (${item.size})\n`;
+        msg += `   - Texture: ${item.texture}\n`;
+        msg += `   - Package: ${item.package === 'bundle' ? 'Shirt + Cap' : 'Shirt Only'}\n`;
+        if (item.hasNickname) msg += `   - Nickname: "${item.nickname}"\n`;
+        if (item.isGift) msg += `   - GIFT RECIPIENT: ${item.recipient.name}\n`;
+        msg += `   - Price: GHS ${item.unitPrice.toFixed(2)}\n\n`;
+      });
+
+      const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
+      msg += `*--- FINANCIALS ---*\n`;
+      msg += `*Subtotal:* GHS ${subTotal.toFixed(2)}\n`;
+      msg += `*Processing Fee:* GHS ${processingFee.toFixed(2)}\n`;
+      msg += `*TOTAL PAID:* GHS ${grandTotal.toFixed(2)}\n\n`;
+      msg += `*Date:* ${new Date().toLocaleDateString()} | ${new Date().toLocaleTimeString()}\n\n`;
+      msg += `_Formal checkout request via SRC Pulse Dashboard._`;
+      return msg;
     }
 
     DOM.form.addEventListener('submit', async (e) => {
@@ -503,15 +536,12 @@
 
       try {
         // 1. Save to Database first
-        const { transactionId, fullName, phone, hostel, className } = await processOrderRecords();
-
-        // 2. Open Paystack
-        const grandTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0) + processingFee;
+        const { transactionId, fullName, phone, hostel, className, grandTotal } = await processOrderRecords();
         const orderSummaryText = cart.map(i => `${i.color} ${i.size}`).join(', ');
 
         const handler = PaystackPop.setup({
           key: CONFIG.PAYSTACK_KEY,
-          email: `${fullName.toLowerCase().replace(/\s+/g, '+')}+${className.toLowerCase().replace(/\s+/g, '')}@pulse.order`,
+          email: `${fullName.toLowerCase().replace(/\s+/g, '_')}+${className.toLowerCase().replace(/\s+/g, '').replace(/[\(\)]/g, '')}@order.net`,
           amount: Math.round(grandTotal * 100),
           currency: 'GHS',
           ref: transactionId,
@@ -527,8 +557,12 @@
           },
           callback: function (response) {
             updatePaymentStatus(transactionId, 'paid').then(function () {
+              const msg = getWhatsAppMessage({ transactionId, fullName, phone, hostel, className, grandTotal, processingFee });
+              const waNumber = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233240064472';
+              const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
+              
               AppState.clearAll();
-              window.location.href = 'confirmation.html?ref=' + transactionId;
+              window.location.href = `confirmation.html?ref=${transactionId}&wa=${encodeURIComponent(waUrl)}`;
             }).catch(function (err) {
               console.error('Payment update failed:', err);
               AppState.clearAll();
@@ -564,32 +598,11 @@
 
         try {
           // 1. SAVE TO DATABASE first so admin sees the order
-          const { transactionId, fullName, phone, hostel, className } = await processOrderRecords();
+          const orderData = await processOrderRecords();
+          const { transactionId } = orderData;
 
           // 2. Format WhatsApp Message
-          let msg = `✅ *SRC PULSE ORDER*\n\n`;
-          msg += `*Ref:* ${transactionId}\n`;
-          msg += `*Customer:* ${fullName}\n`;
-          msg += `*Phone:* ${phone}\n`;
-          msg += `*Hostel:* ${hostel}\n\n`;
-          msg += `*Items:* \n`;
-
-          cart.forEach((item, index) => {
-            msg += `${index + 1}. ${item.color} Shirt (${item.size})`;
-            if (item.package === 'bundle') msg += ` + Cap`;
-            if (item.hasNickname) msg += ` (Nickname: ${item.nickname})`;
-            if (item.isGift) msg += `\n   - Gift for: ${item.recipient.name}`;
-            msg += `\n`;
-          });
-
-          const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-          const pFee = Number((subTotal * 0.0195).toFixed(2));
-          const totalWithFee = subTotal + pFee;
-          msg += `\n*Subtotal:* GHS ${subTotal.toFixed(2)}`;
-          msg += `\n*Fee (1.95%):* GHS ${pFee.toFixed(2)}`;
-          msg += `\n*Total:* GHS ${totalWithFee.toFixed(2)}`;
-          msg += `\n\nI have submitted my order details to the Registry. This is my formal request for manual fulfillment.`;
-
+          const msg = getWhatsAppMessage(orderData);
           const waNumber = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233240064472';
           const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
 
