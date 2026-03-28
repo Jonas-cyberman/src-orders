@@ -441,21 +441,40 @@
     .lux-modal-overlay.active { display: flex; }
     .lux-modal-card {
       background: #fff;
-      padding: 60px 48px;
+      padding: 40px 32px;
       border-radius: 24px;
-      width: 100%;
-      max-width: 420px;
-      text-align: center;
+      width: 95%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      text-align: left;
       box-shadow: 0 40px 100px rgba(0,0,0,0.15);
       border: 1px solid rgba(184, 147, 63, 0.1);
       transform: scale(0.9) translateY(40px);
       transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
       opacity: 0;
+      position: relative;
+      overscroll-behavior: contain;
+    }
+    @media (max-width: 576px) {
+      .lux-modal-card { padding: 32px 24px; }
     }
     .lux-modal-overlay.active .lux-modal-card { 
       transform: scale(1) translateY(0); 
       opacity: 1;
     }
+    .modal-close-lux {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      font-size: 24px;
+      cursor: pointer;
+      opacity: 0.3;
+      transition: opacity 0.3s;
+    }
+    .modal-close-lux:hover { opacity: 1; }
+    body.modal-open { overflow: hidden !important; }
+
     .btn-outline-lux {
       background: transparent;
       border: 1px solid var(--lux-border);
@@ -475,7 +494,8 @@
 
   <!-- EXPORT SETTINGS MODAL -->
   <div id="exportModal" class="lux-modal-overlay">
-    <div class="lux-modal-card" style="max-width: 500px; text-align: left; padding: 48px;">
+    <div class="lux-modal-card">
+      <i class="ph ph-x modal-close-lux" id="closeExportTop"></i>
       <h3 class="serif mb-2" style="font-size: 28px;">Export Settings</h3>
       <p class="small opacity-50 mb-4">Select format and columns for your intelligence report.</p>
       
@@ -489,6 +509,22 @@
             <i class="ph ph-file-xls"></i> Excel Sheet
           </button>
         </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="small fw-bold text-uppercase tracking-widest mb-3 d-block" style="font-size: 10px;">Filter by Status</label>
+        <div class="d-flex gap-3" id="exportStatusFilter">
+          <label class="column-opt"><input type="radio" name="exportStatus" value="all" checked> All</label>
+          <label class="column-opt"><input type="radio" name="exportStatus" value="paid"> Paid</label>
+          <label class="column-opt"><input type="radio" name="exportStatus" value="pending"> Pending</label>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="small fw-bold text-uppercase tracking-widest mb-3 d-block" style="font-size: 10px;">Filter by Class</label>
+        <select id="exportClassFilter" class="status-select-lux w-100" style="border: 1px solid var(--lux-border); height: 45px;">
+          <option value="all">All Classes</option>
+        </select>
       </div>
 
       <div class="mb-5">
@@ -505,6 +541,12 @@
           </div>
           <div class="col-6">
             <label class="column-opt"><input type="checkbox" value="items" checked> Order Items</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="programme" checked> Programme</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="class" checked> Class</label>
           </div>
           <div class="col-6">
             <label class="column-opt"><input type="checkbox" value="nickname" checked> Nickname</label>
@@ -605,13 +647,29 @@
     async function loadDashboard() {
       try {
         orders = await getAllOrders();
+        updateExportClassFilter(orders);
         applyFilters(); 
         renderStats();
-        // renderTable is called inside applyFilters
       } catch (err) {
         console.error("Dashboard Sync Failed:", err);
-        alert("Failed to synchronize with registry: " + (err.message || "Unknown error") + ". Please ensure schema.sql has been executed in Supabase.");
+        alert("Failed to synchronize with registry: " + (err.message || "Unknown error"));
       }
+    }
+
+    function updateExportClassFilter(data) {
+      const select = document.getElementById('exportClassFilter');
+      if (!select) return;
+      const currentVal = select.value;
+      
+      // Get unique classes
+      const classes = [...new Set(data.map(o => o.student?.class).filter(Boolean))].sort();
+      
+      let html = '<option value="all">All Classes</option>';
+      classes.forEach(c => {
+        html += `<option value="${c}">${c}</option>`;
+      });
+      select.innerHTML = html;
+      if (classes.includes(currentVal)) select.value = currentVal;
     }
 
     function applyFilters() {
@@ -862,10 +920,19 @@
 
     document.getElementById('exportCsv').addEventListener('click', () => {
       exportModal.classList.add('active');
+      document.body.classList.add('modal-open');
     });
 
-    document.getElementById('closeExport').addEventListener('click', () => {
+    const closeExport = () => {
       exportModal.classList.remove('active');
+      document.body.classList.remove('modal-open');
+    }
+    document.getElementById('closeExport').addEventListener('click', closeExport);
+    document.getElementById('closeExportTop').addEventListener('click', closeExport);
+    
+    // Close on overlay click
+    exportModal.addEventListener('click', (e) => {
+      if (e.target === exportModal) closeExport();
     });
 
     // Handle Format Selection
@@ -879,22 +946,42 @@
 
     document.getElementById('runExport').addEventListener('click', async () => {
       const selectedColumns = Array.from(document.querySelectorAll('#columnPicker input:checked')).map(cb => cb.value);
+      const selectedStatus = document.querySelector('input[name="exportStatus"]:checked').value;
+      const selectedClass = document.getElementById('exportClassFilter').value;
       
+      let dataToExport = orders;
+      
+      // 1. Status Filter
+      if (selectedStatus === 'paid') {
+        dataToExport = dataToExport.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled');
+      } else if (selectedStatus === 'pending') {
+        dataToExport = dataToExport.filter(o => o.payment_status === 'pending');
+      }
+
+      // 2. Class Filter
+      if (selectedClass !== 'all') {
+        dataToExport = dataToExport.filter(o => o.student?.class === selectedClass);
+      }
+
+      console.log("Exporting Data:", { status: selectedStatus, class: selectedClass, count: dataToExport.length });
+
       if (selectedColumns.length === 0) {
         alert("Please select at least one column to export.");
         return;
       }
 
-      if (orders.length === 0) {
-        alert("No data available to export.");
+      if (dataToExport.length === 0) {
+        alert("No data available for the selected status.");
         return;
       }
 
+      const selectedClassLabel = selectedClass === 'all' ? 'All Classes' : `Class: ${selectedClass}`;
+
       try {
         if (exportFormat === 'pdf') {
-          generatePdfReport(orders, selectedColumns);
+          generatePdfReport(dataToExport, selectedColumns, selectedClassLabel);
         } else {
-          generateExcelReport(orders, selectedColumns);
+          generateExcelReport(dataToExport, selectedColumns);
         }
       } catch (err) {
         console.error("Export Error:", err);
@@ -904,22 +991,38 @@
       exportModal.classList.remove('active');
     });
 
-    function generatePdfReport(data, cols) {
-      const { jsPDF } = window.jspdf || window; // Fallback for different builds
-      if (!jsPDF) throw new Error("PDF library (jspdf) not loaded. Please refresh.");
+    function generatePdfReport(data, cols, selectionLabel) {
+      const jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+      if (!jsPDF) {
+        alert("PDF Library (jsPDF) failed to load. Please check your internet connection and refresh.");
+        return;
+      }
       
       const doc = new jsPDF('l', 'mm', 'a4');
       
       // Luxury Header
-      doc.setFont("serif", "bold");
+      doc.setFont("times", "bold");
       doc.setFontSize(24);
       doc.setTextColor(15, 25, 35);
       doc.text("SRC PULSE | ORDER INTELLIGENCE", 14, 20);
       
       doc.setFontSize(10);
-      doc.setFont("sans", "normal");
+      doc.setFont("helvetica", "normal");
       doc.setTextColor(150, 150, 150);
       doc.text(`Generated on ${new Date().toLocaleString()} | Dunkwa-On-Offin NMTC`, 14, 28);
+
+      // Summary Logic
+      const totalCount = data.length;
+      const paidCount = data.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled').length;
+      
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(15, 25, 35);
+      doc.text(`REPORT SUMMARY: ${selectionLabel || 'General Listing'}`, 14, 38);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Total Records Found: ${totalCount} | Successfully Settled (Paid): ${paidCount}`, 14, 44);
 
       const tableHeaders = [];
       const tableData = [];
@@ -927,8 +1030,10 @@
       // Map columns
       const colMap = {
         date: { label: 'DATE', key: 'created_at', fmt: v => new Date(v).toLocaleDateString() },
-        name: { label: 'STUDENT', key: 'students.name' },
-        hostel: { label: 'HOSTEL', key: 'students.hostel' },
+        name: { label: 'STUDENT', key: 'student.name' },
+        hostel: { label: 'HOSTEL', key: 'student.hostel' },
+        programme: { label: 'PROGRAMME', key: 'student.programme' },
+        class: { label: 'CLASS', key: 'student.class' },
         items: { label: 'ITEMS', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
         nickname: { label: 'NICKNAME', key: 'nickname_text' },
         total: { label: 'TOTAL (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
@@ -953,18 +1058,23 @@
         tableData.push(row);
       });
 
+      console.log("Generated PDF Table Data:", tableData);
+
       doc.autoTable({
         head: [tableHeaders],
         body: tableData,
-        startY: 35,
+        startY: 52,
         theme: 'striped',
-        headStyles: { fillColor: [15, 25, 35], textColor: [255, 255, 255], fontStyle: 'bold' },
+        headStyles: { fillColor: [15, 25, 35], textColor: [255, 255, 255], font: 'helvetica', fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 248, 248] },
-        styles: { fontSize: 9, cellPadding: 4 },
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4 },
         margin: { top: 35 }
       });
 
-      doc.save(`src-intelligence-${Date.now()}.pdf`);
+      console.log("Saving PDF...");
+      const pdfBaseName = `src-intelligence-${new Date().toISOString().slice(0, 10)}`;
+      doc.save(`${pdfBaseName}.pdf`);
+      console.log("PDF Export Complete.");
     }
 
     function generateExcelReport(data, cols) {
@@ -972,8 +1082,10 @@
       
       const colMap = {
         date: { label: 'Date', key: 'created_at', fmt: v => new Date(v).toLocaleDateString() },
-        name: { label: 'Student Name', key: 'students.name' },
-        hostel: { label: 'Hostel', key: 'students.hostel' },
+        name: { label: 'Student Name', key: 'student.name' },
+        hostel: { label: 'Hostel', key: 'student.hostel' },
+        programme: { label: 'Programme', key: 'student.programme' },
+        class: { label: 'Class', key: 'student.class' },
         items: { label: 'Order Items', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
         nickname: { label: 'Nickname', key: 'nickname_text' },
         total: { label: 'Total (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
@@ -1000,8 +1112,10 @@
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
       
-      // Style columns (auto-width)
-      XLSX.writeFile(workbook, `src-registry-${Date.now()}.xlsx`);
+      const excelBaseName = `src-registry-${new Date().toISOString().slice(0, 10)}`;
+      console.log("Saving Excel...");
+      XLSX.writeFile(workbook, `${excelBaseName}.xlsx`);
+      console.log("Excel Export Complete.");
     }
 
     loadDashboard();

@@ -14,7 +14,7 @@ const CONFIG = {
   },
   DEADLINE: new Date('2026-04-18T23:59:59'),
   SCHOOL: 'Dunkwa-On-Offin Nursing & Midwifery Training College',
-  WHATSAPP_NUMBER: '233501962247 ',
+  WHATSAPP_NUMBER: '233240064472 ',
 };
 
 // ── Supabase Client ────────────────────────────────────────
