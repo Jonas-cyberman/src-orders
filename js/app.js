@@ -92,11 +92,27 @@ function generateTransactionId() {
 async function insertStudent(data) {
   const db = getSupabase();
   if (!db) throw new Error('Supabase not initialised');
+  
+  // 1. Check if student already exists by phone
+  const { data: existing, error: findError } = await db
+    .from('students')
+    .select('id')
+    .eq('phone', data.phone)
+    .maybeSingle();
+    
+  if (existing) {
+    // Optional: Update their details (name, class, etc) to latest
+    await db.from('students').update(data).eq('id', existing.id);
+    return existing.id;
+  }
+
+  // 2. Insert if new
   const { data: result, error } = await db
     .from('students')
     .insert([data])
     .select('id')
     .single();
+    
   if (error) throw error;
   return result.id;
 }
@@ -104,13 +120,23 @@ async function insertStudent(data) {
 async function insertOrder(data) {
   const db = getSupabase();
   if (!db) throw new Error('Supabase not initialised');
+  
   const { data: result, error } = await db
     .from('orders')
     .insert([data])
-    .select('order_id')
-    .single();
-  if (error) throw error;
-  return result.order_id;
+    .select('order_id');
+    
+  if (error) {
+    console.error("Order Registration Failure:", error);
+    throw error;
+  }
+  
+  if (!result || result.length === 0) {
+    console.error("Order Insert OK, but result was empty.");
+    return null; 
+  }
+  
+  return result[0].order_id;
 }
 
 async function updatePaymentStatus(transaction_id, status) {
@@ -281,8 +307,9 @@ function initNavbar() {
 
 // ── Side Cart Drawer ───────────────────────────────────────
 function initSideCart() {
-  // Prevent showing on admin pages
-  if (window.location.pathname.includes('admin')) return;
+  // Prevent showing on admin, checkout, or confirmation pages
+  const path = window.location.pathname;
+  if (path.includes('admin') || path.includes('checkout') || path.includes('confirmation')) return;
   if (document.getElementById('sideCartDrawer')) return;
 
   const drawerHtml = `
@@ -318,10 +345,12 @@ function initSideCart() {
     if (open) {
       overlay.classList.add('active');
       drawer.classList.add('active');
+      document.body.style.overflow = 'hidden';
       updateCartUI();
     } else {
       overlay.classList.remove('active');
       drawer.classList.remove('active');
+      document.body.style.overflow = '';
     }
   };
 

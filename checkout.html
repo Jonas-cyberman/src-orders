@@ -243,7 +243,7 @@
         'NAC': ['NAC17', 'NAC18']
       };
 
-      const processingFee = 1.95;
+      // The fee is now dynamically calculated as 1.95% of total
 
       // CUSTOM SELECT LOGIC
       function setupCustomSelects() {
@@ -359,10 +359,20 @@
         document.getElementById('summary-items').innerHTML = itemsHtml;
         document.getElementById('summary-badge').textContent = `${cart.length} Item${cart.length > 1 ? 's' : ''}`;
 
-        const finalTotal = grandTotal + processingFee;
+        const pFee = Number((grandTotal * 0.0195).toFixed(2));
+        const finalTotal = grandTotal + pFee;
         DOM.summaryItems.innerHTML = itemsHtml;
         DOM.totalDisplay.textContent = `GH₵ ${finalTotal.toFixed(2)}`;
         DOM.payBtn.querySelector('.pay-label').textContent = `Pay GH₵ ${finalTotal.toFixed(2)}`;
+        
+        // Add a line for the fee in summary if total > 0
+        const feeHtml = `
+          <div class="d-flex justify-content-between mt-3 px-1 small opacity-50">
+            <span>Processing Fee (1.95%)</span>
+            <span>GH₵ ${pFee.toFixed(2)}</span>
+          </div>
+        `;
+        document.getElementById('summary-items').insertAdjacentHTML('beforeend', feeHtml);
         
         // Add event listeners to remove buttons
         const removeButtons = document.querySelectorAll('.btn-remove-item');
@@ -396,6 +406,69 @@
         }
       });
 
+      async function processOrderRecords() {
+        const fullName = document.getElementById('fullName').value;
+        const phone = document.getElementById('phone').value;
+        const hostel = document.getElementById('hostel').value;
+        const programme = document.getElementById('programme').value;
+        const className = document.getElementById('class').value;
+
+        localStorage.setItem('lastStudentName', fullName);
+
+        // 1. Insert/Update Buyer
+        console.log('Processing student record...');
+        const buyerId = await insertStudent({
+          name: fullName,
+          phone: phone,
+          hostel: hostel,
+          programme: programme,
+          class: className
+        });
+        console.log('Student ID:', buyerId);
+
+        // 2. Prepare Transaction
+        const transactionId = generateTransactionId();
+        const orderTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
+        const processingFee = Number((orderTotal * 0.0195).toFixed(2));
+        const grandTotal = orderTotal + processingFee;
+
+        // 3. Loop and Insert Orders
+        console.log('Inserting', cart.length, 'order records...');
+        for (let i = 0; i < cart.length; i++) {
+          const item = cart[i];
+          let recipientId = buyerId;
+          
+          if (item.isGift && item.recipient) {
+            recipientId = await insertStudent({
+              name: item.recipient.name,
+              phone: item.recipient.phone || 'N/A',
+              hostel: item.recipient.hostel || 'N/A',
+              programme: item.recipient.programme || 'N/A',
+              class: item.recipient.class || 'N/A'
+            });
+          }
+
+          await insertOrder({
+            student_id: recipientId,
+            buyer_id: buyerId,
+            is_gift: item.isGift,
+            shirt_color: item.color,
+            shirt_size: item.size,
+            shirt_texture: item.texture,
+            cap_option: item.package === 'bundle',
+            nickname_option: item.hasNickname,
+            nickname_text: item.nickname || null,
+            total_price: item.unitPrice,
+            service_fee: (i === 0) ? processingFee : 0, // Track fee on first item of tx
+            total_paid: grandTotal, // Store full tx amount for reconciliation
+            payment_status: 'pending',
+            transaction_id: transactionId
+          });
+        }
+        console.log('All order records saved as PENDING.');
+        return { transactionId, fullName, phone, hostel, className };
+      }
+
       DOM.form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -412,8 +485,8 @@
 
         if (!isValid) return;
 
-        const phone = document.getElementById('phone').value;
-        if (!/^0\d{9}$/.test(phone)) {
+        const phoneInput = document.getElementById('phone').value;
+        if (!/^0\d{9}$/.test(phoneInput)) {
           alert('Invalid phone number. Please enter exactly 10 digits starting with 0.');
           document.getElementById('phone').style.borderColor = 'var(--lux-gold)';
           return;
@@ -423,73 +496,21 @@
         DOM.payBtn.textContent = 'Processing...';
 
         try {
-          // 1. Insert/Update Buyer
-          const fullName = document.getElementById('fullName').value;
-          const hostel = document.getElementById('hostel').value;
-          localStorage.setItem('lastStudentName', fullName);
+          // 1. Save to Database first
+          const { transactionId, fullName, phone, hostel } = await processOrderRecords();
 
-          const buyerId = await insertStudent({
-            name: fullName,
-            phone: phone,
-            hostel: hostel,
-            programme: document.getElementById('programme').value,
-            class: document.getElementById('class').value
-          });
-
-          // 2. Prepare Transaction
-          const transactionId = generateTransactionId();
+          // 2. Open Paystack
           const grandTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0) + processingFee;
-
-          // 3. Loop and Insert Orders
-          for (const item of cart) {
-            let recipientId = buyerId;
-            
-            // If gift, create/get recipient student record
-            if (item.isGift && item.recipient) {
-              console.log('Inserting recipient:', item.recipient.name);
-              recipientId = await insertStudent({
-                name: item.recipient.name,
-                phone: item.recipient.phone || 'N/A',
-                hostel: item.recipient.hostel || 'N/A',
-                programme: item.recipient.programme || 'N/A',
-                class: item.recipient.class || 'N/A'
-              });
-              console.log('Recipient inserted:', recipientId);
-            }
-
-            console.log('Inserting order for transaction:', transactionId);
-            await insertOrder({
-              student_id: recipientId,
-              buyer_id: buyerId,
-              is_gift: item.isGift,
-              shirt_color: item.color,
-              shirt_size: item.size,
-              shirt_texture: item.texture,
-              cap_option: item.package === 'bundle',
-              nickname_option: item.hasNickname,
-              nickname_text: item.nickname || null,
-              total_price: item.unitPrice,
-              payment_status: 'pending',
-              transaction_id: transactionId
-            });
-            console.log('Order record inserted.');
-          }
-
-          // 4. Paystack
           const orderSummaryText = cart.map(i => `${i.color} ${i.size}`).join(', ');
-          
-          console.log('Initialising Paystack...', { email: CONFIG.SYSTEM_EMAIL, amount: grandTotal });
           
           const handler = PaystackPop.setup({
             key: CONFIG.PAYSTACK_KEY,
-            email: CONFIG.SYSTEM_EMAIL, // Admin receives the receipt
+            email: `${fullName.toLowerCase().replace(/\s+/g, '.')}.${className.toLowerCase().replace(/\s+/g, '')}@pulse.temp`,
             amount: Math.round(grandTotal * 100),
             currency: 'GHS',
             ref: transactionId,
-            phone: phone, // Prefill phone for student
-            mobile_money: {
-              phone: phone // Prefill MoMo field
-            },
+            phone: phone,
+            mobile_money: { phone: phone },
             metadata: {
               custom_fields: [
                 { display_name: "Customer Name", variable_name: "customer_name", value: fullName },
@@ -515,43 +536,67 @@
           });
           handler.openIframe();
         } catch (err) {
-          console.error(err);
-          alert('An error occurred: ' + (err.message || 'Check console for details'));
+          console.error('Checkout Error:', err);
+          alert('Database Error: Your order could not be saved. Please check your internet or contact support. ' + (err.message || ''));
           DOM.payBtn.disabled = false;
-          DOM.payBtn.innerHTML = `<span class="pay-label">Recovering...</span><i class="ph ph-lock-simple"></i>`;
+          DOM.payBtn.innerHTML = `<span class="pay-label">Try Again</span><i class="ph ph-lock-simple"></i>`;
         }
       });
 
       // WhatsApp Finish
       const waFinishBtn = document.getElementById('waFinishBtn');
       if (waFinishBtn) {
-        waFinishBtn.addEventListener('click', () => {
-          const fullName = document.getElementById('fullName').value || '[Enter Name]';
-          const phoneInput = document.getElementById('phone').value || '[Enter Phone]';
-          const hostel = document.getElementById('hostel').value || '[Enter Hostel]';
-          
-          let msg = `✅ *SRC PULSE ORDER*\n\n`;
-          msg += `*Customer:* ${fullName}\n`;
-          msg += `*Phone:* ${phoneInput}\n`;
-          msg += `*Hostel:* ${hostel}\n\n`;
-          msg += `*Items:* \n`;
-          
-          cart.forEach((item, index) => {
-            msg += `${index + 1}. ${item.color} Shirt (${item.size})`;
-            if (item.package === 'bundle') msg += ` + Cap`;
-            if (item.hasNickname) msg += ` (Nickname: ${item.nickname})`;
-            if (item.isGift) msg += `\n   - Gift for: ${item.recipient.name}`;
-            msg += `\n`;
-          });
-          
-          const grandTotalItems = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-          const totalWithFee = grandTotalItems + processingFee;
-          msg += `\n*Total:* GHS ${totalWithFee.toFixed(2)}`;
-          msg += `\n\nPlease help me process this.`;
-          
-          const waNumber = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233240064472';
-          const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
-          window.open(url, '_blank');
+        waFinishBtn.addEventListener('click', async () => {
+          // Manual Validation check
+          const inputs = DOM.form.querySelectorAll('input[required], select[required]');
+          let valid = true;
+          inputs.forEach(i => { if(!i.value) { i.style.borderColor='red'; valid=false; } });
+          if(!valid) return alert("Please fill in your details first.");
+
+          waFinishBtn.disabled = true;
+          waFinishBtn.innerHTML = '<i class="ph ph-spinner-gap spinning"></i> Saving...';
+
+          try {
+            // 1. SAVE TO DATABASE first so admin sees the order
+            const { transactionId, fullName, phone, hostel } = await processOrderRecords();
+
+            // 2. Format WhatsApp Message
+            let msg = `✅ *SRC PULSE ORDER*\n\n`;
+            msg += `*Ref:* ${transactionId}\n`;
+            msg += `*Customer:* ${fullName}\n`;
+            msg += `*Phone:* ${phone}\n`;
+            msg += `*Hostel:* ${hostel}\n\n`;
+            msg += `*Items:* \n`;
+            
+            cart.forEach((item, index) => {
+              msg += `${index + 1}. ${item.color} Shirt (${item.size})`;
+              if (item.package === 'bundle') msg += ` + Cap`;
+              if (item.hasNickname) msg += ` (Nickname: ${item.nickname})`;
+              if (item.isGift) msg += `\n   - Gift for: ${item.recipient.name}`;
+              msg += `\n`;
+            });
+            
+            const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
+            const pFee = Number((subTotal * 0.0195).toFixed(2));
+            const totalWithFee = subTotal + pFee;
+            msg += `\n*Subtotal:* GHS ${subTotal.toFixed(2)}`;
+            msg += `\n*Fee (1.95%):* GHS ${pFee.toFixed(2)}`;
+            msg += `\n*Total:* GHS ${totalWithFee.toFixed(2)}`;
+            msg += `\n\nI have submitted my order details to the Registry. This is my formal request for manual fulfillment.`;
+            
+            const waNumber = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233240064472';
+            const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
+            
+            // Clear cart and redirect
+            AppState.clearAll();
+            window.open(url, '_blank');
+            window.location.href = 'index.html'; // Return home after WhatsApp
+          } catch (err) {
+            console.error('WhatsApp Save Error:', err);
+            alert("Could not register order in Database: " + err.message);
+            waFinishBtn.disabled = false;
+            waFinishBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo"></i> Order via WhatsApp';
+          }
         });
       }
 

@@ -218,23 +218,88 @@
     }
 
     /* Table Responsiveness — Horizontal Scroll */
-    @media (max-width: 768px) {
-      .admin-header-lux h1 { font-size: 32px !important; }
-      
-      .table-lux th, .table-lux td {
-        white-space: nowrap;
-      }
-      
-      /* Ensure the programme cell can wrap if too long, or keep it nowrap for consistency */
-      .table-lux td[data-label="Programme"] {
-        min-width: 200px;
-        white-space: normal;
-      }
-
-      .table-lux td[data-label="Student"] {
-        min-width: 150px;
+    /* Table Styles */
+    .table-lux { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+    .table-lux th { 
+      padding: 16px 20px; 
+      font-size: 11px; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      letter-spacing: 0.15em; 
+      color: var(--lux-gold);
+      border-bottom: 2px solid var(--lux-gold-light);
     }
-  }
+    
+    /* Account Row (Master) */
+    .account-row-lux {
+      background: #fff;
+      border: 1px solid var(--lux-border);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .account-row-lux:hover {
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      border-color: var(--lux-gold);
+    }
+    
+    .account-row-lux td { padding: 20px; border-top: 1px solid var(--lux-border); border-bottom: 1px solid var(--lux-border); }
+    .account-row-lux td:first-child { border-left: 1px solid var(--lux-border); border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .account-row-lux td:last-child { border-right: 1px solid var(--lux-border); border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+    /* Transaction Dropdown (Detail) */
+    .transaction-detail-lux {
+      display: none; /* Controlled by active class */
+      background: #fafaf9;
+      margin: -10px 10px 10px 10px;
+      border: 1px solid var(--lux-border);
+      border-top: none;
+      border-radius: 0 0 16px 16px;
+      padding: 24px;
+      animation: slideDownCustom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .transaction-detail-lux.active { display: block; }
+    
+    .tx-card-lux {
+      background: #fff;
+      border: 1px solid var(--lux-border);
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .item-line-lux {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--lux-border);
+    }
+    .item-line-lux:last-child { border-bottom: none; }
+
+    @keyframes slideDownCustom {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .expand-icon-lux {
+      transition: transform 0.3s;
+      color: var(--lux-gold);
+      font-size: 20px;
+    }
+    .account-row-lux.expanded .expand-icon-lux { transform: rotate(180deg); }
+
+    .stat-badge-lux {
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--lux-bg);
+      color: var(--lux-ink);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
 
     /* Sales History Styling */
     .status-select-lux {
@@ -357,9 +422,9 @@
         <div class="d-flex gap-3 align-items-center">
           <div class="d-none d-md-block text-uppercase small opacity-50 tracking-widest" style="font-size: 10px;">Filter:</div>
           <select id="statusFilter" class="status-select-lux">
-            <option value="paid" selected>Paid Only</option>
+            <option value="paid">Paid Only</option>
             <option value="pending">Pending</option>
-            <option value="all">All Status</option>
+            <option value="all" selected>All Status</option>
           </select>
           <div class="small opacity-50 text-uppercase tracking-widest d-none d-lg-block" style="font-size: 10px;">
             Transactions: <span id="transactionCount" class="fw-bold text-dark">0</span>
@@ -370,23 +435,18 @@
       <div class="table-responsive">
         <table class="table-lux">
           <thead>
-            <tr>
-              <th>Date</th>
-              <th>Student / Contact</th>
-              <th>Programme & Class</th>
+              <th style="width: 40px; border-bottom: none;"></th>
+              <th>Student Account</th>
+              <th>Programme</th>
               <th>Hostel</th>
-              <th>Order Details</th>
-              <th>Nickname</th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Transaction ID</th>
-              <th>Actions</th>
-            </tr>
+              <th>Total Orders</th>
+              <th>Lifetime Spend</th>
+              <th style="text-align: right;">Latest Activity</th>
           </thead>
           <tbody id="ordersTable">
             <!-- Data rows injected via JS -->
             <tr>
-              <td colspan="7" class="text-center py-5 opacity-50 italic no-records-td">Synchronizing with registry...</td>
+              <td colspan="12" class="text-center py-5 opacity-50 italic no-records-td">Synchronizing with registry...</td>
             </tr>
           </tbody>
         </table>
@@ -485,6 +545,14 @@
       border-color: var(--lux-ink);
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Receipt Preview */
+    .receipt-preview-frame {
+      width: 100%;
+      height: 500px;
+      border: 1px solid var(--lux-border);
+      background: #fdfdfd;
+    }
   </style>
 
   <!-- EXTERNAL LIBRARIES -->
@@ -551,11 +619,17 @@
           <div class="col-6">
             <label class="column-opt"><input type="checkbox" value="nickname" checked> Nickname</label>
           </div>
-          <div class="col-6">
-            <label class="column-opt"><input type="checkbox" value="total" checked> Total Amount</label>
+          <div class="col-4">
+            <label class="column-opt"><input type="checkbox" value="total" checked> Price</label>
           </div>
-          <div class="col-6">
-            <label class="column-opt"><input type="checkbox" value="status" checked> Payment Status</label>
+          <div class="col-4">
+            <label class="column-opt"><input type="checkbox" value="fee" checked> Service Fee</label>
+          </div>
+          <div class="col-4">
+            <label class="column-opt"><input type="checkbox" value="total_paid" checked> Total Paid</label>
+          </div>
+          <div class="col-4">
+            <label class="column-opt"><input type="checkbox" value="status" checked> Status</label>
           </div>
         </div>
       </div>
@@ -563,6 +637,22 @@
       <div class="d-flex gap-3">
         <button id="runExport" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff;">Generate Report</button>
         <button id="closeExport" class="btn-lux w-100 btn-outline-lux">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECEIPT PREVIEW MODAL -->
+  <div id="receiptPreviewModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 600px;">
+      <i class="ph ph-x modal-close-lux" id="closeReceiptPreviewTop"></i>
+      <h3 class="serif mb-1" style="font-size: 28px;">Receipt Preview</h3>
+      <p class="small opacity-50 mb-4">Official SRC Pulse Confirmation Artifact</p>
+      
+      <iframe id="receiptFrame" class="receipt-preview-frame mb-4" style="width:100%; height:450px; border:1px solid #eee;"></iframe>
+
+      <div class="d-flex gap-3">
+        <button id="downloadReceiptBtn" class="btn-lux w-100" style="background: var(--lux-gold); color: #fff; border: none; padding: 16px; font-size: 11px; letter-spacing: 0.15em;">DOWNLOAD PDF</button>
+        <button id="closeReceiptPreview" class="btn-lux w-100 btn-outline-lux" style="padding: 16px; font-size: 11px; letter-spacing: 0.15em;">CANCEL</button>
       </div>
     </div>
   </div>
@@ -642,7 +732,7 @@
     let filteredOrders = []; 
     let currentPage = 1;
     const itemsPerPage = 10;
-    let currentStatusFilter = 'paid';
+    let currentStatusFilter = 'all';
 
     async function loadDashboard() {
       try {
@@ -675,7 +765,8 @@
     function applyFilters() {
       const query = document.getElementById('orderSearch').value.toLowerCase();
       
-      filteredOrders = orders.filter(o => {
+      // 1. Filter the base items
+      const baseFiltered = orders.filter(o => {
         // Status Filter
         let matchesStatus = true;
         if (currentStatusFilter === 'paid') {
@@ -695,11 +786,61 @@
         return matchesStatus && matchesSearch;
       });
 
+      // 2. Group into Accounts
+      filteredOrders = groupOrdersIntoAccounts(baseFiltered);
+
+      const countTotal = filteredOrders.length;
+      const countItems = baseFiltered.length;
       const countEl = document.getElementById('transactionCount');
-      if (countEl) countEl.textContent = filteredOrders.length;
+      if (countEl) countEl.textContent = `${countTotal} Accounts (${countItems} Items)`;
       
       currentPage = 1;
       renderTable();
+    }
+
+    function groupOrdersIntoAccounts(data) {
+      const map = {};
+      data.forEach(o => {
+        const phone = o.student?.phone || 'Guest';
+        if (!map[phone]) {
+          map[phone] = {
+            student: o.student,
+            transactions: {},
+            totalSpend: 0,
+            itemCount: 0,
+            latestDate: o.created_at
+          };
+        }
+        const acc = map[phone];
+        const txId = o.transaction_id || 'manual-' + Date.now();
+        if (!acc.transactions[txId]) {
+          acc.transactions[txId] = {
+            id: txId,
+            date: o.created_at,
+            status: o.payment_status,
+            totalPaid: o.total_paid || 0,
+            serviceFee: o.service_fee || 0,
+            items: []
+          };
+        }
+        acc.transactions[txId].items.push(o);
+        acc.itemCount++;
+        if (new Date(o.created_at) > new Date(acc.latestDate)) acc.latestDate = o.created_at;
+      });
+
+      // Recalculate account totals
+      return Object.values(map).map(acc => {
+        const txList = Object.values(acc.transactions);
+        acc.subtotal = 0;
+        acc.totalSpend = txList.reduce((sum, tx) => {
+          // If totalPaid is 0 or missing, fallback to summing items + fee
+          const sumItems = tx.items.reduce((s, i) => s + (Number(i.total_price) || 0), 0);
+          acc.subtotal += sumItems;
+          const calcTotal = sumItems + (Number(tx.serviceFee) || 0);
+          return sum + (Number(tx.totalPaid) > 0 ? Number(tx.totalPaid) : calcTotal);
+        }, 0);
+        return acc;
+      }).sort((a,b) => new Date(b.latestDate) - new Date(a.latestDate));
     }
 
     function renderStats() {
@@ -737,7 +878,7 @@
     }
 
     function renderAnalytics(paid) {
-      const all = paid; // Redefine all as paid for intelligence context
+      const all = paid;
       const colors = {};
       all.forEach(o => { if(o.shirt_color) colors[o.shirt_color] = (colors[o.shirt_color] || 0) + 1; });
       const sortedColors = Object.entries(colors).sort((a,b)=>b[1]-a[1]);
@@ -774,7 +915,7 @@
 
       const modalItems = document.getElementById('modalTotalItems');
       if (modalItems) modalItems.textContent = all.length;
-
+      
       const modalAvg = document.getElementById('modalAvgOrder');
       if (modalAvg) {
         const totalPaidRev = paid.reduce((s,o)=>s+o.total_price,0);
@@ -791,73 +932,127 @@
       const results = filteredOrders.slice(start, end);
       
       const tbody = document.getElementById('ordersTable');
-      tbody.innerHTML = results.map(o => {
-        const initials = o.student?.name ? o.student.name.split(' ').map(n => n[0]).join('').substring(0,2) : '?';
-        const formattedDate = new Date(o.created_at).toLocaleString('en-GB', {
+      tbody.innerHTML = results.map(acc => {
+        const namePart = acc.student?.name || 'Unknown Student';
+        const initials = namePart.split(' ').filter(n => n).map(n => n[0]).join('').toUpperCase().substring(0,2);
+        const formattedDate = new Date(acc.latestDate).toLocaleString('en-GB', {
           day: 'numeric', month: 'numeric', year: '2-digit', 
           hour: 'numeric', minute: '2-digit', hour12: true
-        }).replace(/\//g, '/'); 
+        });
 
-        const giftIndicator = o.is_gift ? `
-          <div class="mt-1">
-            <span class="badge bg-gold-lux small text-dark" style="font-size:10px;">GIFT</span>
-            <span class="small opacity-50 ms-1">From: ${o.buyer?.name || 'Unknown'}</span>
-          </div>
-        ` : '';
+        const txList = Object.values(acc.transactions).sort((a,b) => new Date(b.date) - new Date(a.date));
 
         return `
-        <tr>
-          <td data-label="Date" class="small">${formattedDate}</td>
-          <td data-label="Student">
+        <tr class="account-row-lux" onclick="toggleAccountRow(this)">
+          <td style="text-align: center;"><i class="ph-bold ph-caret-right expand-icon-lux"></i></td>
+          <td>
             <div class="d-flex align-items-center">
-              <div class="customer-avatar-lux">${initials}</div>
-              <div>
-                <div class="fw-bold">${o.student?.name || 'Unknown'}</div>
-                <div class="small opacity-50">${o.student?.phone || ''}</div>
-                ${giftIndicator}
+              <div class="customer-avatar-lux" style="background:var(--lux-bg); color:var(--lux-gold); border-color:var(--lux-gold-light); display:flex; align-items:center; justify-content:center; font-weight:700;">${initials}</div>
+              <div class="ms-3">
+                <div class="fw-bold">${namePart}</div>
+                <div class="small opacity-50">${acc.student?.phone || 'No Phone'}</div>
               </div>
             </div>
           </td>
-          <td data-label="Programme" class="small text-uppercase">
-            <div class="fw-bold">${o.student?.programme || ''}</div>
-            <div class="opacity-50">${o.student?.class || ''}</div>
+          <td class="small opacity-50">${acc.student?.programme || '---'}</td>
+          <td class="small opacity-50">${acc.student?.hostel || '---'}</td>
+          <td><span class="stat-badge-lux">${txList.length} ORDERS</span></td>
+          <td>
+            <div class="fw-bold text-dark">GHS ${acc.totalSpend.toFixed(2)}</div>
+            <div class="small opacity-50" style="font-size: 9px; text-transform:uppercase;">Items: GHS ${acc.subtotal.toFixed(2)}</div>
           </td>
-          <td data-label="Hostel" class="small">${o.student?.hostel || '---'}</td>
-          <td data-label="Order">
-            <div class="small opacity-75">${o.shirt_color} (${o.shirt_size})</div>
-            <div class="small fw-bold text-uppercase opacity-50">${o.shirt_texture || 'Cotton'}</div>
-            ${o.cap_option ? '<div class="small text-gold text-uppercase tracking-tighter">+ Cap Included</div>' : ''}
-          </td>
-          <td data-label="Nickname" class="small fw-bold text-uppercase" style="color: var(--lux-gold);">
-            ${o.nickname_text || '<span class="opacity-25">---</span>'}
-          </td>
-          <td data-label="Price" class="fw-bold">GHS ${o.total_price ? o.total_price.toFixed(2) : '0.00'}</td>
-          <td data-label="Status">
-            <div class="d-flex align-items-center gap-2 status-${o.payment_status}-alt fw-bold small text-uppercase" style="letter-spacing:0.05em;">
-              <i class="ph ph-${o.payment_status === 'pending' ? 'clock' : (o.payment_status === 'paid' ? 'check-circle' : 'package')}"></i>
-              ${o.payment_status}
-            </div>
-          </td>
-          <td data-label="ID" class="small font-monospace opacity-50">${o.transaction_id || '---'}</td>
-          <td data-label="Action">
-            <div class="d-flex gap-2 flex-wrap">
-              ${o.payment_status === 'paid' ? `
-                <button onclick="handleFulfill('${o.transaction_id}')" class="btn-action-lux btn-fulfill-lux"><i class="ph ph-package"></i></button>
-              ` : ''}
-              ${o.payment_status === 'pending' ? `
-                <button onclick="handleConfirmManual('${o.transaction_id}')" class="btn-action-lux btn-confirm-lux"><i class="ph ph-check"></i></button>
-                <button onclick="handleDeleteOrder('${o.transaction_id}')" class="btn-action-lux btn-cancel-lux"><i class="ph ph-trash"></i></button>
-              ` : ''}
-              ${(o.payment_status !== 'paid' && o.payment_status !== 'pending') ? `
-                <button onclick="handleDeleteOrder('${o.transaction_id}')" class="btn-action-lux btn-cancel-lux"><i class="ph ph-trash"></i></button>
-              ` : ''}
+          <td class="small opacity-50 text-end">${formattedDate}</td>
+        </tr>
+        <tr class="transaction-detail-row" style="display: none;">
+          <td colspan="12" style="padding: 0; border: none;">
+            <div class="transaction-detail-lux">
+              <h6 class="small text-uppercase tracking-widest opacity-50 mb-3 px-2">Account Transaction History</h6>
+              <div class="row g-3">
+                ${txList.map(tx => {
+                  const txItemsSum = tx.items.reduce((s, i) => s + (Number(i.total_price) || 0), 0);
+                  const txFallbackTotal = txItemsSum + (Number(tx.serviceFee) || 0);
+                  const txDisplayTotal = (Number(tx.totalPaid) > 0) ? Number(tx.totalPaid) : txFallbackTotal;
+                  
+                  return `
+                <div class="col-12">
+                  <div class="tx-card-lux">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                       <div class="small font-monospace opacity-50">${tx.id}</div>
+                       <div class="d-flex align-items-center gap-3">
+                          <div class="small opacity-75">${new Date(tx.date).toLocaleDateString()}</div>
+                          <div class="status-badge-lux status-${tx.status}-alt small fw-bold text-uppercase px-2" style="font-size: 9px; border-radius: 4px; padding: 4px;">
+                            ${tx.status}
+                          </div>
+                          <div class="fw-bold text-lux">GHS ${txDisplayTotal.toFixed(2)}</div>
+                       </div>
+                    </div>
+                    
+                    <div class="items-list-lux">
+                      ${tx.items.map(item => `
+                        <div class="item-line-lux small">
+                          <div>
+                             <span class="fw-bold">${item.shirt_color} (${item.shirt_size})</span>
+                             <span class="opacity-50 ms-1 text-uppercase">${item.shirt_texture || 'Cotton'}</span>
+                             ${item.is_gift ? '<span class="stat-badge-lux ms-1" style="color:var(--lux-gold);">GIFT</span>' : ''}
+                             ${item.cap_option ? '<span class="stat-badge-lux ms-1" style="background:#e3f2fd; color:#1e88e5; border-color:#bbdefb;">+ CAP</span>' : ''}
+                             ${item.nickname_text ? `<div class="text-gold fw-bold mt-1">NICKNAME: ${item.nickname_text}</div>` : ''}
+                          </div>
+                          <div class="fw-bold">GHS ${Number(item.total_price || 0).toFixed(2)}</div>
+                        </div>
+                      `).join('')}
+                    </div>
+
+                    <div class="d-flex flex-column gap-1 mt-2 pt-2 border-top">
+                       <div class="d-flex justify-content-between small opacity-50">
+                         <span>Subtotal (Items)</span>
+                         <span>GHS ${txItemsSum.toFixed(2)}</span>
+                       </div>
+                       <div class="d-flex justify-content-between small opacity-50">
+                         <span>Processing Fee</span>
+                         <span>GHS ${(Number(tx.serviceFee) || (txDisplayTotal - txItemsSum)).toFixed(2)}</span>
+                       </div>
+                       <div class="d-flex justify-content-between fw-bold mt-1" style="color:var(--lux-ink);">
+                         <span>Total Received</span>
+                         <span>GHS ${txDisplayTotal.toFixed(2)}</span>
+                       </div>
+                       <div class="d-flex gap-2 mt-2">
+                          <button onclick="event.stopPropagation(); handlePrintReceipt('${tx.id}')" class="btn-action-lux" style="background:#f3f0ff; color:#673ab7; border-color:#d1c4e9;" title="Print Receipt"><i class="ph ph-printer"></i></button>
+                          ${tx.status === 'paid' ? `<button onclick="event.stopPropagation(); handleFulfill('${tx.id}')" class="btn-action-lux btn-fulfill-lux"><i class="ph ph-package"></i></button>` : ''}
+                          ${tx.status === 'pending' ? `
+                            <button onclick="event.stopPropagation(); handleConfirmManual('${tx.id}')" class="btn-action-lux btn-confirm-lux"><i class="ph ph-check"></i></button>
+                            <button onclick="event.stopPropagation(); handleDeleteOrder('${tx.id}')" class="btn-action-lux btn-cancel-lux"><i class="ph ph-trash"></i></button>
+                          ` : ''}
+                       </div>
+                    </div>
+                  </div>
+                </div>
+                `}).join('')}
+              </div>
             </div>
           </td>
         </tr>
-      `}).join('') || '<tr><td colspan="10" class="text-center py-5 opacity-50 no-records-td">No records found matching your audit.</td></tr>';
+        `}).join('') || '<tr><td colspan="12" class="text-center py-5 opacity-50 no-records-td">No student accounts found matching your filter.</td></tr>';
 
       const pInfo = document.getElementById('pageInfo');
-      if (pInfo) pInfo.textContent = `Showing ${Math.min(end, filteredOrders.length)} of ${filteredOrders.length} records`;
+      if (pInfo) pInfo.textContent = `Showing ${Math.min(end, filteredOrders.length)} of ${filteredOrders.length} accounts`;
+    }
+
+    function toggleAccountRow(el) {
+      const detailRow = el.nextElementSibling;
+      const detailContent = detailRow.querySelector('.transaction-detail-lux');
+      const icon = el.querySelector('.expand-icon-lux');
+      
+      const isOpen = detailRow.style.display !== 'none';
+      
+      if (isOpen) {
+        detailRow.style.display = 'none';
+        detailContent.classList.remove('active');
+        el.classList.remove('expanded');
+      } else {
+        detailRow.style.display = 'table-row';
+        setTimeout(() => detailContent.classList.add('active'), 10);
+        el.classList.add('expanded');
+      }
     }
 
     // New event listeners for filtering
@@ -900,6 +1095,125 @@
         alert("Failed to confirm payment.");
       }
     }
+
+    
+    let currentDoc = null;
+    let currentDocName = "";
+
+    function handlePrintReceipt(txId) {
+      const order = orders.find(o => o.transaction_id === txId);
+      if (!order) return alert("Order not found.");
+      
+      const jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+      if (!jsPDF) return alert("PDF Engine failed. Please refresh.");
+      
+      const doc = new jsPDF('p', 'mm', [105, 148]); // A6 size for a "card" look
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+
+      // Card Background (Very subtle border)
+      doc.setDrawColor(230, 230, 230);
+      doc.rect(5, 5, W - 10, H - 10);
+
+      // 1. Success Circle & Check
+      doc.setDrawColor(184, 147, 63); // Gold
+      doc.setLineWidth(0.5);
+      doc.circle(W/2, 25, 10);
+      
+      doc.setLineWidth(1);
+      doc.line(W/2 - 4.5, 25, W/2 - 1.5, 28);
+      doc.line(W/2 - 1.5, 28, W/2 + 4.5, 22);
+
+      // 2. Title
+      doc.setFont("times", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(15, 25, 35);
+      doc.text("Payment Successful", W/2, 45, { align: 'center' });
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Official SRC Pulse Confirmation", W/2, 52, { align: 'center' });
+
+      // 3. Detail Section
+      const startY = 65;
+      const rowH = 8;
+      const detailX = 15;
+      const valueX = W - 15;
+
+      doc.setDrawColor(240, 240, 240);
+      doc.line(detailX, startY - 5, valueX, startY - 5);
+
+      function drawRow(label, value, y, color = [15, 25, 35]) {
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(150, 150, 150);
+        doc.text(label.toUpperCase(), detailX, y);
+
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(color[0], color[1], color[2]);
+        doc.text(value, valueX, y, { align: 'right' });
+      }
+
+      drawRow("Student Name", order.student?.name || '---', startY);
+      drawRow("Reference ID", order.transaction_id || '---', startY + rowH, [184, 147, 63]);
+      drawRow("Status", (order.payment_status || 'PENDING').toUpperCase(), startY + rowH * 2, order.payment_status === 'pending' ? [239, 108, 0] : [39, 174, 96]);
+      drawRow("Date", new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), startY + rowH * 3);
+
+      doc.line(detailX, startY + rowH * 3 + 5, valueX, startY + rowH * 3 + 5);
+
+      // 4. Order Summary
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(150, 150, 150);
+      doc.text("ORDER SUMMARY", detailX, startY + rowH * 4 + 5);
+
+      doc.setFontSize(10);
+      doc.setFont("times", "bolditalic");
+      doc.setTextColor(15, 25, 35);
+      const itemsText = `${order.shirt_color} Shirt (${order.shirt_size})${order.cap_option ? ' + Cap' : ''}`;
+      doc.text(itemsText, detailX, startY + rowH * 4 + 12);
+      
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.text(`${order.shirt_texture} · ${order.nickname_text ? 'Nickname: "' + order.nickname_text + '"' : 'No Nickname'}`, detailX, startY + rowH * 4 + 17);
+
+      // 5. Total
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(184, 147, 63);
+      doc.text(`GHS ${Number(order.total_price).toFixed(2)}`, valueX, startY + rowH * 4 + 15, { align: 'right' });
+
+      // 6. Footer
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(180, 180, 180);
+      doc.text("Thank you for supporting SRC Week 2026.", W/2, H - 15, { align: 'center' });
+      doc.text("This receipt is official proof of payment.", W/2, H - 11, { align: 'center' });
+
+      // OPEN PREVIEW
+      currentDoc = doc;
+      currentDocName = `Receipt-${order.transaction_id}.pdf`;
+      const pdfUrl = doc.output('datauristring');
+      document.getElementById('receiptFrame').src = pdfUrl;
+      document.getElementById('receiptPreviewModal').classList.add('active');
+    }
+
+    // Modal Control Logic
+    document.getElementById('closeReceiptPreview').addEventListener('click', () => {
+      document.getElementById('receiptPreviewModal').classList.remove('active');
+    });
+    document.getElementById('closeReceiptPreviewTop').addEventListener('click', () => {
+      document.getElementById('receiptPreviewModal').classList.remove('active');
+    });
+    document.getElementById('downloadReceiptBtn').addEventListener('click', () => {
+      if(currentDoc) {
+        currentDoc.save(currentDocName);
+        document.getElementById('receiptPreviewModal').classList.remove('active');
+      }
+    });
+
 
     async function handleDeleteOrder(txId) {
       if(!confirm("Are you sure you want to cancel and DELETE this order record? This cannot be undone.")) return;
@@ -1036,7 +1350,12 @@
         class: { label: 'CLASS', key: 'student.class' },
         items: { label: 'ITEMS', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
         nickname: { label: 'NICKNAME', key: 'nickname_text' },
-        total: { label: 'TOTAL (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        total: { label: 'PRICE (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        fee: { label: 'FEE (GHS)', key: 'service_fee', fmt: v => Number(v || 0).toFixed(2) },
+        total_paid: { label: 'TOTAL PAID', key: 'total_paid', fmt: (v, row) => {
+          const val = Number(v);
+          return (val > 0 ? val : (Number(row.total_price) || 0)).toFixed(2);
+        }},
         status: { label: 'STATUS', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' }
       };
 
@@ -1088,7 +1407,12 @@
         class: { label: 'Class', key: 'student.class' },
         items: { label: 'Order Items', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
         nickname: { label: 'Nickname', key: 'nickname_text' },
-        total: { label: 'Total (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        total: { label: 'Price (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        fee: { label: 'Service Fee', key: 'service_fee', fmt: v => Number(v || 0).toFixed(2) },
+        total_paid: { label: 'Total Paid', key: 'total_paid', fmt: (v, row) => {
+          const val = Number(v);
+          return (val > 0 ? val : (Number(row.total_price) || 0)).toFixed(2);
+        }},
         status: { label: 'Payment Status', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' }
       };
 
