@@ -71,23 +71,39 @@
     .metric-card-lux {
       background: var(--lux-white);
       border: 1px solid var(--lux-border);
-      padding: 32px;
+      padding: 24px 20px;
       height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    .metric-card-lux:hover {
+      border-color: var(--lux-gold);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     }
     .metric-value-lux {
       font-family: var(--font-serif);
-      font-size: 48px;
+      font-size: 36px;
       font-weight: 500;
       color: var(--lux-gold);
-      line-height: 1;
-      margin-top: 8px;
+      line-height: 1.2;
+      margin: 12px 0 4px 0;
     }
     .metric-label-lux {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.15em;
+      letter-spacing: 0.2em;
       opacity: 0.5;
+    }
+    .metric-sub-lux {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.4;
+      margin-top: 4px;
     }
     
     .table-lux {
@@ -389,6 +405,10 @@
         <div id="userRoleName" class="small opacity-50 text-uppercase tracking-widest" style="font-size: 9px;">Registry Access</div>
       </div>
       <i class="ph ph-sign-out" id="logoutBtn" style="font-size: 24px; cursor: pointer;" title="Logout"></i>
+      <!-- Mobile Toggle -->
+      <button class="nav-mobile-toggle d-md-none" aria-label="Toggle Menu">
+        <i class="ph ph-list"></i>
+      </button>
     </div>
   </nav>
 
@@ -424,14 +444,14 @@
         <div class="metric-card-lux text-center">
           <span class="metric-label-lux">Gross Revenue</span>
           <div id="statTotalRevenue" class="metric-value-lux">GHS 0</div>
-          <div class="small opacity-50" style="font-size: 8px;">TOTAL FROM STUDENTS</div>
+          <div class="metric-sub-lux">TOTAL FROM STUDENTS</div>
         </div>
       </div>
       <div class="col-md-3">
         <div class="metric-card-lux text-center" style="border-bottom: 2px solid var(--lux-gold);">
           <span class="metric-label-lux">Estimated Payout</span>
           <div id="statTotalNet" class="metric-value-lux" style="color: var(--lux-gold);">GHS 0</div>
-          <div class="small opacity-50" style="font-size: 8px;">NET AFTER PAYSTACK FEES (1.95%)</div>
+          <div class="metric-sub-lux">NET SETTLEMENT (1.95% FEE)</div>
         </div>
       </div>
       <div class="col-md-2">
@@ -458,9 +478,12 @@
         <div class="d-flex gap-3 align-items-center">
           <div class="d-none d-md-block text-uppercase small opacity-50 tracking-widest" style="font-size: 10px;">Filter:</div>
           <select id="statusFilter" class="status-select-lux">
-            <option value="paid">Paid Only</option>
+            <option value="paid" selected>Paid Only</option>
             <option value="pending">Pending</option>
-            <option value="all" selected>All Status</option>
+            <option value="all">All Status</option>
+          </select>
+          <select id="classFilter" class="status-select-lux" style="min-width: 140px;">
+            <option value="all">All Classes</option>
           </select>
           <button id="bulkAuditBtn" class="btn-action-lux" style="background: var(--lux-gold); color: #fff; height: 38px; padding: 0 15px; font-size: 10px;">
             <i class="ph ph-shield-check me-1"></i> BULK PAYMENT AUDIT
@@ -912,12 +935,14 @@
     let filteredOrders = []; 
     let currentPage = 1;
     const itemsPerPage = 10;
-    let currentStatusFilter = 'all';
+    let currentStatusFilter = 'paid';
+    let currentClassFilter = 'all';
 
     async function loadDashboard() {
       try {
         orders = await getAllOrders();
         updateExportClassFilter(orders);
+        updateDashboardClassFilter(orders);
         applyFilters(); 
         renderStats();
       } catch (err) {
@@ -931,7 +956,6 @@
       if (!select) return;
       const currentVal = select.value;
       
-      // Get unique classes
       const classes = [...new Set(data.map(o => o.student?.class).filter(Boolean))].sort();
       
       let html = '<option value="all">All Classes</option>';
@@ -940,6 +964,22 @@
       });
       select.innerHTML = html;
       if (classes.includes(currentVal)) select.value = currentVal;
+    }
+
+    function updateDashboardClassFilter(data) {
+      const select = document.getElementById('classFilter');
+      if (!select) return;
+      const currentVal = currentClassFilter;
+      
+      const classes = [...new Set(data.map(o => o.student?.class).filter(Boolean))].sort();
+      
+      let html = '<option value="all">All Classes</option>';
+      classes.forEach(c => {
+        html += `<option value="${c}">${c}</option>`;
+      });
+      select.innerHTML = html;
+      if (classes.includes(currentVal)) select.value = currentVal;
+      else currentClassFilter = 'all';
     }
 
     function applyFilters() {
@@ -963,7 +1003,10 @@
           o.transaction_id?.toLowerCase().includes(query) ||
           (o.nickname_text && o.nickname_text.toLowerCase().includes(query));
 
-        return matchesStatus && matchesSearch;
+        // Class Filter
+        const matchesClass = currentClassFilter === 'all' || o.student?.class === currentClassFilter;
+
+        return matchesStatus && matchesSearch && matchesClass;
       });
 
       // 2. Group into Accounts
@@ -1013,11 +1056,15 @@
         const txList = Object.values(acc.transactions);
         acc.subtotal = 0;
         acc.totalSpend = txList.reduce((sum, tx) => {
-          // If totalPaid is 0 or missing, fallback to summing items + fee
+          if (tx.status === 'pending') return sum; 
           const sumItems = tx.items.reduce((s, i) => s + (Number(i.total_price) || 0), 0);
           acc.subtotal += sumItems;
-          const calcTotal = sumItems + (Number(tx.serviceFee) || 0);
-          return sum + (Number(tx.totalPaid) > 0 ? Number(tx.totalPaid) : calcTotal);
+          
+          // Fallback: 1.95% fee + 1 GHC Momo for all Paystack orders (SRC-) if fee is missing
+          const fallbackFee = (tx.id.startsWith('SRC-') ? Number((( (sumItems) / 0.9805) - sumItems).toFixed(2)) : 0);
+          const fee = Number(tx.serviceFee) || fallbackFee;
+          
+          return sum + sumItems + fee;
         }, 0);
         return acc;
       }).sort((a,b) => new Date(b.latestDate) - new Date(a.latestDate));
@@ -1026,16 +1073,23 @@
     function renderStats() {
       const paid = orders.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled');
       
-      // Revenue Logic (Gross vs Net)
-      const gross = paid.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
-      const feeRate = 0.0195; // Paystack 1.95%
-      const net = gross * (1 - feeRate);
+      const gross = paid.reduce((sum, o) => {
+        const itemPrice = Number(o.total_price) || 0;
+        // In renderStats, we calculate per-order fee estimate. 
+        // Note: This is an approximation since Momo fee is per transaction.
+        const fallbackFee = (o.transaction_id && o.transaction_id.startsWith('SRC-')) ? Number((( (itemPrice) / 0.9805) - itemPrice).toFixed(2)) : 0;
+        const fee = Number(o.service_fee) || fallbackFee;
+        return sum + itemPrice + fee;
+      }, 0);
+      
+      // Net is simply the sum of base prices (merchant settlement)
+      const net = paid.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
 
       const sRevenue = document.getElementById('statTotalRevenue');
-      if (sRevenue) sRevenue.textContent = `GHS ${gross.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      if (sRevenue) sRevenue.innerHTML = `<span style="font-size: 16px; opacity: 0.5; margin-right: 4px;">GHS</span>${gross.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
       
       const sNet = document.getElementById('statTotalNet');
-      if (sNet) sNet.textContent = `GHS ${net.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      if (sNet) sNet.innerHTML = `<span style="font-size: 16px; opacity: 0.5; margin-right: 4px;">GHS</span>${net.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
 
       const sOrders = document.getElementById('statTotalOrders');
       if (sOrders) sOrders.textContent = paid.length;
@@ -1127,8 +1181,8 @@
 
         return `
         <tr class="account-row-lux" onclick="toggleAccountRow(this)">
-          <td style="text-align: center;"><i class="ph-bold ph-caret-right expand-icon-lux"></i></td>
-          <td>
+          <td data-label="Expand" style="text-align: center;"><i class="ph-bold ph-caret-right expand-icon-lux"></i></td>
+          <td data-label="Student Account">
             <div class="d-flex align-items-center">
               <div class="customer-avatar-lux" style="background:var(--lux-bg); color:var(--lux-gold); border-color:var(--lux-gold-light); display:flex; align-items:center; justify-content:center; font-weight:700;">${initials}</div>
               <div class="ms-3">
@@ -1137,14 +1191,14 @@
               </div>
             </div>
           </td>
-          <td class="small opacity-50">${acc.student?.programme || '---'}</td>
-          <td class="small opacity-50">${acc.student?.hostel || '---'}</td>
-          <td><span class="stat-badge-lux">${txList.length} ORDERS</span></td>
-          <td>
+          <td data-label="Programme" class="small opacity-50">${acc.student?.programme || '---'}</td>
+          <td data-label="Hostel" class="small opacity-50">${acc.student?.hostel || '---'}</td>
+          <td data-label="Orders"><span class="stat-badge-lux">${txList.length} ORDERS</span></td>
+          <td data-label="Total Spend">
             <div class="fw-bold text-dark">GHS ${acc.totalSpend.toFixed(2)}</div>
             <div class="small opacity-50" style="font-size: 9px; text-transform:uppercase;">Items: GHS ${acc.subtotal.toFixed(2)}</div>
           </td>
-          <td class="small opacity-50 text-end">${formattedDate}</td>
+          <td data-label="Latest Activity" class="small opacity-50 text-end">${formattedDate}</td>
         </tr>
         <tr class="transaction-detail-row" style="display: none;">
           <td colspan="12" style="padding: 0; border: none;">
@@ -1153,8 +1207,8 @@
               <div class="row g-3">
                 ${txList.map(tx => {
                   const txItemsSum = tx.items.reduce((s, i) => s + (Number(i.total_price) || 0), 0);
-                  const txFallbackTotal = txItemsSum + (Number(tx.serviceFee) || 0);
-                  const txDisplayTotal = (Number(tx.totalPaid) > 0) ? Number(tx.totalPaid) : txFallbackTotal;
+                  const txFee = Number(tx.serviceFee) || (tx.id.startsWith('SRC-') ? Number((( (txItemsSum) / 0.9805) - txItemsSum).toFixed(2)) : 0);
+                  const txDisplayTotal = txItemsSum + txFee;
                   
                   return `
                 <div class="col-12">
@@ -1252,6 +1306,11 @@
     // New event listeners for filtering
     document.getElementById('statusFilter').addEventListener('change', e => {
       currentStatusFilter = e.target.value;
+      applyFilters();
+    });
+
+    document.getElementById('classFilter').addEventListener('change', e => {
+      currentClassFilter = e.target.value;
       applyFilters();
     });
 
@@ -1959,3 +2018,4 @@
 
 </body>
 </html>
+

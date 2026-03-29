@@ -45,6 +45,10 @@
       <span class="step">Payment</span>
     </div>
     <a href="https://wa.me/233540000000" class="help-link-lux">Need help?</a>
+    <!-- Mobile Toggle -->
+    <button class="nav-mobile-toggle d-md-none" aria-label="Toggle Menu" style="margin-left: 15px;">
+      <i class="ph ph-list"></i>
+    </button>
   </nav>
 
   <style>
@@ -366,14 +370,15 @@
       document.getElementById('summary-badge').textContent = `${cart.length} Item${cart.length > 1 ? 's' : ''}`;
 
       const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-      const fee = Number((subTotal * 0.02).toFixed(2)); // 2% Processing Fee
-      grandTotal = subTotal + fee;
+      const momoFee = 1.00;
+      grandTotal = Number(((subTotal + momoFee) / 0.9805).toFixed(2));
+      const totalFee = Number((grandTotal - subTotal).toFixed(2));
 
       // Add fee line to summary
       const feeHtml = `
           <div class="d-flex justify-content-between mt-3 px-1 small opacity-50">
-            <span>Processing Fee (Paystack)</span>
-            <span>GHS ${fee.toFixed(2)}</span>
+            <span>Processing Fee (Paystack) + Momo charge</span>
+            <span>GHS ${totalFee.toFixed(2)}</span>
           </div>
         `;
       document.getElementById('summary-items').insertAdjacentHTML('beforeend', feeHtml);
@@ -438,8 +443,9 @@
       // 2. Prepare Transaction
       const transactionId = generateTransactionId();
       const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-      const processingFee = Number((subTotal * 0.02).toFixed(2));
-      const grandTotal = subTotal + processingFee;
+      const momoFee = 1.00;
+      const grandTotal = Number(((subTotal + momoFee) / 0.9805).toFixed(2));
+      const processingFee = Number((grandTotal - subTotal).toFixed(2));
 
       // 3. Loop and Insert Orders
       console.log('Inserting', cart.length, 'order records...');
@@ -468,6 +474,7 @@
           nickname_option: item.hasNickname,
           nickname_text: item.nickname || null,
           total_price: item.unitPrice,
+          service_fee: processingFee / cart.length, // Split fee equally among items in transaction for stats
           payment_status: 'pending',
           transaction_id: transactionId
         });
@@ -501,7 +508,7 @@
       const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
       msg += `*--- FINANCIALS ---*\n`;
       msg += `*Subtotal:* GHS ${subTotal.toFixed(2)}\n`;
-      msg += `*Processing Fee:* GHS ${processingFee.toFixed(2)}\n`;
+      msg += `*Processing Fee (Paystack) + Momo charge:* GHS ${processingFee.toFixed(2)}\n`;
       msg += `*TOTAL PAID:* GHS ${grandTotal.toFixed(2)}\n\n`;
       msg += `*Date:* ${new Date().toLocaleDateString()} | ${new Date().toLocaleTimeString()}\n\n`;
       msg += `_Formal checkout request via SRC Pulse Dashboard._`;

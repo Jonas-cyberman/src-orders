@@ -273,9 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initNavbar() {
-  const navbar = document.querySelector('.navbar-main');
+  const navbar = document.querySelector('.lux-navbar') || document.querySelector('.navbar-main');
   const toggle = document.querySelector('.nav-mobile-toggle');
-  const navLinks = document.querySelector('.nav-links');
+  const navLinks = document.querySelector('.nav-links-lux') || document.querySelector('.nav-links');
 
   // Scroll shadow
   if (navbar) {
@@ -287,17 +287,33 @@ function initNavbar() {
       }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // initial check
   }
 
   // Mobile toggle
   if (toggle && navLinks) {
-    toggle.addEventListener('click', () => {
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
       navLinks.classList.toggle('open');
       const icon = toggle.querySelector('i');
       if (icon) {
-        icon.setAttribute('name', navLinks.classList.contains('open') ? 'x' : 'list');
+        icon.classList.toggle('ph-list');
+        icon.classList.toggle('ph-x');
       }
     });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (navLinks.classList.contains('open') && !navLinks.contains(e.target) && !toggle.contains(e.target)) {
+        navLinks.classList.remove('open');
+        const icon = toggle.querySelector('i');
+        if (icon) {
+          icon.classList.add('ph-list');
+          icon.classList.remove('ph-x');
+        }
+      }
+    });
+
     // Close nav when a link is clicked
     navLinks.querySelectorAll('a').forEach(a => {
       a.addEventListener('click', () => navLinks.classList.remove('open'));
