@@ -1633,7 +1633,6 @@
         alert("Order Cancelled and Deleted");
         loadDashboard();
       } catch (err) {
-        console.error("Deletion Failed:", err);
         alert("Failed to delete order.");
       }
     }
@@ -1687,8 +1686,6 @@
         dataToExport = dataToExport.filter(o => o.student?.class === selectedClass);
       }
 
-      console.log("Exporting Data:", { status: selectedStatus, class: selectedClass, count: dataToExport.length });
-
       if (selectedColumns.length === 0) {
         alert("Please select at least one column to export.");
         return;
@@ -1708,7 +1705,6 @@
           generateExcelReport(dataToExport, selectedColumns);
         }
       } catch (err) {
-        console.error("Export Error:", err);
         alert("Export failed: " + err.message);
       }
       
@@ -1791,7 +1787,7 @@
         tableData.push(row);
       });
 
-      console.log("Generated PDF Table Data:", tableData);
+
 
       doc.autoTable({
         head: [tableHeaders],
@@ -1804,10 +1800,8 @@
         margin: { top: 35 }
       });
 
-      console.log("Saving PDF...");
       const pdfBaseName = `src-intelligence-${new Date().toISOString().slice(0, 10)}`;
       doc.save(`${pdfBaseName}.pdf`);
-      console.log("PDF Export Complete.");
     }
 
     function generateExcelReport(data, cols) {
@@ -1855,9 +1849,7 @@
       XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
       
       const excelBaseName = `src-registry-${new Date().toISOString().slice(0, 10)}`;
-      console.log("Saving Excel...");
       XLSX.writeFile(workbook, `${excelBaseName}.xlsx`);
-      console.log("Excel Export Complete.");
     }
 
     // MANUAL ORDER MANAGEMENT
@@ -1961,7 +1953,6 @@
         closeManualOrderModal();
         loadDashboard(); // Refresh
       } catch (err) {
-        console.error('Manual Order Error:', err);
         showLuxNotification("ERROR", "Failed to save record: " + err.message, "error");
       } finally {
         btn.disabled = false;

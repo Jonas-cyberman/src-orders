@@ -24,7 +24,6 @@ let _supabase = null;
 function getSupabase() {
   if (!_supabase) {
     if (typeof supabase === 'undefined') {
-      console.warn('Supabase SDK not loaded.');
       return null;
     }
     _supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -127,12 +126,10 @@ async function insertOrder(data) {
     .select('order_id');
     
   if (error) {
-    console.error("Order Registration Failure:", error);
     throw error;
   }
   
   if (!result || result.length === 0) {
-    console.error("Order Insert OK, but result was empty.");
     return null; 
   }
   
@@ -236,7 +233,6 @@ const AdminAuth = {
       sessionStorage.setItem(this.KEY, JSON.stringify(sessionData));
       return true;
     } catch (err) {
-      console.error("Auth Exception:", err);
       return false;
     }
   },
@@ -250,7 +246,6 @@ const AdminAuth = {
 
       // Check for expiration
       if (session.login_at && (now - session.login_at > this.DURATION)) {
-        console.warn("Admin session expired.");
         this.logout();
         return null;
       }

@@ -430,7 +430,6 @@
       localStorage.setItem('lastStudentName', fullName);
 
       // 1. Insert/Update Buyer
-      console.log('Processing student record...');
       const buyerId = await insertStudent({
         name: fullName,
         phone: phone,
@@ -438,49 +437,46 @@
         programme: programme,
         class: className
       });
-      console.log('Student ID:', buyerId);
 
       // 2. Prepare Transaction
-      const transactionId = generateTransactionId();
-      const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-      const momoFee = 1.00;
-      const grandTotal = Number(((subTotal + momoFee) / 0.9805).toFixed(2));
-      const processingFee = Number((grandTotal - subTotal).toFixed(2));
+    const transactionId = generateTransactionId();
+    const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
+    const momoFee = 1.00;
+    const grandTotal = Number(((subTotal + momoFee) / 0.9805).toFixed(2));
+    const processingFee = Number((grandTotal - subTotal).toFixed(2));
 
-      // 3. Loop and Insert Orders
-      console.log('Inserting', cart.length, 'order records...');
-      for (let i = 0; i < cart.length; i++) {
-        const item = cart[i];
-        let recipientId = buyerId;
+    // 3. Loop and Insert Orders
+    for (let i = 0; i < cart.length; i++) {
+      const item = cart[i];
+      let recipientId = buyerId;
 
-        if (item.isGift && item.recipient) {
-          recipientId = await insertStudent({
-            name: item.recipient.name,
-            phone: item.recipient.phone || 'N/A',
-            hostel: item.recipient.hostel || 'N/A',
-            programme: item.recipient.programme || 'N/A',
-            class: item.recipient.class || 'N/A'
-          });
-        }
-
-        await insertOrder({
-          student_id: recipientId,
-          buyer_id: buyerId,
-          is_gift: item.isGift,
-          shirt_color: item.color,
-          shirt_size: item.size,
-          shirt_texture: item.texture,
-          cap_option: item.package === 'bundle',
-          nickname_option: item.hasNickname,
-          nickname_text: item.nickname || null,
-          total_price: item.unitPrice,
-          service_fee: processingFee / cart.length, // Split fee equally among items in transaction for stats
-          payment_status: 'pending',
-          transaction_id: transactionId
+      if (item.isGift && item.recipient) {
+        recipientId = await insertStudent({
+          name: item.recipient.name,
+          phone: item.recipient.phone || 'N/A',
+          hostel: item.recipient.hostel || 'N/A',
+          programme: item.recipient.programme || 'N/A',
+          class: item.recipient.class || 'N/A'
         });
       }
-      console.log('All order records saved as PENDING.');
-      return { transactionId, fullName, phone, hostel, className, grandTotal, processingFee };
+
+      await insertOrder({
+        student_id: recipientId,
+        buyer_id: buyerId,
+        is_gift: item.isGift,
+        shirt_color: item.color,
+        shirt_size: item.size,
+        shirt_texture: item.texture,
+        cap_option: item.package === 'bundle',
+        nickname_option: item.hasNickname,
+        nickname_text: item.nickname || null,
+        total_price: item.unitPrice,
+        service_fee: processingFee / cart.length, // Split fee equally among items in transaction for stats
+        payment_status: 'pending',
+        transaction_id: transactionId
+      });
+    }
+    return { transactionId, fullName, phone, hostel, className, grandTotal, processingFee };
     }
 
     function getWhatsAppMessage(data) {
@@ -501,7 +497,13 @@
         msg += `   - Texture: ${item.texture}\n`;
         msg += `   - Package: ${item.package === 'bundle' ? 'Shirt + Cap' : 'Shirt Only'}\n`;
         if (item.hasNickname) msg += `   - Nickname: "${item.nickname}"\n`;
-        if (item.isGift) msg += `   - GIFT RECIPIENT: ${item.recipient.name}\n`;
+        if (item.isGift) {
+          msg += `   - GIFT RECIPIENT: ${item.recipient.name}\n`;
+          if (item.recipient.phone && item.recipient.phone !== 'N/A') msg += `     - Phone: ${item.recipient.phone}\n`;
+          if (item.recipient.hostel && item.recipient.hostel !== 'N/A') msg += `     - Hostel: ${item.recipient.hostel}\n`;
+          if (item.recipient.programme && item.recipient.programme !== 'N/A') msg += `     - Prog: ${item.recipient.programme}\n`;
+          if (item.recipient.class && item.recipient.class !== 'N/A') msg += `     - Class: ${item.recipient.class}\n`;
+        }
         msg += `   - Price: GHS ${item.unitPrice.toFixed(2)}\n\n`;
       });
 
@@ -543,7 +545,7 @@
 
       try {
         // 1. Save to Database first
-        const { transactionId, fullName, phone, hostel, className, grandTotal } = await processOrderRecords();
+        const { transactionId, fullName, phone, hostel, className, grandTotal, processingFee } = await processOrderRecords();
         const orderSummaryText = cart.map(i => `${i.color} ${i.size}`).join(', ');
 
         const handler = PaystackPop.setup({
@@ -567,11 +569,10 @@
               const msg = getWhatsAppMessage({ transactionId, fullName, phone, hostel, className, grandTotal, processingFee });
               const waNumber = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233240064472';
               const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
-              
+
               AppState.clearAll();
               window.location.href = `confirmation.html?ref=${transactionId}&wa=${encodeURIComponent(waUrl)}`;
             }).catch(function (err) {
-              console.error('Payment update failed:', err);
               AppState.clearAll();
               window.location.href = 'confirmation.html?ref=' + transactionId;
             });
@@ -583,7 +584,6 @@
         });
         handler.openIframe();
       } catch (err) {
-        console.error('Checkout Error:', err);
         alert('Database Error: Your order could not be saved. Please check your internet or contact support. ' + (err.message || ''));
         DOM.payBtn.disabled = false;
         DOM.payBtn.innerHTML = `<span class="pay-label">Try Again</span><i class="ph ph-lock-simple"></i>`;
@@ -618,7 +618,6 @@
           window.open(url, '_blank');
           window.location.href = 'index.html'; // Return home after WhatsApp
         } catch (err) {
-          console.error('WhatsApp Save Error:', err);
           alert("Could not register order in Database: " + err.message);
           waFinishBtn.disabled = false;
           waFinishBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo"></i> Order via WhatsApp';
