@@ -1512,10 +1512,10 @@
 
     function handlePrintReceipt(txId) {
       const order = orders.find(o => o.transaction_id === txId);
-      if (!order) return alert("Order not found.");
+      if (!order) return showLuxNotification("SEARCH ERROR", "Order not found.", "error");
       
       const jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
-      if (!jsPDF) return alert("PDF Engine failed. Please refresh.");
+      if (!jsPDF) return showLuxNotification("SYSTEM ERROR", "PDF Engine failed to initialize. Please refresh the page.", "error");
       
       const doc = new jsPDF('p', 'mm', [105, 148]); // A6 size for a "card" look
       const W = doc.internal.pageSize.getWidth();
@@ -1630,10 +1630,10 @@
       try {
         const adminName = AdminAuth.getUser()?.username || 'System';
         await deleteOrder(txId, adminName);
-        alert("Order Cancelled and Deleted");
+        showLuxNotification("ACTION COMPLETE", "Order record has been cancelled and moved to archives.", "success");
         loadDashboard();
       } catch (err) {
-        alert("Failed to delete order.");
+        showLuxNotification("ACTION FAILED", "Failed to delete order record.", "error");
       }
     }
 
@@ -1687,12 +1687,11 @@
       }
 
       if (selectedColumns.length === 0) {
-        alert("Please select at least one column to export.");
+        showLuxNotification("EXPORT ERROR", "Please select at least one column to include in your report.", "info");
         return;
       }
-
       if (dataToExport.length === 0) {
-        alert("No data available for the selected status.");
+        showLuxNotification("EXPORT ERROR", "No data available matching the current filters.", "info");
         return;
       }
 
@@ -1705,7 +1704,7 @@
           generateExcelReport(dataToExport, selectedColumns);
         }
       } catch (err) {
-        alert("Export failed: " + err.message);
+        showLuxNotification("EXPORT FAILED", "An error occurred while generating your report: " + err.message, "error");
       }
       
       exportModal.classList.remove('active');
@@ -1714,7 +1713,7 @@
     function generatePdfReport(data, cols, selectionLabel) {
       const jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
       if (!jsPDF) {
-        alert("PDF Library (jsPDF) failed to load. Please check your internet connection and refresh.");
+        showLuxNotification("SYSTEM ERROR", "PDF Library failed to load. Please check your internet connection.", "error");
         return;
       }
       

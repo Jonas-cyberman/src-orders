@@ -29,9 +29,9 @@ const classMapping = {
 // State
 let state = {
   color: COLORS[0],
-  size: 'S',
-  texture: 'Cotton',
-  package: 'shirt',
+  size: null,
+  texture: null,
+  package: null,
   hasNickname: false,
   nickname: '',
   isGift: false,
@@ -190,15 +190,20 @@ function attachEvents() {
     };
   };
 
-  // Add to Cart
+  // Add to Basket
   if (DOM.addToCartBtn) {
     DOM.addToCartBtn.addEventListener('click', () => {
+      if (!state.size || !state.texture || !state.package) {
+        showLuxAlert("Please select a size, fabric texture, and product tier before adding to your basket.", "Incomplete Selection", "ph ph-warning");
+        return;
+      }
       if (state.isGift && !state.friend.name) {
-        alert("Please enter your friend's name for the gift.");
+        showLuxAlert("Please enter your friend's name to complete the gift details.", "Missing Detail", "ph ph-warning");
         return;
       }
       AppState.addOrUpdateItem(buildItemData());
-      alert(`${state.color.name} shirt added to order!`);
+      showLuxAlert(`${state.color.name} shirt has been added to your basket.`, "Added to Basket", "ph ph-shopping-basket-horizontal", "success");
+      resetStoreForm();
     });
   }
 
@@ -207,6 +212,10 @@ function attachEvents() {
   if (waOrderBtn) {
     waOrderBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      if (!state.size || !state.texture || !state.package) {
+        showLuxAlert("Please complete your shirt selection before proceeding to WhatsApp.", "Incomplete Selection", "ph ph-warning");
+        return;
+      }
       const item = buildItemData();
       let msg = `✅ *SRC PULSE ORDER*\n\n`;
       msg += `*Item:* ${item.color} Shirt (${item.size})\n`;
@@ -230,8 +239,12 @@ function attachEvents() {
   // Checkout (Immediate)
   DOM.checkoutBtn.addEventListener('click', () => {
     if (AppState.getItemCount() === 0) {
+      if (!state.size || !state.texture || !state.package) {
+        showLuxAlert("Please select your shirt details before proceeding to checkout.", "Incomplete Selection", "ph ph-warning");
+        return;
+      }
       if (state.isGift && !state.friend.name) {
-        alert("Please enter your friend's name for the gift.");
+        showLuxAlert("Please enter your friend's name to complete the gift details.", "Missing Detail", "ph ph-warning");
         return;
       }
       AppState.addOrUpdateItem(buildItemData());
@@ -243,6 +256,36 @@ function attachEvents() {
   window.addEventListener('cartUpdated', () => {
     if (DOM.cartCount) DOM.cartCount.textContent = AppState.getItemCount();
   });
+}
+
+function resetStoreForm() {
+    state.size = null;
+    state.texture = null;
+    state.package = null;
+    state.hasNickname = false;
+    state.nickname = '';
+    state.isGift = false;
+    state.friend = { name: '', phone: '', hostel: '', programme: '', class: '' };
+
+    // Reset UI
+    DOM.sizeBtns.forEach(b => b.classList.remove('active'));
+    DOM.textureCards.forEach(b => b.classList.remove('active'));
+    DOM.pkgCards.forEach(b => b.classList.remove('active'));
+    
+    if (DOM.nickToggle) {
+        DOM.nickToggle.checked = false;
+        DOM.nickGroup.style.display = 'none';
+        DOM.nickField.value = '';
+    }
+    
+    if (DOM.giftToggle) {
+        DOM.giftToggle.checked = false;
+        DOM.giftForm.style.display = 'none';
+        Object.keys(DOM.friendFields).forEach(k => DOM.friendFields[k].value = '');
+    }
+
+    updateUI();
+    selectColor(state.color.id); // Reset preview image to "No cap" version
 }
 
 function selectColor(id) {

@@ -23,6 +23,7 @@
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/checkout.css">
 </head>
 
@@ -44,7 +45,7 @@
       <span class="step active">Details</span>
       <span class="step">Payment</span>
     </div>
-    <a href="https://wa.me/233540000000" class="help-link-lux">Need help?</a>
+    <a href="https://wa.me/233240064472" class="help-link-lux">+233 240 064 472</a>
     <!-- Mobile Toggle -->
     <button class="nav-mobile-toggle d-md-none" aria-label="Toggle Menu" style="margin-left: 15px;">
       <i class="ph ph-list"></i>
@@ -156,11 +157,11 @@
             </div>
 
             <div id="summary-items" style="max-height: 320px; overflow-y: auto; padding-right: 5px;">
-              <div class="summary-item">
-                <i class="ph ph-t-shirt"></i>
-                <span class="summary-item-text">Celebration Shirt</span>
-                <span class="summary-item-price">GH₵ 45.00</span>
-              </div>
+              <!-- Items -->
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+               <button type="button" class="btn-clear-cart-lux" onclick="confirmClearCart()">Clear All</button>
             </div>
 
             <div class="lux-divider"></div>
@@ -229,6 +230,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="https://js.paystack.co/v1/inline.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="js/app.js?v=1.1.0"></script>
 
   <script>
@@ -341,47 +343,40 @@
       let grandTotal = 0;
 
       cart.forEach((item, index) => {
-        grandTotal += item.unitPrice;
+        const itemGrandTotal = Number(((item.unitPrice + 1.00) / 0.9805).toFixed(2));
+        const itemFee = Number((itemGrandTotal - item.unitPrice).toFixed(2));
+        grandTotal += itemGrandTotal;
+
         itemsHtml += `
-            <div class="summary-item-compact d-flex align-items-start justify-content-between py-3 border-bottom" style="gap: 12px;">
-              <div class="d-flex align-items-start gap-3 flex-grow-1" style="min-width: 0;">
-                <div style="width:12px; height:12px; border-radius:50%; background:${item.colorHex}; flex-shrink: 0; margin-top: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,0.1);"></div>
-                <div style="min-width: 0;">
-                  <div class="fw-bold serif" style="font-size: 16px; line-height: 1.2; color: var(--lux-ink); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${item.color} Shirt · ${item.size}
-                  </div>
-                  <div class="small opacity-50 text-uppercase tracking-widest" style="font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${item.texture} · ${item.package === 'bundle' ? 'Bundle' : 'Shirt'}
-                    ${item.hasNickname ? ` · "${item.nickname}"` : ''}
-                  </div>
-                  ${item.isGift ? `<div class="text-gold fw-bold mt-1" style="font-size: 11px; letter-spacing:0.05em;">Gift for: ${item.recipient.name}</div>` : ''}
+          <div class="summary-item-compact d-flex align-items-start justify-content-between py-3 border-bottom" style="gap: 12px;">
+            <div class="d-flex align-items-start gap-3 flex-grow-1" style="min-width: 0;">
+              <div style="width:12px; height:12px; border-radius:50%; background:${item.colorHex}; flex-shrink: 0; margin-top: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,0.1);"></div>
+              <div style="min-width: 0;">
+                <div class="fw-bold serif" style="font-size: 16px; line-height: 1.2; color: var(--lux-ink); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${item.color} Shirt · ${item.size}
                 </div>
-              </div>
-              <div class="d-flex align-items-center gap-3 flex-shrink-0" style="margin-top: 2px;">
-                <span class="fw-bold" style="color: var(--lux-ink); font-size: 15px; white-space: nowrap;">GH₵ ${item.unitPrice.toFixed(2)}</span>
-                <button type="button" class="btn-remove-item border-0 bg-transparent p-0" data-id="${item.id}" title="Remove item">
-                  <i class="ph ph-trash" style="font-size: 18px;"></i>
-                </button>
+                <div class="small opacity-50 text-uppercase tracking-widest" style="font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${item.texture} · ${item.package === 'bundle' ? 'Bundle' : 'Shirt'}
+                  ${item.hasNickname ? ` · "${item.nickname}"` : ''}
+                </div>
+                <div class="mt-1" style="font-size: 10px; color: var(--lux-gold); font-weight: 600; opacity: 0.8; letter-spacing: 0.02em;">
+                  Inc. GHS ${itemFee.toFixed(2)} service fee
+                </div>
+                ${item.isGift ? `<div class="text-gold fw-bold mt-1" style="font-size: 11px; letter-spacing:0.05em;">Gift for: ${item.recipient.name}</div>` : ''}
               </div>
             </div>
-          `;
-      });
-      document.getElementById('summary-items').innerHTML = itemsHtml;
-      document.getElementById('summary-badge').textContent = `${cart.length} Item${cart.length > 1 ? 's' : ''}`;
-
-      const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-      const momoFee = 1.00;
-      grandTotal = Number(((subTotal + momoFee) / 0.9805).toFixed(2));
-      const totalFee = Number((grandTotal - subTotal).toFixed(2));
-
-      // Add fee line to summary
-      const feeHtml = `
-          <div class="d-flex justify-content-between mt-3 px-1 small opacity-50">
-            <span>Processing Fee (Paystack) + Momo charge</span>
-            <span>GHS ${totalFee.toFixed(2)}</span>
+            <div class="d-flex align-items-center gap-3 flex-shrink-0" style="margin-top: 2px;">
+              <span class="fw-bold" style="color: var(--lux-ink); font-size: 15px; white-space: nowrap;">GH₵ ${itemGrandTotal.toFixed(2)}</span>
+              <button type="button" class="btn-remove-item border-0 bg-transparent p-0" data-id="${item.id}" title="Remove item">
+                <i class="ph ph-trash" style="font-size: 18px;"></i>
+              </button>
+            </div>
           </div>
         `;
-      document.getElementById('summary-items').insertAdjacentHTML('beforeend', feeHtml);
+      });
+
+      document.getElementById('summary-items').innerHTML = itemsHtml;
+      document.getElementById('summary-badge').textContent = `${cart.length} Item${cart.length > 1 ? 's' : ''}`;
 
       DOM.totalDisplay.textContent = `GHS ${grandTotal.toFixed(2)}`;
       if (DOM.payBtn.querySelector('.pay-label')) {
@@ -401,9 +396,14 @@
 
       // Update first swatch/title placeholder if needed
       if (cart.length > 0) {
-        document.getElementById('summary-swatch').style.backgroundColor = cart[0].colorHex;
-        document.getElementById('summary-color-name').textContent = cart.length > 1 ? `${cart.length} Items Selected` : cart[0].color;
-        document.getElementById('summary-size').style.display = cart.length > 1 ? 'none' : 'inline-block';
+        const summarySwatch = document.getElementById('summary-swatch');
+        if (summarySwatch) summarySwatch.style.backgroundColor = cart[0].colorHex;
+        
+        const summaryColorName = document.getElementById('summary-color-name');
+        if (summaryColorName) summaryColorName.textContent = cart.length > 1 ? `${cart.length} Items Selected` : cart[0].color;
+        
+        const summarySize = document.getElementById('summary-size');
+        if (summarySize) summarySize.style.display = cart.length > 1 ? 'none' : 'inline-block';
       }
     }
 
@@ -440,9 +440,12 @@
 
       // 2. Prepare Transaction
     const transactionId = generateTransactionId();
+    let grandTotal = 0;
+    cart.forEach(item => {
+      const itemGrandTotal = Number(((item.unitPrice + 1.00) / 0.9805).toFixed(2));
+      grandTotal += itemGrandTotal;
+    });
     const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-    const momoFee = 1.00;
-    const grandTotal = Number(((subTotal + momoFee) / 0.9805).toFixed(2));
     const processingFee = Number((grandTotal - subTotal).toFixed(2));
 
     // 3. Loop and Insert Orders
@@ -535,7 +538,7 @@
 
       const phoneInput = document.getElementById('phone').value;
       if (!/^0\d{9}$/.test(phoneInput)) {
-        alert('Invalid phone number. Please enter exactly 10 digits starting with 0.');
+        showLuxAlert("Invalid phone number. Please enter exactly 10 digits starting with 0.", "Validation Error", "ph ph-warning");
         document.getElementById('phone').style.borderColor = 'var(--lux-gold)';
         return;
       }
@@ -584,7 +587,7 @@
         });
         handler.openIframe();
       } catch (err) {
-        alert('Database Error: Your order could not be saved. Please check your internet or contact support. ' + (err.message || ''));
+        showLuxAlert('Your order could not be saved. Please check your internet or contact support. ' + (err.message || ''), "Database Error", "ph ph-x-circle");
         DOM.payBtn.disabled = false;
         DOM.payBtn.innerHTML = `<span class="pay-label">Try Again</span><i class="ph ph-lock-simple"></i>`;
       }
@@ -598,7 +601,7 @@
         const inputs = DOM.form.querySelectorAll('input[required], select[required]');
         let valid = true;
         inputs.forEach(i => { if (!i.value) { i.style.borderColor = 'red'; valid = false; } });
-        if (!valid) return alert("Please fill in your details first.");
+        if (!valid) return showLuxAlert("Please fill in all required details to proceed with your order.", "Missing Details", "ph ph-warning-circle");
 
         waFinishBtn.disabled = true;
         waFinishBtn.innerHTML = '<i class="ph ph-spinner-gap spinning"></i> Saving...';
@@ -618,7 +621,7 @@
           window.open(url, '_blank');
           window.location.href = 'index.html'; // Return home after WhatsApp
         } catch (err) {
-          alert("Could not register order in Database: " + err.message);
+          showLuxAlert("Could not register order in Database: " + err.message, "System Error", "ph ph-warning");
           waFinishBtn.disabled = false;
           waFinishBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo"></i> Order via WhatsApp';
         }

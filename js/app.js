@@ -57,6 +57,11 @@ const AppState = {
   setStudent(student) {
     const s = this.get(); s.student = student; this.save(s);
   },
+  clearCart() {
+    const s = this.get();
+    s.cart = [];
+    this.save(s);
+  },
   clearAll() { localStorage.removeItem(STATE_KEY); },
 
   // Cart helpers
@@ -384,14 +389,26 @@ function initSideCart() {
     }
   });
 
-  // Listen for state changes
-  window.addEventListener('cartUpdated', () => {
-    updateCartUI();
-  });
-
   // Initial update
   updateCartUI();
 }
+
+// Global Clear Cart Confirmation
+window.confirmClearCart = function() {
+  if (AppState.getCart().length === 0) return;
+  
+  if (confirm("Are you sure you want to clear your entire basket? This cannot be undone.")) {
+    AppState.clearCart();
+    showLuxAlert("Your basket has been cleared successfully.", "Basket Cleared", "ph ph-check-circle", "success");
+    const overlay = document.getElementById('sideCartOverlay');
+    if (overlay) overlay.click(); // Close drawer
+    
+    // If on checkout page, redirect
+    if (window.location.pathname.includes('checkout')) {
+      window.location.href = 'product.html';
+    }
+  }
+};
 
 function updateCartUI() {
   const cart = AppState.getCart();
@@ -439,7 +456,11 @@ function updateCartUI() {
           </div>
         `;
       });
-      body.innerHTML = itemsHtml;
+      body.innerHTML = itemsHtml + `
+        <div class="d-flex justify-content-end px-3 mt-3">
+          <button class="btn-clear-cart-lux" onclick="confirmClearCart()">Clear All</button>
+        </div>
+      `;
       if (totalDisplay) totalDisplay.textContent = `GHS ${total.toFixed(2)}`;
     }
   }
@@ -517,8 +538,62 @@ function onReady(fn) {
   else document.addEventListener('DOMContentLoaded', fn);
 }
 
+
+// ── Luxury Alert System ──────────────────────────
+function showLuxAlert(message, title = 'Notification', icon = 'ph ph-info', variant = 'default') {
+  let overlay = document.getElementById('luxModalOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'luxModalOverlay';
+    overlay.className = 'lux-modal-overlay';
+    overlay.innerHTML = `
+      <div class="lux-modal">
+        <div class="lux-modal-icon"><i id="luxModalIcon"></i></div>
+        <h3 id="luxModalTitle" class="lux-modal-title"></h3>
+        <p id="luxModalBody" class="lux-modal-body"></p>
+        <button id="luxModalClose" class="btn-lux lux-modal-btn">OK</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#luxModalClose').addEventListener('click', () => {
+      overlay.classList.remove('active');
+    });
+  }
+  
+  const modal = overlay.querySelector('.lux-modal');
+  modal.className = `lux-modal variant-${variant}`;
+  overlay.className = `lux-modal-overlay variant-${variant}`;
+  
+  const iconWrap = overlay.querySelector('.lux-modal-icon');
+  iconWrap.classList.toggle('pulse', variant === 'success');
+  
+  const iconEl = overlay.querySelector('#luxModalIcon');
+  iconEl.className = icon;
+  overlay.querySelector('#luxModalTitle').textContent = title;
+  overlay.querySelector('#luxModalBody').textContent = message;
+  
+  if (variant === 'success' && typeof confetti === 'function') {
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#b8933f', '#0f1923', '#ffffff'],
+      zIndex: 12000 // Higher than 11000 (overlay)
+    });
+  }
+
+  setTimeout(() => {
+    overlay.classList.add('active');
+  }, 10);
+}
+
 // Auto-init shared components
 onReady(() => {
   initNavbar();
   initSideCart();
+  
+  // Initialize Global Countdown
+  if (document.getElementById('preorder-countdown')) {
+    initCountdown(new Date('2026-06-12T00:00:00'), 'preorder-countdown');
+  }
 });
