@@ -161,7 +161,7 @@
             </div>
 
             <div class="d-flex justify-content-end mt-3">
-               <button type="button" class="btn-clear-cart-lux" onclick="confirmClearCart()">Clear All</button>
+              <button type="button" class="btn-clear-cart-lux" onclick="confirmClearCart()">Clear All</button>
             </div>
 
             <div class="lux-divider"></div>
@@ -398,10 +398,10 @@
       if (cart.length > 0) {
         const summarySwatch = document.getElementById('summary-swatch');
         if (summarySwatch) summarySwatch.style.backgroundColor = cart[0].colorHex;
-        
+
         const summaryColorName = document.getElementById('summary-color-name');
         if (summaryColorName) summaryColorName.textContent = cart.length > 1 ? `${cart.length} Items Selected` : cart[0].color;
-        
+
         const summarySize = document.getElementById('summary-size');
         if (summarySize) summarySize.style.display = cart.length > 1 ? 'none' : 'inline-block';
       }
@@ -439,85 +439,55 @@
       });
 
       // 2. Prepare Transaction
-    const transactionId = generateTransactionId();
-    let grandTotal = 0;
-    cart.forEach(item => {
-      const itemGrandTotal = Number(((item.unitPrice + 1.00) / 0.9805).toFixed(2));
-      grandTotal += itemGrandTotal;
-    });
-    const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-    const processingFee = Number((grandTotal - subTotal).toFixed(2));
+      const transactionId = generateTransactionId();
+      let grandTotal = 0;
+      cart.forEach(item => {
+        const itemGrandTotal = Number(((item.unitPrice + 1.00) / 0.9805).toFixed(2));
+        grandTotal += itemGrandTotal;
+      });
+      const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
+      const processingFee = Number((grandTotal - subTotal).toFixed(2));
 
-    // 3. Loop and Insert Orders
-    for (let i = 0; i < cart.length; i++) {
-      const item = cart[i];
-      let recipientId = buyerId;
+      // 3. Loop and Insert Orders
+      for (let i = 0; i < cart.length; i++) {
+        const item = cart[i];
+        let recipientId = buyerId;
 
-      if (item.isGift && item.recipient) {
-        recipientId = await insertStudent({
-          name: item.recipient.name,
-          phone: item.recipient.phone || 'N/A',
-          hostel: item.recipient.hostel || 'N/A',
-          programme: item.recipient.programme || 'N/A',
-          class: item.recipient.class || 'N/A'
+        if (item.isGift && item.recipient) {
+          recipientId = await insertStudent({
+            name: item.recipient.name,
+            phone: item.recipient.phone || 'N/A',
+            hostel: item.recipient.hostel || 'N/A',
+            programme: item.recipient.programme || 'N/A',
+            class: item.recipient.class || 'N/A'
+          });
+        }
+
+        await insertOrder({
+          student_id: recipientId,
+          buyer_id: buyerId,
+          is_gift: item.isGift,
+          shirt_color: item.color,
+          shirt_size: item.size,
+          shirt_texture: item.texture,
+          cap_option: item.package === 'bundle',
+          nickname_option: item.hasNickname,
+          nickname_text: item.nickname || null,
+          total_price: item.unitPrice,
+          service_fee: processingFee / cart.length, // Split fee equally among items in transaction for stats
+          payment_status: 'pending',
+          transaction_id: transactionId
         });
       }
-
-      await insertOrder({
-        student_id: recipientId,
-        buyer_id: buyerId,
-        is_gift: item.isGift,
-        shirt_color: item.color,
-        shirt_size: item.size,
-        shirt_texture: item.texture,
-        cap_option: item.package === 'bundle',
-        nickname_option: item.hasNickname,
-        nickname_text: item.nickname || null,
-        total_price: item.unitPrice,
-        service_fee: processingFee / cart.length, // Split fee equally among items in transaction for stats
-        payment_status: 'pending',
-        transaction_id: transactionId
-      });
-    }
-    return { transactionId, fullName, phone, hostel, className, grandTotal, processingFee };
+      return { transactionId, fullName, phone, hostel, className, grandTotal, processingFee };
     }
 
     function getWhatsAppMessage(data) {
-      const { transactionId, fullName, phone, hostel, className, grandTotal, processingFee } = data;
-      const programme = document.getElementById('programme').value;
-
-      let msg = `✅ *SRC PULSE ORDER CONFIRMED* 🦁\n\n`;
-      msg += `*Ref:* ${transactionId}\n`;
-      msg += `*Customer:* ${fullName}\n`;
-      msg += `*Phone:* ${phone}\n`;
-      msg += `*Programme:* ${programme}\n`;
-      msg += `*Class:* ${className}\n`;
-      msg += `*Hostel:* ${hostel}\n\n`;
-      msg += `*--- ORDER ITEMS ---*\n\n`;
-
-      cart.forEach((item, index) => {
-        msg += `*${index + 1}. ${item.color} Shirt* (${item.size})\n`;
-        msg += `   - Texture: ${item.texture}\n`;
-        msg += `   - Package: ${item.package === 'bundle' ? 'Shirt + Cap' : 'Shirt Only'}\n`;
-        if (item.hasNickname) msg += `   - Nickname: "${item.nickname}"\n`;
-        if (item.isGift) {
-          msg += `   - GIFT RECIPIENT: ${item.recipient.name}\n`;
-          if (item.recipient.phone && item.recipient.phone !== 'N/A') msg += `     - Phone: ${item.recipient.phone}\n`;
-          if (item.recipient.hostel && item.recipient.hostel !== 'N/A') msg += `     - Hostel: ${item.recipient.hostel}\n`;
-          if (item.recipient.programme && item.recipient.programme !== 'N/A') msg += `     - Prog: ${item.recipient.programme}\n`;
-          if (item.recipient.class && item.recipient.class !== 'N/A') msg += `     - Class: ${item.recipient.class}\n`;
-        }
-        msg += `   - Price: GHS ${item.unitPrice.toFixed(2)}\n\n`;
-      });
-
-      const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
-      msg += `*--- FINANCIALS ---*\n`;
-      msg += `*Subtotal:* GHS ${subTotal.toFixed(2)}\n`;
-      msg += `*Processing Fee (Paystack) + Momo charge:* GHS ${processingFee.toFixed(2)}\n`;
-      msg += `*TOTAL PAID:* GHS ${grandTotal.toFixed(2)}\n\n`;
-      msg += `*Date:* ${new Date().toLocaleDateString()} | ${new Date().toLocaleTimeString()}\n\n`;
-      msg += `_Formal checkout request via SRC Pulse Dashboard._`;
-      return msg;
+      if (typeof window.generateWhatsAppSummary === 'function') {
+        const orderData = { ...data, programme: document.getElementById('programme').value };
+        return window.generateWhatsAppSummary(orderData, cart);
+      }
+      return "Order details missing. Please check your dashboard.";
     }
 
     DOM.form.addEventListener('submit', async (e) => {

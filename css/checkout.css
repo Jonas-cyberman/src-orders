@@ -13,11 +13,12 @@
   --lux-border: rgba(15, 14, 13, 0.1);
   --lux-white: #ffffff;
   --lux-navy: #0f1923;
-  
+
   --font-serif: 'Cormorant Garamond', serif;
   --font-sans: 'DM Sans', sans-serif;
-  
-  --radius-sm: 4px; /* More refined, smaller radius for luxury */
+
+  --radius-sm: 4px;
+  /* More refined, smaller radius for luxury */
   --radius-md: 8px;
 }
 
@@ -29,7 +30,12 @@ body {
   line-height: 1.6;
 }
 
-h1, h2, h3, h4, .logo-text, .step {
+h1,
+h2,
+h3,
+h4,
+.logo-text,
+.step {
   font-family: var(--font-serif);
 }
 
@@ -81,7 +87,8 @@ h1, h2, h3, h4, .logo-text, .step {
 }
 
 .step.link-step {
-  color: rgba(15, 14, 13, 0.6); /* Slightly darker than non-active but not full ink */
+  color: rgba(15, 14, 13, 0.6);
+  /* Slightly darker than non-active but not full ink */
 }
 
 .step.link-step:hover {
@@ -144,7 +151,8 @@ h1, h2, h3, h4, .logo-text, .step {
 
 .lux-input {
   width: 100%;
-  height: 54px; /* Slightly more substantial */
+  height: 54px;
+  /* Slightly more substantial */
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--lux-border);
@@ -192,7 +200,8 @@ select.lux-input option {
 }
 
 .lux-select select {
-  display: none !important; /* Fully hide native */
+  display: none !important;
+  /* Fully hide native */
 }
 
 .lux-select-trigger {
@@ -257,12 +266,15 @@ select.lux-input option {
   border-bottom: 1px solid rgba(15, 14, 13, 0.03);
 }
 
-.lux-select-option:last-child { border-bottom: none; }
+.lux-select-option:last-child {
+  border-bottom: none;
+}
 
 .lux-select-option:hover {
   background-color: var(--lux-bg);
   color: var(--lux-gold);
-  padding-left: 24px; /* Subtle indent on hover */
+  padding-left: 24px;
+  /* Subtle indent on hover */
 }
 
 .lux-select-option.selected {
@@ -301,7 +313,7 @@ select.lux-input option {
   height: 64px;
   border-radius: 50%;
   border: 4px solid var(--lux-white);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .lux-badge {
@@ -413,12 +425,10 @@ select.lux-input option {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    120deg,
-    transparent,
-    rgba(184, 147, 63, 0.2),
-    transparent
-  );
+  background: linear-gradient(120deg,
+      transparent,
+      rgba(184, 147, 63, 0.2),
+      transparent);
   transition: all 0.6s ease;
 }
 
@@ -450,25 +460,48 @@ select.lux-input option {
 
 /* ── Mobile ────────────────────────────────────────────── */
 @media (max-width: 991px) {
-  .checkout-container { padding: 48px 24px; }
-  .left-column { padding-right: 0; }
-  .lux-summary-card { 
-    position: relative; 
-    top: 0; 
-    padding: 40px 24px; 
+  .checkout-container {
+    padding: 48px 24px;
+  }
+
+  .left-column {
+    padding-right: 0;
+  }
+
+  .lux-summary-card {
+    position: relative;
+    top: 0;
+    padding: 40px 24px;
     margin-top: 64px;
     margin-bottom: 40px;
   }
-  .lux-navbar { padding: 0 20px; }
-  .section-title { font-size: 42px; margin-bottom: 40px; }
-  .lux-total-value { font-size: 32px; }
-  .lux-pay-btn { padding: 0 24px; font-size: 18px; }
+
+  .lux-navbar {
+    padding: 0 20px;
+  }
+
+  .section-title {
+    font-size: 42px;
+    margin-bottom: 40px;
+  }
+
+  .lux-total-value {
+    font-size: 32px;
+  }
+
+  .lux-pay-btn {
+    padding: 0 24px;
+    font-size: 18px;
+  }
 }
 
 /* ── Custom Confirmation Modal ─────────────────── */
 .lux-modal-overlay {
   position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(15, 14, 13, 0.4);
   backdrop-filter: blur(4px);
   display: flex;
@@ -479,38 +512,45 @@ select.lux-input option {
   pointer-events: none;
   transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
+
 .lux-modal-overlay.active {
   opacity: 1;
   pointer-events: all;
 }
+
 .lux-modal {
   background: var(--lux-white);
   padding: 40px;
   max-width: 400px;
   width: 90%;
   text-align: center;
-  box-shadow: 0 40px 80px rgba(0,0,0,0.2);
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.2);
   transform: translateY(20px);
   transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
+
 .lux-modal-overlay.active .lux-modal {
   transform: translateY(0);
 }
+
 .lux-modal-title {
   font-family: var(--font-serif);
   font-size: 24px;
   margin-bottom: 16px;
   color: var(--lux-ink);
 }
+
 .lux-modal-body {
   font-size: 15px;
-  color: rgba(15,14,13,0.6);
+  color: rgba(15, 14, 13, 0.6);
   margin-bottom: 32px;
 }
+
 .lux-modal-actions {
   display: flex;
   gap: 12px;
 }
+
 .lux-modal-btn {
   flex: 1;
   height: 48px;
@@ -521,15 +561,18 @@ select.lux-input option {
   cursor: pointer;
   transition: all 0.3s;
 }
+
 .lux-modal-btn.confirm-btn {
   background: var(--lux-navy);
   color: var(--lux-white);
   border: none;
 }
+
 .lux-modal-btn:hover {
   border-color: var(--lux-gold);
   color: var(--lux-gold);
 }
+
 .lux-modal-btn.confirm-btn:hover {
   background: #1a2a3a;
   color: var(--lux-white);
@@ -542,7 +585,8 @@ select.lux-input option {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px; /* Increased for better touch target */
+  width: 42px;
+  /* Increased for better touch target */
   height: 42px;
   border-radius: 50%;
   color: var(--lux-gold);
@@ -553,5 +597,6 @@ select.lux-input option {
   background: rgba(184, 147, 63, 0.1);
   opacity: 1 !important;
   transform: scale(1.1) rotate(5deg);
-  color: #dc3545; /* Red indicator for deletion */
+  color: #dc3545;
+  /* Red indicator for deletion */
 }

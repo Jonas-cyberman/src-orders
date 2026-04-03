@@ -174,8 +174,14 @@ function attachEvents() {
   // Helper to build item
   const buildItemData = () => {
     const finalPrice = calculateTotal();
+    
+    // Generate deterministic ID so exact duplicates update, but gifts and personal stay distinct
+    let baseId = `ITEM-${state.color.id}-${state.size}-${state.texture}-${state.package}`;
+    if (state.hasNickname) baseId += `-${state.nickname}`;
+    const generatedId = state.isGift ? `${baseId}-GIFT-${state.friend.phone || 'NONE'}` : baseId;
+
     return {
-      id: 'ITEM-' + Date.now(),
+      id: generatedId,
       color: state.color.name,
       colorHex: state.color.hex,
       size: state.size,

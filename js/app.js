@@ -95,94 +95,177 @@ function generateTransactionId() {
 // ── Supabase Operations ────────────────────────────────────
 async function insertStudent(data) {
   const db = getSupabase();
-  if (!db) throw new Error('Supabase not initialised');
-  
-  // 1. Check if student already exists by phone
-  const { data: existing, error: findError } = await db
-    .from('students')
-    .select('id')
-    .eq('phone', data.phone)
-    .maybeSingle();
-    
-  if (existing) {
-    // Optional: Update their details (name, class, etc) to latest
-    await db.from('students').update(data).eq('id', existing.id);
-    return existing.id;
+  if (!db) {
+    showLuxAlert('Database configuration missing. Please refresh.', 'System Error', 'ph ph-warning-circle', 'error');
+    throw new Error('Supabase not initialised');
   }
+  
+  try {
+    // 1. Check if student already exists by phone
+    const { data: existing, error: findError } = await db
+      .from('students')
+      .select('id')
+      .eq('phone', data.phone)
+      .maybeSingle();
+      
+    if (findError) {
+      console.error('[Supabase Error] Failed to verify existing student:', findError);
+      showLuxAlert('Network issue. Could not verify student record.', 'Connection Error', 'ph ph-wifi-slash', 'error');
+      throw findError;
+    }
+      
+    if (existing) {
+      // 2a. Update their details gracefully if they already exist
+      const { error: updateError } = await db
+        .from('students')
+        .update(data)
+        .eq('id', existing.id);
+        
+      if (updateError) {
+        console.error('[Supabase Error] Failed to update existing student:', updateError);
+        showLuxAlert('Failed to update existing student profile.', 'Update Error', 'ph ph-warning', 'error');
+        throw updateError;
+      }
+      return existing.id;
+    }
 
-  // 2. Insert if new
-  const { data: result, error } = await db
-    .from('students')
-    .insert([data])
-    .select('id')
-    .single();
+    // 2b. Insert if new
+    const { data: result, error: insertError } = await db
+      .from('students')
+      .insert([data])
+      .select('id')
+      .single();
+      
+    if (insertError) {
+      console.error('[Supabase Error] Failed to insert new student:', insertError);
+      
+      // Fallback: If there was a race condition making the phone number duplicate right after our check
+      if (insertError.code === '23505' || (insertError.message && insertError.message.includes('duplicate'))) {
+        console.warn('[Supabase Warning] Duplicate constraint triggered. Attempting a graceful recovery...');
+        // Let the caller retry or handle it, but notify the user
+        showLuxAlert('Student record was updated by another process simultaneously. Please retry.', 'Data Conflict', 'ph ph-arrows-clockwise', 'error');
+      } else {
+        showLuxAlert('Network error while saving student profile.', 'Save Failed', 'ph ph-warning', 'error');
+      }
+      throw insertError;
+    }
     
-  if (error) throw error;
-  return result.id;
+    return result.id;
+  } catch (err) {
+    console.error('[Unexpected Error] insertStudent encountered an issue:', err);
+    throw err;
+  }
 }
 
 async function insertOrder(data) {
   const db = getSupabase();
-  if (!db) throw new Error('Supabase not initialised');
+  if (!db) {
+    showLuxAlert('Database configuration missing. Please refresh.', 'System Error', 'ph ph-warning-circle', 'error');
+    throw new Error('Supabase not initialised');
+  }
   
-  const { data: result, error } = await db
-    .from('orders')
-    .insert([data])
-    .select('order_id');
+  try {
+    const { data: result, error } = await db
+      .from('orders')
+      .insert([data])
+      .select('order_id');
+      
+    if (error) {
+      console.error('[Supabase Error] Failed to insert order:', error);
+      showLuxAlert('Network error while finalizing order details.', 'Checkout Issue', 'ph ph-warning', 'error');
+      throw error;
+    }
     
-  if (error) {
-    throw error;
+    if (!result || result.length === 0) {
+      const emptyErr = new Error('Insert query returned empty results successfully.');
+      console.error('[Supabase Error]', emptyErr);
+      throw emptyErr;
+    }
+    
+    return result[0].order_id;
+  } catch (err) {
+    console.error('[Unexpected Error] insertOrder encountered an issue:', err);
+    throw err;
   }
-  
-  if (!result || result.length === 0) {
-    return null; 
-  }
-  
-  return result[0].order_id;
 }
 
 async function updatePaymentStatus(transaction_id, status) {
   const db = getSupabase();
-  if (!db) throw new Error('Supabase not initialised');
-  const { error } = await db
-    .from('orders')
-    .update({ payment_status: status })
-    .eq('transaction_id', transaction_id);
-  if (error) throw error;
+  if (!db) {
+    showLuxAlert('Database configuration missing. Please refresh.', 'System Error', 'ph ph-warning-circle', 'error');
+    throw new Error('Supabase not initialised');
+  }
+
+  try {
+    const { error } = await db
+      .from('orders')
+      .update({ payment_status: status })
+      .eq('transaction_id', transaction_id);
+      
+    if (error) {
+      console.error(`[Supabase Error] Failed to update payment status for TX ${transaction_id}:`, error);
+      showLuxAlert('Network error while syncing your payment.', 'Sync Failed', 'ph ph-warning', 'error');
+      throw error;
+    }
+  } catch (err) {
+    console.error('[Unexpected Error] updatePaymentStatus encountered an issue:', err);
+    throw err;
+  }
 }
 
 async function deleteOrder(transaction_id, admin_username) {
   const db = getSupabase();
-  if (!db) throw new Error('Supabase not initialised');
+  if (!db) {
+    showLuxAlert('Database configuration missing. Please refresh.', 'System Error', 'ph ph-warning-circle', 'error');
+    throw new Error('Supabase not initialised');
+  }
 
-  // 1. Fetch all order records for this transaction
-  const { data: orders, error: fetchError } = await db
-    .from('orders')
-    .select('*')
-    .eq('transaction_id', transaction_id);
+  try {
+    // 1. Fetch all order records for this transaction
+    const { data: orders, error: fetchError } = await db
+      .from('orders')
+      .select('*')
+      .eq('transaction_id', transaction_id);
 
-  if (fetchError) throw fetchError;
-  if (!orders || orders.length === 0) return;
+    if (fetchError) {
+      console.error(`[Supabase Error] Could not pre-fetch TX ${transaction_id} for deletion:`, fetchError);
+      showLuxAlert('Could not reach the server to fetch records.', 'Delete Failed', 'ph ph-wifi-slash', 'error');
+      throw fetchError;
+    }
+    
+    if (!orders || orders.length === 0) return;
 
-  // 2. Insert into deleted_orders table
-  const archiveData = orders.map(order => ({
-    ...order,
-    deleted_by: admin_username || 'Unknown Admin'
-  }));
+    // 2. Insert into deleted_orders table
+    const archiveData = orders.map(order => ({
+      ...order,
+      deleted_by: admin_username || 'Unknown Admin'
+    }));
 
-  const { error: archiveError } = await db
-    .from('deleted_orders')
-    .insert(archiveData);
+    const { error: archiveError } = await db
+      .from('deleted_orders')
+      .insert(archiveData);
 
-  if (archiveError) throw archiveError;
+    if (archiveError) {
+      console.error('[Supabase Error] Failed to safely archive deleted order:', archiveError);
+      showLuxAlert('Could not safely archive records prior to deletion.', 'Safety Lock', 'ph ph-shield-warning', 'error');
+      throw archiveError;
+    }
 
-  // 3. Delete from original orders table
-  const { error: deleteError } = await db
-    .from('orders')
-    .delete()
-    .eq('transaction_id', transaction_id);
+    // 3. Delete from original orders table
+    const { error: deleteError } = await db
+      .from('orders')
+      .delete()
+      .eq('transaction_id', transaction_id);
 
-  if (deleteError) throw deleteError;
+    if (deleteError) {
+      console.error(`[Supabase Error] Failed to cleanly erase TX ${transaction_id} from primary records:`, deleteError);
+      showLuxAlert('Failed to permanently erase the order.', 'Deletion Error', 'ph ph-warning', 'error');
+      throw deleteError;
+    }
+  } catch (err) {
+    console.error('[Unexpected Error] deleteOrder encountered an issue:', err);
+    throw err;
+  }
 }
 
 async function getAllOrders() {
@@ -597,3 +680,54 @@ onReady(() => {
     initCountdown(new Date('2026-06-12T00:00:00'), 'preorder-countdown');
   }
 });
+
+// ── WhatsApp Order Formatter ──────────────────────────────
+window.generateWhatsAppSummary = function(orderData, cart) {
+  const { transactionId, fullName, phone, hostel, className, programme, grandTotal, processingFee } = orderData;
+  
+  let msg = `🛍️ *SRC PULSE LUXURY ORDER* 🛍️\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+  msg += `👤 *CUSTOMER DETAILS*\n`;
+  msg += `*Name:* ${fullName}\n`;
+  msg += `*Phone:* ${phone}\n`;
+  if (programme) msg += `*Programme:* ${programme}\n`;
+  if (className) msg += `*Class:* ${className}\n`;
+  if (hostel) msg += `*Hostel:* ${hostel}\n\n`;
+
+  msg += `📦 *CART ITEMS*\n`;
+  
+  cart.forEach((item, index) => {
+    msg += `*${index + 1}. ${item.color} Shirt*\n`;
+    msg += `   • Size: ${item.size}\n`;
+    msg += `   • Fabric: ${item.texture}\n`;
+    msg += `   • Qty: ${item.qty || 1}\n`;
+    msg += `   • Package: ${item.package === 'bundle' ? 'Bundle (Shirt + Cap)' : 'Shirt Only'}\n`;
+    
+    if (item.hasNickname) {
+      msg += `   • Nickname: "${item.nickname}"\n`;
+    }
+    
+    if (item.isGift && item.recipient) {
+      msg += `   🎁 *Gift For:* ${item.recipient.name}\n`;
+      if (item.recipient.phone && item.recipient.phone !== 'N/A') msg += `      Phone: ${item.recipient.phone}\n`;
+      if (item.recipient.hostel && item.recipient.hostel !== 'N/A') msg += `      Hostel: ${item.recipient.hostel}\n`;
+    }
+    
+    const itemTotal = item.unitPrice * (item.qty || 1);
+    msg += `   💵 *Item Subtotal:* GHS ${itemTotal.toFixed(2)}\n\n`;
+  });
+
+  const rawSubTotal = cart.reduce((sum, item) => sum + (item.unitPrice * (item.qty || 1)), 0);
+
+  msg += `🧾 *FINANCIAL SUMMARY*\n`;
+  msg += `*Cart Subtotal:* GHS ${rawSubTotal.toFixed(2)}\n`;
+  if (processingFee) msg += `*Service & Processing Fee:* GHS ${processingFee.toFixed(2)}\n`;
+  msg += `*TOTAL DUE:* GHS ${grandTotal.toFixed(2)}\n\n`;
+
+  if (transactionId) msg += `🔑 *Transaction ID:* ${transactionId}\n`;
+  msg += `📅 *Date:* ${new Date().toLocaleString()}\n\n`;
+  msg += `_Automated checkout request via SRC Pulse._`;
+
+  return msg;
+};

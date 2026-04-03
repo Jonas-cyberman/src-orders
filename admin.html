@@ -24,6 +24,7 @@
   
   <!-- EXTERNAL LIBRARIES -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/theme.css">
 
@@ -468,6 +469,42 @@
       </div>
     </div>
 
+    <!-- ANALYTICS SECTION -->
+    <div class="row g-4 mb-5">
+      <div class="col-lg-6">
+        <div class="metric-card-lux" style="height: 400px; padding: 24px;">
+           <h6 class="small text-uppercase tracking-widest opacity-50 mb-4">Daily Revenue (GHS)</h6>
+           <div class="lux-chart-container" style="position: relative; height: 300px; width: 100%;">
+              <canvas id="chartDailyRevenue"></canvas>
+           </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="metric-card-lux" style="height: 400px; padding: 24px;">
+           <h6 class="small text-uppercase tracking-widest opacity-50 mb-4">Orders per Student Class</h6>
+           <div class="lux-chart-container" style="position: relative; height: 300px; width: 100%;">
+              <canvas id="chartOrdersPerClass"></canvas>
+           </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="metric-card-lux" style="height: 400px; padding: 24px;">
+           <h6 class="small text-uppercase tracking-widest opacity-50 mb-4">Shirt Size Distribution</h6>
+           <div class="lux-chart-container" style="position: relative; height: 300px; width: 100%;">
+              <canvas id="chartSizeDist"></canvas>
+           </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="metric-card-lux" style="height: 400px; padding: 24px;">
+           <h6 class="small text-uppercase tracking-widest opacity-50 mb-4">Color Popularity</h6>
+           <div class="lux-chart-container" style="position: relative; height: 300px; width: 100%;">
+              <canvas id="chartColorPop"></canvas>
+           </div>
+        </div>
+      </div>
+    </div>
+
     <!-- DATA TABLE -->
     <div class="table-container-lux">
       <div class="search-bar-lux d-flex justify-content-between align-items-center">
@@ -485,6 +522,11 @@
           <select id="classFilter" class="status-select-lux" style="min-width: 140px;">
             <option value="all">All Classes</option>
           </select>
+          <select id="capFilter" class="status-select-lux">
+            <option value="all" selected>All Caps</option>
+            <option value="true">With Cap</option>
+            <option value="false">Without Cap</option>
+          </select>
           <button id="bulkAuditBtn" class="btn-action-lux" style="background: var(--lux-gold); color: #fff; height: 38px; padding: 0 15px; font-size: 10px;">
             <i class="ph ph-shield-check me-1"></i> BULK PAYMENT AUDIT
           </button>
@@ -496,6 +538,9 @@
           </div>
         </div>
       </div>
+
+      <!-- ACTIVE FILTERS INDICATOR -->
+      <div id="activeFiltersContainer" class="d-flex gap-2 flex-wrap mb-3 px-1 mt-3"></div>
 
       <div class="table-responsive">
         <table class="table-lux">
@@ -897,6 +942,9 @@
       accent-color: var(--lux-gold);
       width: 18px; height: 18px;
     }
+    .lux-chart-container canvas {
+      max-width: 100%;
+    }
   </style>
   <script>
     // ── Authentication Guard (Legacy cleanup) ───────────────────────
@@ -937,6 +985,8 @@
     const itemsPerPage = 10;
     let currentStatusFilter = 'paid';
     let currentClassFilter = 'all';
+    let currentCapFilter = 'all';
+    let charts = {}; // Global chart instances
 
     async function loadDashboard() {
       try {
@@ -945,6 +995,7 @@
         updateDashboardClassFilter(orders);
         applyFilters(); 
         renderStats();
+        renderAnalytics();
       } catch (err) {
         console.error("Dashboard Sync Failed:", err);
         alert("Failed to synchronize with registry: " + (err.message || "Unknown error"));
@@ -983,8 +1034,14 @@
     }
 
     function applyFilters() {
-      const query = document.getElementById('orderSearch').value.toLowerCase();
+      const searchEl = document.getElementById('orderSearch');
+      const query = (searchEl ? searchEl.value : '').toLowerCase();
       
+      // Update UI Badges
+      if (typeof updateActiveFilterBadges === 'function') {
+        updateActiveFilterBadges(query);
+      }
+
       // 1. Filter the base items
       const baseFiltered = orders.filter(o => {
         // Status Filter
@@ -1006,7 +1063,12 @@
         // Class Filter
         const matchesClass = currentClassFilter === 'all' || o.student?.class === currentClassFilter;
 
-        return matchesStatus && matchesSearch && matchesClass;
+        // Cap Filter
+        const matchesCap = currentCapFilter === 'all' || 
+          (currentCapFilter === 'true' && o.cap_option === true) || 
+          (currentCapFilter === 'false' && o.cap_option === false);
+
+        return matchesStatus && matchesSearch && matchesClass && matchesCap;
       });
 
       // 2. Group into Accounts
@@ -1114,53 +1176,175 @@
       renderAnalytics(paid);
     }
 
-    function renderAnalytics(paid) {
-      const all = paid;
-      const colors = {};
-      all.forEach(o => { if(o.shirt_color) colors[o.shirt_color] = (colors[o.shirt_color] || 0) + 1; });
-      const sortedColors = Object.entries(colors).sort((a,b)=>b[1]-a[1]);
-      const colorEl = document.getElementById('analyticsColors');
-      if(colorEl) {
-        colorEl.innerHTML = sortedColors.map(([name, count]) => `
+    function renderAnalytics() {
+      const paid = orders.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled');
+      if (paid.length === 0) return;
+
+      // 1. Daily Revenue (Line)
+      const revData = {};
+      paid.forEach(o => {
+        const date = new Date(o.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        revData[date] = (revData[date] || 0) + (Number(o.total_price) || 0);
+      });
+      const revLabels = Object.keys(revData).sort((a,b) => new Date(a) - new Date(b));
+      const revValues = revLabels.map(l => revData[l]);
+
+      // 2. Orders per Class (Horizontal Bar)
+      const classData = {};
+      paid.forEach(o => {
+        const cls = o.student?.class || 'Other';
+        classData[cls] = (classData[cls] || 0) + 1;
+      });
+      const classLabels = Object.keys(classData).sort((a,b) => classData[b] - classData[a]).slice(0, 8);
+      const classValues = classLabels.map(l => classData[l]);
+
+      // 3. Shirt Size Distribution (Doughnut)
+      const sizeData = {};
+      paid.forEach(o => {
+        const size = o.shirt_size || 'M';
+        sizeData[size] = (sizeData[size] || 0) + 1;
+      });
+      const sizeOrder = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+      const sizeLabels = sizeOrder.filter(s => sizeData[s]);
+      const sizeValues = sizeLabels.map(l => sizeData[l]);
+
+      // 4. Color Popularity (Vertical Bar)
+      const colorData = {};
+      paid.forEach(o => {
+        const color = o.shirt_color || 'Other';
+        colorData[color] = (colorData[color] || 0) + 1;
+      });
+      const colorLabels = Object.keys(colorData).sort((a,b) => colorData[b] - colorData[a]);
+      const colorValues = colorLabels.map(l => colorData[l]);
+
+      // --- Chart.js Global Theme ---
+      const luxGold = '#b8933f';
+      const luxGoldLight = 'rgba(184, 147, 63, 0.2)';
+      const luxInk = '#0f1923';
+      
+      Chart.defaults.color = 'rgba(15, 25, 35, 0.4)';
+      Chart.defaults.font.family = "'Outfit', sans-serif";
+      Chart.defaults.font.size = 11;
+
+      // Clean up existing charts
+      Object.values(charts).forEach(c => c.destroy());
+
+      // REVENUE LINE
+      const ctxRev = document.getElementById('chartDailyRevenue');
+      if (ctxRev) {
+        charts.revenue = new Chart(ctxRev, {
+          type: 'line',
+          data: {
+            labels: revLabels,
+            datasets: [{
+              label: 'Revenue',
+              data: revValues,
+              borderColor: luxGold,
+              backgroundColor: luxGoldLight,
+              fill: true,
+              borderWidth: 2,
+              tension: 0.4,
+              pointStyle: 'circle',
+              pointRadius: 3,
+              pointBackgroundColor: luxGold
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } }
+        });
+      }
+
+      // CLASS BAR (Horizontal)
+      const ctxClass = document.getElementById('chartOrdersPerClass');
+      if (ctxClass) {
+        charts.class = new Chart(ctxClass, {
+          type: 'bar',
+          data: {
+            labels: classLabels,
+            datasets: [{
+              data: classValues,
+              backgroundColor: luxGold,
+              borderRadius: 4
+            }]
+          },
+          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: false } } } }
+        });
+      }
+
+      // SIZE DOUGHNUT
+      const ctxSize = document.getElementById('chartSizeDist');
+      if (ctxSize) {
+        charts.size = new Chart(ctxSize, {
+          type: 'doughnut',
+          data: {
+            labels: sizeLabels,
+            datasets: [{
+              data: sizeValues,
+              backgroundColor: [luxGold, luxInk, '#34495e', '#7f8c8d', '#95a5a6', '#bdc3c7'],
+              borderWidth: 0,
+              hoverOffset: 10
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 15 } } } }
+        });
+      }
+
+      // COLOR BAR (Vertical)
+      const ctxColor = document.getElementById('chartColorPop');
+      if (ctxColor) {
+        charts.color = new Chart(ctxColor, {
+          type: 'bar',
+          data: {
+            labels: colorLabels,
+            datasets: [{
+              data: colorValues,
+              backgroundColor: luxGold,
+              borderRadius: 4
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } }
+        });
+      }
+
+      // Legacy support for modal analytics if elements exist
+      const modalColors = document.getElementById('analyticsColors');
+      if (modalColors) {
+         // Keep old logic for the pop-up modal
+         const sortedColors = Object.entries(colorData).sort((a,b)=>b[1]-a[1]);
+         modalColors.innerHTML = sortedColors.map(([name, count]) => `
           <div class="d-flex justify-content-between mb-1">
             <span>${name}</span> <span>${count}</span>
           </div>
           <div class="progress mb-3" style="height:4px; border-radius:0;">
-            <div class="progress-bar bg-dark" style="width:${(count/all.length)*100}%"></div>
+            <div class="progress-bar bg-dark" style="width:${(count/paid.length)*100}%"></div>
           </div>
-        `).join('');
+         `).join('');
       }
 
-      const classes = {};
-      paid.forEach(o => {
-        const cls = o.student?.class || 'Other';
-        classes[cls] = (classes[cls] || 0) + (o.total_price || 0);
-      });
-      const sortedClasses = Object.entries(classes).sort((a,b)=>b[1]-a[1]);
-      const maxRev = sortedClasses.length ? sortedClasses[0][1] : 1;
-      const classEl = document.getElementById('analyticsClasses');
-      if(classEl) {
-        classEl.innerHTML = sortedClasses.slice(0, 5).map(([name, rev]) => `
+      const modalClasses = document.getElementById('analyticsClasses');
+      if (modalClasses) {
+        const sortedClasses = Object.entries(classData).sort((a,b)=>b[1]-a[1]);
+        const maxVal = sortedClasses[0]?.[1] || 1;
+        modalClasses.innerHTML = sortedClasses.slice(0, 5).map(([name, count]) => `
           <div class="d-flex justify-content-between mb-1">
-            <span>${name}</span> <span>GHS ${rev.toFixed(2)}</span>
+            <span>${name}</span> <span>${count} Orders</span>
           </div>
           <div class="progress mb-3" style="height:4px; border-radius:0;">
-            <div class="progress-bar" style="background:var(--lux-gold); width:${(rev/maxRev)*100}%"></div>
+            <div class="progress-bar" style="background:var(--lux-gold); width:${(count/maxVal)*100}%"></div>
           </div>
         `).join('');
       }
 
       const modalItems = document.getElementById('modalTotalItems');
-      if (modalItems) modalItems.textContent = all.length;
+      if (modalItems) modalItems.textContent = paid.length;
       
       const modalAvg = document.getElementById('modalAvgOrder');
       if (modalAvg) {
-        const totalPaidRev = paid.reduce((s,o)=>s+o.total_price,0);
+        const totalPaidRev = paid.reduce((s,o)=>s+(Number(o.total_price) || 0), 0);
         modalAvg.textContent = `GHS ${(totalPaidRev/paid.length || 0).toFixed(2)}`;
       }
 
       const modalCaps = document.getElementById('modalTotalCaps');
-      if (modalCaps) modalCaps.textContent = all.filter(o => o.cap_option).length;
+      if (modalCaps) modalCaps.textContent = paid.filter(o => o.cap_option).length;
     }
 
     function renderTable() {
@@ -1169,6 +1353,8 @@
       const results = filteredOrders.slice(start, end);
       
       const tbody = document.getElementById('ordersTable');
+      if (!tbody) return; // Safeguard if DOM isn't fully ready
+      
       tbody.innerHTML = results.map(acc => {
         const namePart = acc.student?.name || 'Unknown Student';
         const initials = namePart.split(' ').filter(n => n).map(n => n[0]).join('').toUpperCase().substring(0,2);
@@ -1241,8 +1427,8 @@
                           <div>
                              <span class="fw-bold">${item.shirt_color} (${item.shirt_size})</span>
                              <span class="opacity-50 ms-1 text-uppercase">${item.shirt_texture || 'Cotton'}</span>
-                             ${item.is_gift ? '<span class="stat-badge-lux ms-1" style="color:var(--lux-gold);">GIFT</span>' : ''}
-                             ${item.cap_option ? '<span class="stat-badge-lux ms-1" style="background:#e3f2fd; color:#1e88e5; border-color:#bbdefb;">+ CAP</span>' : ''}
+                             ${item.is_gift ? '<span class="stat-badge-lux ms-1 d-inline-flex align-items-center" style="color:var(--lux-gold);" title="Gift Order"><i class="ph-bold ph-gift" style="font-size:12px;"></i><span class="d-none d-md-inline ms-1">GIFT</span></span>' : ''}
+                             ${item.cap_option ? '<span class="stat-badge-lux ms-1 d-inline-flex align-items-center" style="background:#e3f2fd; color:#1e88e5; border-color:#bbdefb;" title="Includes Cap"><i class="ph-bold ph-baseball-cap" style="font-size:13px;"></i><span class="d-none d-md-inline ms-1">CAP</span></span>' : ''}
                              ${item.nickname_text ? `<div class="text-gold fw-bold mt-1">NICKNAME: ${item.nickname_text}</div>` : ''}
                           </div>
                           <div class="fw-bold">GHS ${Number(item.total_price || 0).toFixed(2)}</div>
@@ -1264,6 +1450,7 @@
                          <span>GHS ${txDisplayTotal.toFixed(2)}</span>
                        </div>
                        <div class="d-flex gap-2 mt-2">
+                          <button onclick="event.stopPropagation(); window.openEditOrderModal('${tx.id}')" class="btn-action-lux" style="background:#e8f4fd; color:#0288d1; border-color:#b3e5fc;" title="Edit Order"><i class="ph ph-pencil-simple"></i></button>
                           <button onclick="event.stopPropagation(); handlePrintReceipt('${tx.id}')" class="btn-action-lux" style="background:#f3f0ff; color:#673ab7; border-color:#d1c4e9;" title="Print Receipt"><i class="ph ph-printer"></i></button>
                           ${tx.status === 'paid' ? `<button onclick="event.stopPropagation(); handleFulfill('${tx.id}')" class="btn-action-lux btn-fulfill-lux"><i class="ph ph-package"></i></button>` : ''}
                           ${tx.status === 'pending' ? `
@@ -1303,6 +1490,44 @@
       }
     }
 
+    // Active Filters Pill Controller
+    window.clearFilter = function(filterType) {
+      if (filterType === 'search') {
+        document.getElementById('orderSearch').value = '';
+      } else if (filterType === 'status') {
+        currentStatusFilter = 'all';
+        document.getElementById('statusFilter').value = 'all';
+      } else if (filterType === 'class') {
+        currentClassFilter = 'all';
+        document.getElementById('classFilter').value = 'all';
+      } else if (filterType === 'cap') {
+        currentCapFilter = 'all';
+        document.getElementById('capFilter').value = 'all';
+      }
+      applyFilters();
+    };
+
+    function updateActiveFilterBadges(query) {
+      const container = document.getElementById('activeFiltersContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      let badges = '';
+      if (query) {
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold);">SEARCH: ${query} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('search')"></i></span>`;
+      }
+      if (currentStatusFilter && currentStatusFilter !== 'all') {
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold); text-transform: uppercase;">STATUS: ${currentStatusFilter} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('status')"></i></span>`;
+      }
+      if (currentClassFilter && currentClassFilter !== 'all') {
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold);">CLASS: ${currentClassFilter} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('class')"></i></span>`;
+      }
+      if (currentCapFilter && currentCapFilter !== 'all') {
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold); text-transform: uppercase;">CAP: ${currentCapFilter === 'true' ? 'WITH CAP' : 'NO CAP'} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('cap')"></i></span>`;
+      }
+      container.innerHTML = badges;
+    }
+
     // New event listeners for filtering
     document.getElementById('statusFilter').addEventListener('change', e => {
       currentStatusFilter = e.target.value;
@@ -1313,6 +1538,14 @@
       currentClassFilter = e.target.value;
       applyFilters();
     });
+
+    const capFilterEl = document.getElementById('capFilter');
+    if (capFilterEl) {
+      capFilterEl.addEventListener('change', e => {
+        currentCapFilter = e.target.value;
+        applyFilters();
+      });
+    }
 
     document.getElementById('orderSearch').addEventListener('input', e => {
       applyFilters();
@@ -1445,17 +1678,27 @@
         
         try {
           const res = await fetch(`/api/verify?reference=${encodeURIComponent(refId)}`);
-          const result = await res.json();
+          
+          let result;
+          try {
+            result = await res.json();
+          } catch(e) {
+            throw new Error(`API Offline. Are you running strictly locally without Vercel?`);
+          }
+
           const statusEl = document.getElementById(`audit-${refId}`);
           
           if (result && result.success && result.status === 'success') {
-            statusEl.innerHTML = '<span style="color: #2e7d32;">✓ PAID</span>';
+            statusEl.innerHTML = '<span style="color: #2e7d32; font-weight: bold;">✓ PAID</span>';
             successCount++;
+          } else if (result && result.message && result.message.toLowerCase().includes('configuration error')) {
+            statusEl.innerHTML = `<span style="color: #d84315; font-weight: bold; cursor: help;" title="Vercel Environment Variables missing.">ENV ERROR</span>`;
           } else {
-            statusEl.innerHTML = '<span style="color: #c62828;">UNPAID</span>';
+            statusEl.innerHTML = '<span style="color: #c62828; font-weight: bold;">UNPAID</span>';
           }
         } catch (err) {
-          document.getElementById(`audit-${refId}`).innerHTML = '<span class="text-danger">ERROR</span>';
+          console.error(`Audit failed for ${refId}:`, err);
+          document.getElementById(`audit-${refId}`).innerHTML = `<span class="text-danger fw-bold" style="font-size: 10px; cursor: help;" title="${err.message}">API ERROR</span>`;
         }
         // Small delay to prevent rate limit friction
         await new Promise(r => setTimeout(r, 400));
@@ -1511,100 +1754,164 @@
     let currentDocName = "";
 
     function handlePrintReceipt(txId) {
-      const order = orders.find(o => o.transaction_id === txId);
-      if (!order) return showLuxNotification("SEARCH ERROR", "Order not found.", "error");
-      
+      // ✅ FIX: Get ALL orders under this transaction, not just the first
+      const txOrders = orders.filter(o => o.transaction_id === txId);
+      if (!txOrders.length) return showLuxNotification("SEARCH ERROR", "Order not found.", "error");
+
+      // Group by student so gifts get their own separate receipt page
+      const studentGroups = {};
+      txOrders.forEach(o => {
+        const sName = o.student?.name || 'Unknown Student';
+        if (!studentGroups[sName]) {
+          studentGroups[sName] = { student: o.student, items: [] };
+        }
+        studentGroups[sName].items.push(o);
+      });
+
       const jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
       if (!jsPDF) return showLuxNotification("SYSTEM ERROR", "PDF Engine failed to initialize. Please refresh the page.", "error");
-      
-      const doc = new jsPDF('p', 'mm', [105, 148]); // A6 size for a "card" look
-      const W = doc.internal.pageSize.getWidth();
-      const H = doc.internal.pageSize.getHeight();
 
-      // Card Background (Very subtle border)
-      doc.setDrawColor(230, 230, 230);
-      doc.rect(5, 5, W - 10, H - 10);
+      let doc = null;
 
-      // 1. Success Circle & Check
-      doc.setDrawColor(184, 147, 63); // Gold
-      doc.setLineWidth(0.5);
-      doc.circle(W/2, 25, 10);
-      
-      doc.setLineWidth(1);
-      doc.line(W/2 - 4.5, 25, W/2 - 1.5, 28);
-      doc.line(W/2 - 1.5, 28, W/2 + 4.5, 22);
+      Object.values(studentGroups).forEach((group, groupIndex) => {
+        const groupOrders = group.items;
+        const studentInfo = group.student;
+        const firstOrder = groupOrders[0];
 
-      // 2. Title
-      doc.setFont("times", "bold");
-      doc.setFontSize(22);
-      doc.setTextColor(15, 25, 35);
-      doc.text("Payment Successful", W/2, 45, { align: 'center' });
+        // Dynamic height calculation based on number of items text lines for THIS student
+        const estimatedHeight = 130 + (groupOrders.length * 20);
+        const pageHeight = Math.max(148, estimatedHeight);
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text("Official SRC Pulse Confirmation", W/2, 52, { align: 'center' });
+        if (groupIndex === 0) {
+          doc = new jsPDF('p', 'mm', [105, pageHeight]); // Custom A6 width, dynamic height
+        } else {
+          doc.addPage([105, pageHeight], 'p');
+        }
 
-      // 3. Detail Section
-      const startY = 65;
-      const rowH = 8;
-      const detailX = 15;
-      const valueX = W - 15;
+        const W = doc.internal.pageSize.getWidth();
+        const H = doc.internal.pageSize.getHeight();
 
-      doc.setDrawColor(240, 240, 240);
-      doc.line(detailX, startY - 5, valueX, startY - 5);
+        doc.setDrawColor(230, 230, 230);
+        doc.rect(5, 5, W - 10, H - 10);
 
-      function drawRow(label, value, y, color = [15, 25, 35]) {
+        // 1. Success Circle & Check
+        doc.setDrawColor(184, 147, 63);
+        doc.setLineWidth(0.5);
+        doc.circle(W/2, 25, 10);
+        doc.setLineWidth(1);
+        doc.line(W/2 - 4.5, 25, W/2 - 1.5, 28);
+        doc.line(W/2 - 1.5, 28, W/2 + 4.5, 22);
+
+        // 2. Title
+        doc.setFont("times", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(15, 25, 35);
+        doc.text("Payment Successful", W/2, 45, { align: 'center' });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Official SRC Pulse Confirmation", W/2, 52, { align: 'center' });
+
+        // 3. Detail Rows
+        const startY = 65;
+        const rowH = 8;
+        const detailX = 15;
+        const valueX = W - 15;
+
+        doc.setDrawColor(240, 240, 240);
+        doc.line(detailX, startY - 5, valueX, startY - 5);
+
+        function drawRow(label, value, y, color = [15, 25, 35]) {
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(150, 150, 150);
+          doc.text(label.toUpperCase(), detailX, y);
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(color[0], color[1], color[2]);
+          doc.text(value, valueX, y, { align: 'right' });
+        }
+
+        drawRow("Student Name", studentInfo?.name || '---', startY);
+        drawRow("Reference ID", firstOrder.transaction_id || '---', startY + rowH, [184, 147, 63]);
+        drawRow("Status", (firstOrder.payment_status || 'PENDING').toUpperCase(), startY + rowH * 2, firstOrder.payment_status === 'pending' ? [239, 108, 0] : [39, 174, 96]);
+        drawRow("Date", new Date(firstOrder.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), startY + rowH * 3);
+
+        doc.line(detailX, startY + rowH * 3 + 5, valueX, startY + rowH * 3 + 5);
+
+        // 4. ✅ FIX: Loop through ALL items for THIS student
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(150, 150, 150);
+        doc.text("ORDER SUMMARY", detailX, startY + rowH * 4 + 5);
+
+        let itemY = startY + rowH * 4 + 13;
+        let grandTotal = 0;
+
+        groupOrders.forEach((item, index) => {
+          const label = `${index + 1}. ${item.shirt_color} Shirt (${item.shirt_size})${item.cap_option ? ' + Cap' : ''}`;
+          
+          // Remove emoji to prevent garbled PDF characters
+          const subLabel = `${item.shirt_texture || ''}${item.nickname_text ? ' · Nickname: "' + item.nickname_text + '"' : ''}${item.is_gift ? ' · GIFT' : ''}`;
+          const price = `GHS ${Number(item.total_price).toFixed(2)}`;
+          grandTotal += Number(item.total_price) || 0;
+
+          doc.setFontSize(10);
+          doc.setFont("times", "bolditalic");
+          doc.setTextColor(15, 25, 35);
+          
+          // Wrap label if too long
+          const labelLines = doc.splitTextToSize(label, W - detailX - 25);
+          doc.text(labelLines, detailX, itemY);
+
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(184, 147, 63);
+          doc.text(price, valueX, itemY, { align: 'right' });
+
+          itemY += (labelLines.length * 4) + 1;
+
+          if (subLabel.trim()) {
+            doc.setFontSize(7.5);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(150, 150, 150);
+            
+            // Wrap sub-label if too long
+            const subLabelLines = doc.splitTextToSize(subLabel, W - detailX - 5);
+            doc.text(subLabelLines, detailX, itemY);
+            itemY += (subLabelLines.length * 3.5) + 4;
+          } else {
+            itemY += 4;
+          }
+        });
+
+        // 5. Grand Total
+        itemY += 2;
+        doc.setDrawColor(220, 220, 220);
+        doc.line(detailX, itemY, valueX, itemY);
+        
+        itemY += 8;
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(184, 147, 63);
+        doc.text(`GHS ${grandTotal.toFixed(2)}`, valueX, itemY, { align: 'right' });
+        
         doc.setFontSize(8);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(150, 150, 150);
-        doc.text(label.toUpperCase(), detailX, y);
+        doc.text("TOTAL", detailX, itemY);
 
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(color[0], color[1], color[2]);
-        doc.text(value, valueX, y, { align: 'right' });
-      }
+        // 6. Footer (Pinned to bottom of the document)
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(180, 180, 180);
+        doc.text("Thank you for supporting SRC Week 2026.", W/2, H - 15, { align: 'center' });
+        doc.text("This receipt is official proof of payment.", W/2, H - 11, { align: 'center' });
+      });
 
-      drawRow("Student Name", order.student?.name || '---', startY);
-      drawRow("Reference ID", order.transaction_id || '---', startY + rowH, [184, 147, 63]);
-      drawRow("Status", (order.payment_status || 'PENDING').toUpperCase(), startY + rowH * 2, order.payment_status === 'pending' ? [239, 108, 0] : [39, 174, 96]);
-      drawRow("Date", new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), startY + rowH * 3);
-
-      doc.line(detailX, startY + rowH * 3 + 5, valueX, startY + rowH * 3 + 5);
-
-      // 4. Order Summary
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(150, 150, 150);
-      doc.text("ORDER SUMMARY", detailX, startY + rowH * 4 + 5);
-
-      doc.setFontSize(10);
-      doc.setFont("times", "bolditalic");
-      doc.setTextColor(15, 25, 35);
-      const itemsText = `${order.shirt_color} Shirt (${order.shirt_size})${order.cap_option ? ' + Cap' : ''}`;
-      doc.text(itemsText, detailX, startY + rowH * 4 + 12);
-      
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.text(`${order.shirt_texture} · ${order.nickname_text ? 'Nickname: "' + order.nickname_text + '"' : 'No Nickname'}`, detailX, startY + rowH * 4 + 17);
-
-      // 5. Total
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(184, 147, 63);
-      doc.text(`GHS ${Number(order.total_price).toFixed(2)}`, valueX, startY + rowH * 4 + 15, { align: 'right' });
-
-      // 6. Footer
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "italic");
-      doc.setTextColor(180, 180, 180);
-      doc.text("Thank you for supporting SRC Week 2026.", W/2, H - 15, { align: 'center' });
-      doc.text("This receipt is official proof of payment.", W/2, H - 11, { align: 'center' });
-
-      // OPEN PREVIEW
       currentDoc = doc;
-      currentDocName = `Receipt-${order.transaction_id}.pdf`;
+      currentDocName = `Receipt-${txId}.pdf`;
       const pdfUrl = doc.output('datauristring');
       document.getElementById('receiptFrame').src = pdfUrl;
       document.getElementById('receiptPreviewModal').classList.add('active');
@@ -1950,7 +2257,7 @@
 
         showLuxNotification("SUCCESS", "Manual order recorded successfully!", "success");
         closeManualOrderModal();
-        loadDashboard(); // Refresh
+        loadDashboard();
       } catch (err) {
         showLuxNotification("ERROR", "Failed to save record: " + err.message, "error");
       } finally {
@@ -1959,8 +2266,185 @@
       }
     };
 
+    // --- EDIT ORDER LOGIC ---
+    window.openEditOrderModal = function(txId) {
+      const txItems = orders.filter(o => o.transaction_id === txId);
+      if (!txItems.length) return showLuxNotification("ERROR", "Order items not found.", "error");
+
+      document.getElementById('editTxIdDisplay').textContent = "REF: #" + txId;
+      const list = document.getElementById('editItemsList');
+      list.innerHTML = "";
+
+      txItems.forEach((item, index) => {
+        const itemRow = document.createElement('div');
+        itemRow.className = "mb-4 pb-4 border-bottom";
+        itemRow.dataset.orderId = item.order_id;
+        
+        itemRow.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center mb-3">
+             <h6 class="small text-uppercase tracking-widest opacity-50 mb-0">Item ${index + 1}: ${item.shirt_color} (${item.shirt_size})</h6>
+             <div class="small fw-bold text-lux">SUBTOTAL: GHS <span class="item-subtotal">${Number(item.total_price).toFixed(2)}</span></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="lux-label">Color</label>
+              <input type="text" class="lux-input w-100 edit-color" value="${item.shirt_color}" oninput="window.updateEditItemSubtotal(${index})">
+            </div>
+            <div class="col-md-3">
+              <label class="lux-label">Size</label>
+              <select class="lux-input w-100 edit-size" onchange="window.updateEditItemSubtotal(${index})">
+                ${['S','M','L', 'XL', '2XL', '3XL'].map(s => `<option value="${s}" ${item.shirt_size === s ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="lux-label">Fabric</label>
+               <select class="lux-input w-100 edit-texture">
+                <option value="Cotton" ${item.shirt_texture === 'Cotton' ? 'selected' : ''}>Cotton</option>
+                <option value="Jersey" ${item.shirt_texture === 'Jersey' ? 'selected' : ''}>Jersey</option>
+              </select>
+            </div>
+             <div class="col-md-3">
+              <label class="lux-label">Status</label>
+               <select class="lux-input w-100 edit-status">
+                <option value="pending" ${item.payment_status === 'pending' ? 'selected' : ''}>PENDING</option>
+                <option value="paid" ${item.payment_status === 'paid' ? 'selected' : ''}>PAID</option>
+                <option value="fulfilled" ${item.payment_status === 'fulfilled' ? 'selected' : ''}>FULFILLED</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+               <div class="d-flex align-items-center gap-2 mt-2">
+                  <input type="checkbox" class="edit-cap" id="cap_${index}" ${item.cap_option ? 'checked' : ''} onchange="window.updateEditItemSubtotal(${index})">
+                  <label for="cap_${index}" class="small mb-0">Include Cap (+GHS 25)</label>
+               </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-center gap-2 mt-2">
+                  <input type="checkbox" class="edit-has-nick" id="nick_${index}" ${item.nickname_option ? 'checked' : ''} onchange="window.updateEditItemSubtotal(${index})">
+                  <label for="nick_${index}" class="small mb-0">Nickname (+GHS 5)</label>
+               </div>
+            </div>
+             <div class="col-md-4">
+                <div class="d-flex align-items-center gap-2 mt-2">
+                  <input type="checkbox" class="edit-gift" id="gift_${index}" ${item.is_gift ? 'checked' : ''} onchange="window.updateEditItemSubtotal(${index})">
+                  <label for="gift_${index}" class="small mb-0">Is Gift?</label>
+               </div>
+            </div>
+            <div class="col-12 mt-2 edit-nick-area" style="display: ${item.nickname_option ? 'block' : 'none'};">
+              <label class="lux-label">Nickname Text</label>
+              <input type="text" class="lux-input w-100 edit-nick-text" value="${item.nickname_text || ''}" placeholder="ENTER NICKNAME">
+            </div>
+          </div>
+        `;
+        list.appendChild(itemRow);
+      });
+
+      document.getElementById('editOrderModal').classList.add('active');
+    };
+
+    window.updateEditItemSubtotal = function(index) {
+      const rows = document.querySelectorAll('#editItemsList > div');
+      const row = rows[index];
+      if (!row) return;
+
+      const hasCap = row.querySelector('.edit-cap').checked;
+      const hasNick = row.querySelector('.edit-has-nick').checked;
+      const nickArea = row.querySelector('.edit-nick-area');
+      const subtotalEl = row.querySelector('.item-subtotal');
+
+      nickArea.style.display = hasNick ? 'block' : 'none';
+
+      let total = 45; // Shirt
+      if (hasCap) total += 25;
+      if (hasNick) total += 5;
+
+      subtotalEl.textContent = total.toFixed(2);
+    };
+
+    window.closeEditOrderModal = function() {
+      document.getElementById('editOrderModal').classList.remove('active');
+    };
+
+    window.handleEditOrderSubmit = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('editSaveBtn');
+      const originalText = btn.textContent;
+      const db = getSupabase();
+      
+      btn.disabled = true;
+      btn.textContent = "UPDATING REGISTRY...";
+
+      try {
+        const rows = document.querySelectorAll('#editItemsList > div');
+        const updates = [];
+
+        for (const row of rows) {
+          const orderId = row.dataset.orderId;
+          const color = row.querySelector('.edit-color').value;
+          const size = row.querySelector('.edit-size').value;
+          const texture = row.querySelector('.edit-texture').value;
+          const status = row.querySelector('.edit-status').value;
+          const cap = row.querySelector('.edit-cap').checked;
+          const hasNick = row.querySelector('.edit-has-nick').checked;
+          const nickText = row.querySelector('.edit-nick-text').value;
+          const gift = row.querySelector('.edit-gift').checked;
+          const total = parseFloat(row.querySelector('.item-subtotal').textContent);
+
+          if (hasNick && !nickText.trim()) throw new Error("Nickname cannot be empty if enabled.");
+
+          const payload = {
+            shirt_color: color,
+            shirt_size: size,
+            shirt_texture: texture,
+            payment_status: status,
+            cap_option: cap,
+            nickname_option: hasNick,
+            nickname_text: hasNick ? nickText.toUpperCase() : null,
+            is_gift: gift,
+            total_price: total
+          };
+
+          const { error } = await db.from('orders').update(payload).eq('order_id', orderId);
+          if (error) throw error;
+        }
+
+        showLuxNotification("SUCCESS", "Orders updated successfully.", "success");
+        window.closeEditOrderModal();
+        loadDashboard();
+      } catch (err) {
+        showLuxNotification("UPDATE FAILED", err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    };
+
     loadDashboard();
   </script>
+
+  <!-- EDIT ORDER MODAL -->
+  <div id="editOrderModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 800px; width: 95%;">
+      <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+          <h3 class="serif mb-1" style="font-size: 28px;">Edit Order Details</h3>
+          <p id="editTxIdDisplay" class="small opacity-50 font-monospace" style="letter-spacing: 0.1em; color: var(--lux-gold);">REF: #000000</p>
+        </div>
+        <i class="ph ph-x modal-close-lux" onclick="window.closeEditOrderModal()"></i>
+      </div>
+
+      <form id="editOrderForm" onsubmit="window.handleEditOrderSubmit(event)">
+        <div id="editItemsList" style="max-height: 60vh; overflow-y: auto; padding-right: 12px; margin-bottom: 24px;">
+          <!-- Dynamic Item Rows -->
+        </div>
+
+        <div class="d-flex gap-3 justify-content-end pt-4 border-top">
+          <button type="button" class="btn-lux btn-lux-outline" style="min-width: 120px;" onclick="window.closeEditOrderModal()">DISCARD</button>
+          <button type="submit" id="editSaveBtn" class="btn-lux" style="background: var(--lux-gold); border: none; color: #fff; min-width: 180px;">SAVE CHANGES</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- INSIGHTS MODAL -->
   <div class="modal fade" id="insightsModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
