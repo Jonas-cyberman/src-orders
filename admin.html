@@ -354,16 +354,78 @@
 
     /* Sales History Styling */
     .status-select-lux {
-      border: none;
-      background: var(--lux-bg);
-      padding: 8px 16px;
-      font-size: 12px;
+      border: 1px solid var(--lux-border);
+      background: #fff;
+      padding: 0 32px 0 14px;
+      height: 38px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
       font-family: var(--font-sans);
+      color: var(--lux-ink);
       cursor: pointer;
       outline: none;
+      border-radius: 4px;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230f0e0d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: all 0.2s ease;
+    }
+    .status-select-lux:hover {
+      border-color: var(--lux-gold);
+      box-shadow: 0 2px 8px rgba(184, 147, 63, 0.1);
+    }
+    .status-select-lux:focus {
+      border-color: var(--lux-gold);
+      box-shadow: 0 0 0 3px rgba(184, 147, 63, 0.12);
+    }
+
+    /* Filter bar responsive layout */
+    .filter-controls-row {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .filter-search-pill {
+      flex: 1; min-width: 200px; height: 38px; background: #fff;
+      border: 1px solid var(--lux-border); border-radius: 24px;
+      padding: 0 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .filter-actions-row {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      border-top: 1px solid var(--lux-border); padding-top: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .filter-controls-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .filter-search-pill {
+        grid-column: 1 / -1;
+        min-width: unset;
+        width: 100%;
+      }
+      .status-select-lux {
+        width: 100% !important;
+      }
+      .filter-actions-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+      }
+      .filter-actions-row .btn-action-lux {
+        width: 100% !important;
+        padding: 0 8px !important;
+        font-size: 9px !important;
+      }
+      .filter-actions-row .filter-tx-count {
+        grid-column: 1 / -1;
+        text-align: center;
+        margin: 0 !important;
+      }
     }
     
     .customer-avatar-lux {
@@ -384,6 +446,108 @@
     .status-paid-alt { color: #2e7d32; }
     .status-pending-alt { color: #ef6c00; }
     .status-fulfilled-alt { color: var(--lux-gold); }
+
+    /* ── Batch Processing System ────────────────────── */
+    .batch-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-radius: 20px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .batch-action-bar {
+      position: fixed;
+      bottom: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 25, 35, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(184, 147, 63, 0.3);
+      border-radius: 16px;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 9000;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      transition: bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .batch-action-bar.visible { bottom: 32px; }
+    .batch-action-bar .bar-count {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .batch-action-bar .bar-count span {
+      color: var(--lux-gold);
+      font-family: var(--font-serif);
+      font-size: 18px;
+      margin-right: 4px;
+    }
+    .batch-action-bar .bar-input {
+      height: 40px;
+      width: 80px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(184, 147, 63, 0.4);
+      border-radius: 8px;
+      color: #fff;
+      text-align: center;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .batch-action-bar .bar-input:focus {
+      outline: none;
+      border-color: var(--lux-gold);
+      box-shadow: 0 0 12px rgba(184, 147, 63, 0.2);
+    }
+    .batch-action-bar .bar-btn {
+      height: 40px;
+      padding: 0 20px;
+      background: var(--lux-gold);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+    .batch-action-bar .bar-btn:hover {
+      background: #d4a843;
+      transform: translateY(-1px);
+    }
+    .batch-action-bar .bar-btn-cancel {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .batch-action-bar .bar-btn-cancel:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    @media (max-width: 768px) {
+      .batch-action-bar {
+        width: calc(100% - 32px);
+        flex-wrap: wrap;
+        padding: 14px 20px;
+        gap: 10px;
+        border-radius: 12px;
+      }
+      .batch-action-bar .bar-input { width: 60px; }
+    }
   </style>
 </head>
 <body>
@@ -507,19 +671,19 @@
 
     <!-- DATA TABLE -->
     <div class="table-container-lux">
-      <div class="search-bar-lux d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center flex-grow-1">
-          <i class="ph ph-magnifying-glass opacity-50"></i>
-          <input type="text" id="orderSearch" class="search-input-lux" placeholder="Audit by name, phone or ID...">
-        </div>
-        <div class="d-flex gap-3 align-items-center">
-          <div class="d-none d-md-block text-uppercase small opacity-50 tracking-widest" style="font-size: 10px;">Filter:</div>
+      <div class="search-bar-lux" style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Search + Filters Row -->
+        <div class="filter-controls-row">
+          <div class="filter-search-pill">
+            <i class="ph ph-magnifying-glass opacity-50" style="font-size: 15px; flex-shrink: 0;"></i>
+            <input type="text" id="orderSearch" class="search-input-lux" placeholder="Search by name, phone or ID..." style="flex: 1; border: none; background: transparent; outline: none; font-size: 12px; font-family: var(--font-sans); height: 100%; letter-spacing: 0.02em;">
+          </div>
           <select id="statusFilter" class="status-select-lux">
             <option value="paid" selected>Paid Only</option>
             <option value="pending">Pending</option>
             <option value="all">All Status</option>
           </select>
-          <select id="classFilter" class="status-select-lux" style="min-width: 140px;">
+          <select id="classFilter" class="status-select-lux">
             <option value="all">All Classes</option>
           </select>
           <select id="capFilter" class="status-select-lux">
@@ -527,13 +691,24 @@
             <option value="true">With Cap</option>
             <option value="false">Without Cap</option>
           </select>
-          <button id="bulkAuditBtn" class="btn-action-lux" style="background: var(--lux-gold); color: #fff; height: 38px; padding: 0 15px; font-size: 10px;">
-            <i class="ph ph-shield-check me-1"></i> BULK PAYMENT AUDIT
+          <select id="batchFilter" class="status-select-lux">
+            <option value="all" selected>All Batches</option>
+            <option value="unassigned">Unassigned</option>
+          </select>
+        </div>
+
+        <!-- Actions Row -->
+        <div class="filter-actions-row">
+          <button id="printBatchBtn" class="btn-action-lux d-flex align-items-center justify-content-center gap-2" style="background: #1a3a5c; color: #fff; height: 38px; padding: 0 18px; font-size: 10px; letter-spacing: 0.08em; border-radius: 4px; white-space: nowrap;" onclick="openBatchPrintModal()">
+            <i class="ph-bold ph-printer" style="font-size: 14px;"></i> PRINT
           </button>
-          <button id="addManualBtn" class="btn-action-lux" style="background: var(--lux-ink); color: #fff; height: 38px; padding: 0 15px; font-size: 10px;" onclick="openManualOrderModal()">
-            <i class="ph ph-plus-circle me-1"></i> ADD MANUAL ORDER
+          <button id="bulkAuditBtn" class="btn-action-lux d-flex align-items-center justify-content-center gap-2" style="background: var(--lux-gold); color: #fff; height: 38px; padding: 0 18px; font-size: 10px; letter-spacing: 0.08em; border-radius: 4px; white-space: nowrap;">
+            <i class="ph-bold ph-shield-check" style="font-size: 14px;"></i> AUDIT
           </button>
-          <div class="small opacity-50 text-uppercase tracking-widest d-none d-lg-block" style="font-size: 10px;">
+          <button id="addManualBtn" class="btn-action-lux d-flex align-items-center justify-content-center gap-2" style="background: var(--lux-ink); color: #fff; height: 38px; padding: 0 18px; font-size: 10px; letter-spacing: 0.08em; border-radius: 4px; white-space: nowrap;" onclick="openManualOrderModal()">
+            <i class="ph-bold ph-plus-circle" style="font-size: 14px;"></i> ADD
+          </button>
+          <div class="ms-auto small opacity-50 text-uppercase tracking-widest filter-tx-count" style="font-size: 10px;">
             Transactions: <span id="transactionCount" class="fw-bold text-dark">0</span>
           </div>
         </div>
@@ -545,6 +720,7 @@
       <div class="table-responsive">
         <table class="table-lux">
           <thead>
+              <th style="width: 40px; border-bottom: none; text-align: center;"><input type="checkbox" id="selectAllOrders" onclick="toggleSelectAll()" style="accent-color: var(--lux-gold); width: 16px; height: 16px; cursor: pointer;" title="Select All"></th>
               <th style="width: 40px; border-bottom: none;"></th>
               <th>Student Account</th>
               <th>Programme</th>
@@ -570,6 +746,18 @@
           <button id="nextPage" class="nav-link-lux" style="background:transparent; border:none; padding:0;">Next</button>
         </div>
       </div>
+    </div>
+
+    <!-- BATCH ACTION BAR -->
+    <div id="batchActionBar" class="batch-action-bar">
+      <div class="bar-count"><span id="selectedCount">0</span> orders selected</div>
+      <input type="number" id="batchNumberInput" class="bar-input" placeholder="#" min="1" max="99">
+      <button class="bar-btn" onclick="handleBatchAssign()">
+        <i class="ph ph-stack me-1"></i> ASSIGN TO BATCH
+      </button>
+      <button class="bar-btn bar-btn-cancel" onclick="clearAllSelections()">
+        <i class="ph ph-x"></i>
+      </button>
     </div>
 
   <footer class="footer-lux" style="background: var(--lux-ink); color: var(--lux-white); padding: 80px 0; text-align: center; margin-top: 80px;">
@@ -622,6 +810,33 @@
       </div>
 
       <button id="closeBulkAudit" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff; padding: 16px; font-size: 11px; letter-spacing: 0.15em;">CLOSE REPORT</button>
+    </div>
+  </div>
+
+  <!-- BATCH PRINT MODAL -->
+  <div id="batchPrintModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 420px;">
+      <i class="ph ph-x modal-close-lux" onclick="closeBatchPrintModal()"></i>
+      <h3 class="serif mb-2" style="font-size: 28px;">Print Production Sheet</h3>
+      <p class="small opacity-50 mb-4">Select a batch to generate a PDF production sheet for the printing team.</p>
+      <div class="mb-4">
+        <label class="lux-label">Batch Number</label>
+        <select id="printBatchSelect" class="lux-input w-100" onchange="updateBatchPrintSummary()">
+          <option value="" disabled selected>Select a batch...</option>
+        </select>
+      </div>
+      <div id="batchPrintSummary" class="mb-4 p-3 d-none" style="background: var(--lux-bg); border-radius: 8px;">
+        <div class="d-flex justify-content-between small">
+          <span class="opacity-50">Total Items</span>
+          <span id="printBatchItemCount" class="fw-bold">0</span>
+        </div>
+      </div>
+      <div class="d-flex gap-3">
+        <button class="btn-lux w-100" style="background: var(--lux-gold); color: #fff; border: none;" onclick="generateBatchPdf()">
+          <i class="ph ph-file-pdf me-1"></i> GENERATE PDF
+        </button>
+        <button class="btn-lux w-100 btn-outline-lux" onclick="closeBatchPrintModal()">CANCEL</button>
+      </div>
     </div>
   </div>
 
@@ -987,6 +1202,8 @@
     let currentClassFilter = 'all';
     let currentCapFilter = 'all';
     let charts = {}; // Global chart instances
+    let currentBatchFilter = 'all';
+    let selectedOrderIds = new Set();
 
     async function loadDashboard() {
       try {
@@ -996,6 +1213,7 @@
         applyFilters(); 
         renderStats();
         renderAnalytics();
+        updateBatchFilterOptions(orders);
       } catch (err) {
         console.error("Dashboard Sync Failed:", err);
         alert("Failed to synchronize with registry: " + (err.message || "Unknown error"));
@@ -1068,7 +1286,15 @@
           (currentCapFilter === 'true' && o.cap_option === true) || 
           (currentCapFilter === 'false' && o.cap_option === false);
 
-        return matchesStatus && matchesSearch && matchesClass && matchesCap;
+        // Batch Filter
+        let matchesBatch = true;
+        if (currentBatchFilter === 'unassigned') {
+          matchesBatch = !o.batch_number;
+        } else if (currentBatchFilter !== 'all') {
+          matchesBatch = o.batch_number === parseInt(currentBatchFilter);
+        }
+
+        return matchesStatus && matchesSearch && matchesClass && matchesCap && matchesBatch;
       });
 
       // 2. Group into Accounts
@@ -1080,6 +1306,8 @@
       if (countEl) countEl.textContent = `${countTotal} Accounts (${countItems} Items)`;
       
       currentPage = 1;
+      selectedOrderIds.clear();
+      updateBatchActionBar();
       renderTable();
     }
 
@@ -1364,9 +1592,31 @@
         });
 
         const txList = Object.values(acc.transactions).sort((a,b) => new Date(b.date) - new Date(a.date));
+        const allOrderIds = txList.flatMap(tx => tx.items.map(i => i.order_id));
+        const isChecked = allOrderIds.length > 0 && allOrderIds.every(id => selectedOrderIds.has(id));
+
+        // Compute account-level batch status
+        const allItems = txList.flatMap(tx => tx.items);
+        const batchNums = [...new Set(allItems.map(i => i.batch_number))];
+        let accountBatchHtml = '';
+        if (batchNums.length === 1 && batchNums[0] != null) {
+          accountBatchHtml = getBatchBadgeHtml(batchNums[0]);
+        } else if (batchNums.every(b => b == null)) {
+          accountBatchHtml = getBatchBadgeHtml(null);
+        } else {
+          // Mixed: some assigned, some not — or multiple batches
+          const assigned = batchNums.filter(b => b != null);
+          accountBatchHtml = assigned.map(b => getBatchBadgeHtml(b)).join(' ');
+          if (batchNums.includes(null) || batchNums.includes(undefined)) {
+            accountBatchHtml += ' ' + getBatchBadgeHtml(null);
+          }
+        }
 
         return `
         <tr class="account-row-lux" onclick="toggleAccountRow(this)">
+          <td data-label="Select" style="text-align: center; width: 40px;" onclick="event.stopPropagation()">
+            <input type="checkbox" class="order-select-cb" data-order-ids="${allOrderIds.join(',')}" onchange="toggleAccountSelection(this)" style="accent-color: var(--lux-gold); width: 16px; height: 16px; cursor: pointer;" ${isChecked ? 'checked' : ''}>
+          </td>
           <td data-label="Expand" style="text-align: center;"><i class="ph-bold ph-caret-right expand-icon-lux"></i></td>
           <td data-label="Student Account">
             <div class="d-flex align-items-center">
@@ -1379,7 +1629,12 @@
           </td>
           <td data-label="Programme" class="small opacity-50">${acc.student?.programme || '---'}</td>
           <td data-label="Hostel" class="small opacity-50">${acc.student?.hostel || '---'}</td>
-          <td data-label="Orders"><span class="stat-badge-lux">${txList.length} ORDERS</span></td>
+          <td data-label="Orders">
+            <div class="d-flex flex-column gap-1">
+              <span class="stat-badge-lux">${txList.length} ORDERS</span>
+              <div class="d-flex gap-1 flex-wrap">${accountBatchHtml}</div>
+            </div>
+          </td>
           <td data-label="Total Spend">
             <div class="fw-bold text-dark">GHS ${acc.totalSpend.toFixed(2)}</div>
             <div class="small opacity-50" style="font-size: 9px; text-transform:uppercase;">Items: GHS ${acc.subtotal.toFixed(2)}</div>
@@ -1431,7 +1686,10 @@
                              ${item.cap_option ? '<span class="stat-badge-lux ms-1 d-inline-flex align-items-center" style="background:#e3f2fd; color:#1e88e5; border-color:#bbdefb;" title="Includes Cap"><i class="ph-bold ph-baseball-cap" style="font-size:13px;"></i><span class="d-none d-md-inline ms-1">CAP</span></span>' : ''}
                              ${item.nickname_text ? `<div class="text-gold fw-bold mt-1">NICKNAME: ${item.nickname_text}</div>` : ''}
                           </div>
-                          <div class="fw-bold">GHS ${Number(item.total_price || 0).toFixed(2)}</div>
+                           <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                             ${getBatchBadgeHtml(item.batch_number)}
+                             <div class="fw-bold">GHS ${Number(item.total_price || 0).toFixed(2)}</div>
+                           </div>
                         </div>
                       `).join('')}
                     </div>
@@ -1503,6 +1761,9 @@
       } else if (filterType === 'cap') {
         currentCapFilter = 'all';
         document.getElementById('capFilter').value = 'all';
+      } else if (filterType === 'batch') {
+        currentBatchFilter = 'all';
+        document.getElementById('batchFilter').value = 'all';
       }
       applyFilters();
     };
@@ -1525,6 +1786,10 @@
       if (currentCapFilter && currentCapFilter !== 'all') {
         badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold); text-transform: uppercase;">CAP: ${currentCapFilter === 'true' ? 'WITH CAP' : 'NO CAP'} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('cap')"></i></span>`;
       }
+      if (currentBatchFilter && currentBatchFilter !== 'all') {
+        const batchLabel = currentBatchFilter === 'unassigned' ? 'UNASSIGNED' : 'BATCH ' + currentBatchFilter;
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold); text-transform: uppercase;">BATCH: ${batchLabel} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('batch')"></i></span>`;
+      }
       container.innerHTML = badges;
     }
 
@@ -1543,6 +1808,14 @@
     if (capFilterEl) {
       capFilterEl.addEventListener('change', e => {
         currentCapFilter = e.target.value;
+        applyFilters();
+      });
+    }
+
+    const batchFilterEl = document.getElementById('batchFilter');
+    if (batchFilterEl) {
+      batchFilterEl.addEventListener('change', e => {
+        currentBatchFilter = e.target.value;
         applyFilters();
       });
     }
@@ -2417,6 +2690,278 @@
         btn.textContent = originalText;
       }
     };
+
+    // ── Batch Processing System ────────────────────────────
+    function getBatchBadgeHtml(batchNum) {
+      const colorMap = {
+        1: { bg: 'rgba(184,147,63,0.15)', color: '#b8933f', border: 'rgba(184,147,63,0.4)' },
+        2: { bg: 'rgba(26,58,92,0.15)', color: '#1a3a5c', border: 'rgba(26,58,92,0.4)' },
+        3: { bg: 'rgba(46,125,50,0.15)', color: '#2e7d32', border: 'rgba(46,125,50,0.4)' },
+      };
+      const fallbackColors = [
+        { bg: 'rgba(99,102,241,0.15)', color: '#6366f1', border: 'rgba(99,102,241,0.4)' },
+        { bg: 'rgba(236,72,153,0.15)', color: '#ec4899', border: 'rgba(236,72,153,0.4)' },
+        { bg: 'rgba(14,165,233,0.15)', color: '#0ea5e9', border: 'rgba(14,165,233,0.4)' },
+      ];
+      if (!batchNum) {
+        return '<span class="batch-badge" style="background:rgba(107,114,128,0.12);color:#6b7280;border-color:rgba(107,114,128,0.3);">UNASSIGNED</span>';
+      }
+      const scheme = colorMap[batchNum] || fallbackColors[(batchNum - 4) % fallbackColors.length] || fallbackColors[0];
+      return `<span class="batch-badge" style="background:${scheme.bg};color:${scheme.color};border-color:${scheme.border};">BATCH ${batchNum}</span>`;
+    }
+
+    function updateBatchFilterOptions(data) {
+      const select = document.getElementById('batchFilter');
+      if (!select) return;
+      const currentVal = currentBatchFilter;
+      const batches = [...new Set(data.map(o => o.batch_number).filter(b => b != null))].sort((a,b) => a - b);
+      let html = '<option value="all">All Batches</option><option value="unassigned">Unassigned</option>';
+      batches.forEach(b => { html += `<option value="${b}">Batch ${b}</option>`; });
+      select.innerHTML = html;
+      select.value = currentVal;
+
+      // Also update the print modal dropdown
+      const printSelect = document.getElementById('printBatchSelect');
+      if (printSelect) {
+        let printHtml = '<option value="" disabled selected>Select a batch...</option>';
+        batches.forEach(b => { printHtml += `<option value="${b}">Batch ${b}</option>`; });
+        printSelect.innerHTML = printHtml;
+      }
+    }
+
+    function toggleAccountSelection(checkbox) {
+      const ids = (checkbox.dataset.orderIds || '').split(',').filter(Boolean);
+      if (checkbox.checked) {
+        ids.forEach(id => selectedOrderIds.add(id));
+      } else {
+        ids.forEach(id => selectedOrderIds.delete(id));
+      }
+      updateBatchActionBar();
+      // Update select-all checkbox state
+      const allCbs = document.querySelectorAll('.order-select-cb');
+      const selectAll = document.getElementById('selectAllOrders');
+      if (selectAll) {
+        selectAll.checked = allCbs.length > 0 && [...allCbs].every(cb => cb.checked);
+      }
+    }
+
+    function toggleSelectAll() {
+      const selectAll = document.getElementById('selectAllOrders');
+      const allCbs = document.querySelectorAll('.order-select-cb');
+      allCbs.forEach(cb => {
+        cb.checked = selectAll.checked;
+        const ids = (cb.dataset.orderIds || '').split(',').filter(Boolean);
+        if (selectAll.checked) {
+          ids.forEach(id => selectedOrderIds.add(id));
+        } else {
+          ids.forEach(id => selectedOrderIds.delete(id));
+        }
+      });
+      updateBatchActionBar();
+    }
+
+    function clearAllSelections() {
+      selectedOrderIds.clear();
+      document.querySelectorAll('.order-select-cb').forEach(cb => cb.checked = false);
+      const selectAll = document.getElementById('selectAllOrders');
+      if (selectAll) selectAll.checked = false;
+      updateBatchActionBar();
+    }
+
+    function updateBatchActionBar() {
+      const bar = document.getElementById('batchActionBar');
+      const countEl = document.getElementById('selectedCount');
+      if (!bar) return;
+      const count = selectedOrderIds.size;
+      if (countEl) countEl.textContent = count;
+      if (count > 0) {
+        bar.classList.add('visible');
+      } else {
+        bar.classList.remove('visible');
+      }
+    }
+
+    async function handleBatchAssign() {
+      const batchNum = parseInt(document.getElementById('batchNumberInput').value);
+      if (!batchNum || batchNum < 1) {
+        showLuxNotification("INPUT REQUIRED", "Please enter a valid batch number (1, 2, 3...).", "info");
+        return;
+      }
+      const ids = [...selectedOrderIds];
+      if (ids.length === 0) {
+        showLuxNotification("NO SELECTION", "Please select orders to assign.", "info");
+        return;
+      }
+
+      const db = getSupabase();
+      if (!db) return showLuxNotification("Config Error", "Supabase not initialized.", "error");
+
+      try {
+        // Batch update all selected orders
+        const { error } = await db
+          .from('orders')
+          .update({ batch_number: batchNum })
+          .in('order_id', ids);
+
+        if (error) throw error;
+
+        showLuxNotification("SUCCESS", `${ids.length} orders assigned to Batch ${batchNum}.`, "success");
+        clearAllSelections();
+        document.getElementById('batchNumberInput').value = '';
+        loadDashboard();
+      } catch (err) {
+        console.error("Batch Assign Error:", err);
+        showLuxNotification("ASSIGNMENT FAILED", "Could not update batch numbers: " + err.message, "error");
+      }
+    }
+
+    function openBatchPrintModal() {
+      updateBatchFilterOptions(orders); // refresh dropdown
+      document.getElementById('batchPrintModal').classList.add('active');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeBatchPrintModal() {
+      document.getElementById('batchPrintModal').classList.remove('active');
+      document.body.classList.remove('modal-open');
+      document.getElementById('batchPrintSummary').classList.add('d-none');
+    }
+
+    function getFilteredOrdersForPrint(batchNum) {
+      return orders.filter(o => {
+        // Batch filter (from print modal selection)
+        if (o.batch_number !== batchNum) return false;
+
+        // Status filter (from dashboard)
+        if (currentStatusFilter === 'paid') {
+          if (o.payment_status !== 'paid' && o.payment_status !== 'fulfilled') return false;
+        } else if (currentStatusFilter === 'pending') {
+          if (o.payment_status !== 'pending') return false;
+        }
+
+        // Class filter
+        if (currentClassFilter !== 'all' && o.student?.class !== currentClassFilter) return false;
+
+        // Cap filter
+        if (currentCapFilter === 'true' && !o.cap_option) return false;
+        if (currentCapFilter === 'false' && o.cap_option) return false;
+
+        return true;
+      });
+    }
+
+    function getActiveFilterLabel() {
+      const parts = [];
+      if (currentStatusFilter !== 'all') parts.push(currentStatusFilter.toUpperCase());
+      if (currentClassFilter !== 'all') parts.push(currentClassFilter);
+      if (currentCapFilter === 'true') parts.push('With Cap');
+      if (currentCapFilter === 'false') parts.push('No Cap');
+      return parts.length > 0 ? ' | Filters: ' + parts.join(', ') : '';
+    }
+
+    function updateBatchPrintSummary() {
+      const batchNum = parseInt(document.getElementById('printBatchSelect').value);
+      const summary = document.getElementById('batchPrintSummary');
+      const countEl = document.getElementById('printBatchItemCount');
+      if (!batchNum) { summary.classList.add('d-none'); return; }
+      const items = getFilteredOrdersForPrint(batchNum);
+      countEl.textContent = items.length;
+      summary.classList.remove('d-none');
+    }
+
+    function generateBatchPdf() {
+      const batchNum = parseInt(document.getElementById('printBatchSelect').value);
+      if (!batchNum) {
+        showLuxNotification("SELECT BATCH", "Please select a batch number to print.", "info");
+        return;
+      }
+
+      const batchOrders = getFilteredOrdersForPrint(batchNum);
+      if (batchOrders.length === 0) {
+        showLuxNotification("NO ORDERS", `No orders found in Batch ${batchNum} matching current filters.`, "info");
+        return;
+      }
+
+      const jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+      if (!jsPDF) return showLuxNotification("SYSTEM ERROR", "PDF Engine not available.", "error");
+
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const filterLabel = getActiveFilterLabel();
+
+      // Header
+      doc.setFont("times", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(15, 25, 35);
+      doc.text(`SRC Pulse \u2014 Batch ${batchNum} Production Sheet`, 14, 18);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Generated: ${today} | Total Items: ${batchOrders.length}${filterLabel}`, 14, 26);
+
+      // Gold underline
+      doc.setDrawColor(184, 147, 63);
+      doc.setLineWidth(0.5);
+      doc.line(14, 29, 283, 29);
+
+      // Table data
+      const tableData = batchOrders.map((o, idx) => [
+        idx + 1,
+        o.student?.name || '---',
+        o.student?.class || '---',
+        o.shirt_color || '---',
+        o.shirt_size || '---',
+        o.shirt_texture || 'Cotton',
+        o.cap_option ? 'YES' : 'NO',
+        o.nickname_text || '---',
+        `GHS ${Number(o.total_price || 0).toFixed(2)}`
+      ]);
+
+      doc.autoTable({
+        head: [['#', 'Student Name', 'Class', 'Color', 'Size', 'Texture', 'Cap', 'Nickname', 'Price']],
+        body: tableData,
+        startY: 34,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [15, 25, 35],
+          textColor: [255, 255, 255],
+          font: 'helvetica',
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          font: 'helvetica',
+          fontSize: 10,
+          cellPadding: 5,
+        },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        tableWidth: 'auto',
+        columnStyles: {
+          0: { halign: 'center', valign: 'middle', fontStyle: 'bold', cellWidth: 18 },
+          4: { halign: 'center' },
+          6: { halign: 'center' },
+          8: { halign: 'right' },
+        },
+        margin: { top: 34 },
+        didDrawPage: function(data) {
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(180, 180, 180);
+          const pageH = doc.internal.pageSize.getHeight();
+          doc.text(`SRC Pulse Production Sheet \u2014 Batch ${batchNum} \u2014 Page ${data.pageNumber}`, 14, pageH - 8);
+        }
+      });
+
+      // Show preview instead of direct download
+      closeBatchPrintModal();
+      currentDoc = doc;
+      currentDocName = `SRC-Pulse-Batch-${batchNum}-Production-Sheet.pdf`;
+      const pdfBlob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      document.getElementById('receiptFrame').src = blobUrl;
+      document.getElementById('receiptPreviewModal').classList.add('active');
+    }
 
     loadDashboard();
   </script>

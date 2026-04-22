@@ -101,18 +101,20 @@ async function insertStudent(data) {
   }
   
   try {
-    // 1. Check if student already exists by phone
-    const { data: existing, error: findError } = await db
+    // 1. Check if student already exists by phone (use limit(1) to avoid multi-row errors)
+    const { data: rows, error: findError } = await db
       .from('students')
       .select('id')
       .eq('phone', data.phone)
-      .maybeSingle();
+      .limit(1);
       
     if (findError) {
       console.error('[Supabase Error] Failed to verify existing student:', findError);
       showLuxAlert('Network issue. Could not verify student record.', 'Connection Error', 'ph ph-wifi-slash', 'error');
       throw findError;
     }
+
+    const existing = rows && rows.length > 0 ? rows[0] : null;
       
     if (existing) {
       // 2a. Update their details gracefully if they already exist
@@ -133,24 +135,26 @@ async function insertStudent(data) {
     const { data: result, error: insertError } = await db
       .from('students')
       .insert([data])
-      .select('id')
-      .single();
+      .select('id');
       
     if (insertError) {
       console.error('[Supabase Error] Failed to insert new student:', insertError);
       
       // Fallback: If there was a race condition making the phone number duplicate right after our check
       if (insertError.code === '23505' || (insertError.message && insertError.message.includes('duplicate'))) {
-        console.warn('[Supabase Warning] Duplicate constraint triggered. Attempting a graceful recovery...');
-        // Let the caller retry or handle it, but notify the user
-        showLuxAlert('Student record was updated by another process simultaneously. Please retry.', 'Data Conflict', 'ph ph-arrows-clockwise', 'error');
-      } else {
-        showLuxAlert('Network error while saving student profile.', 'Save Failed', 'ph ph-warning', 'error');
+        console.warn('[Supabase Warning] Duplicate constraint triggered. Recovering gracefully...');
+        // Re-fetch the existing student that was inserted by the concurrent call
+        const { data: retry } = await db.from('students').select('id').eq('phone', data.phone).limit(1);
+        if (retry && retry.length > 0) return retry[0].id;
       }
+      showLuxAlert('Network error while saving student profile.', 'Save Failed', 'ph ph-warning', 'error');
       throw insertError;
     }
     
-    return result.id;
+    if (!result || result.length === 0) {
+      throw new Error('Student insert returned no results');
+    }
+    return result[0].id;
   } catch (err) {
     console.error('[Unexpected Error] insertStudent encountered an issue:', err);
     throw err;
