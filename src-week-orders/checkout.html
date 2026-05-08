@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | SRC Pulse Luxury</title>
+
+  <!-- Social Media Preview (Open Graph) -->
+  <meta property="og:title" content="SRC Pulse | Celebration 2026">
+  <meta property="og:description" content="Official SRC Week 2026 Merchandise Store - DNMTC Dunkwa-On-Offin.">
+  <meta property="og:image" content="https://src-orders.vercel.app/img/Flyer/social-share.jpg">
+  <meta property="og:url" content="https://src-orders.vercel.app/checkout">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SRC Pulse | Celebration 2026">
+  <meta name="twitter:description" content="Official SRC Week 2026 Merchandise Store - DNMTC Dunkwa-On-Offin.">
+  <meta name="twitter:image" content="https://src-orders.vercel.app/img/Flyer/social-share.jpg">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/checkout.css">
+</head>
+
+<body>
+
+  <!-- LUXURY NAVBAR -->
+  <nav class="lux-navbar">
+    <div class="d-flex align-items-center gap-3">
+      <a href="product.html" class="back-link-lux" title="Go Back">
+        <i class="ph ph-arrow-left"></i>
+      </a>
+      <a href="index.html" class="logo-lux">
+        <img src="img/Flyer/logo1.jpeg" alt="Logo" class="logo-img-lux">
+        <span>SRC PULSE</span>
+      </a>
+    </div>
+    <div class="breadcrumb-nav d-none d-md-flex">
+      <a href="product.html" class="step link-step">Design</a>
+      <span class="step active">Details</span>
+      <span class="step">Payment</span>
+    </div>
+    <a href="https://wa.me/233240064472" class="help-link-lux">+233 240 064 472</a>
+    <!-- Mobile Toggle -->
+    <button class="nav-mobile-toggle d-md-none" aria-label="Toggle Menu" style="margin-left: 15px;">
+      <i class="ph ph-list"></i>
+    </button>
+  </nav>
+
+  <style>
+    .back-link-lux {
+      font-size: 24px;
+      color: var(--lux-ink);
+      opacity: 0.6;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+    }
+
+    .back-link-lux:hover {
+      opacity: 1;
+      color: var(--lux-gold);
+    }
+
+    @media (min-width: 992px) {
+      .back-link-lux {
+        display: none;
+      }
+    }
+
+    .logo-img-lux {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 1px solid var(--lux-border);
+    }
+
+    .logo-lux {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--lux-ink);
+      font-family: var(--font-serif);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+  </style>
+
+  <div class="checkout-container">
+    <form id="checkoutForm" novalidate>
+      <div class="row gx-lg-5">
+
+        <!-- LEFT COLUMN: FORM -->
+        <div class="col-lg-7 left-column">
+          <span class="label-eyebrow">Contact & Identity</span>
+          <h1 class="section-title">Your Details</h1>
+
+          <div class="row g-4 lux-form-group">
+            <div class="col-md-6">
+              <label class="lux-label">Full Name</label>
+              <input type="text" id="fullName" name="fullName" class="lux-input" placeholder="Enter your full name"
+                required>
+            </div>
+            <div class="col-md-6">
+              <label class="lux-label">Phone Number</label>
+              <input type="tel" id="phone" name="phone" class="lux-input" placeholder="0XXXXXXXXX" required
+                pattern="^0\d{9}$" maxlength="10"
+                title="Please enter a valid 10-digit Ghana phone number starting with 0">
+            </div>
+          </div>
+
+          <div class="lux-form-group">
+            <label class="lux-label">Hostel</label>
+            <select id="hostel" name="hostel" class="lux-input" required>
+              <option value="" disabled selected>Select your hostel</option>
+              <option value="Virginia Henerdson">Virginia Henerdson</option>
+              <option value="Queens Hostel">Queens Hostel</option>
+              <option value="Nightingale Hostel">Nightingale Hostel</option>
+              <option value="Royal Hostel">Royal Hostel</option>
+              <option value="DBS Hostel">DBS Hostel</option>
+              <option value="Harmony Hostel">Harmony Hostel</option>
+              <option value="Males Hostel">Males Hostel</option>
+            </select>
+          </div>
+
+          <div class="lux-form-group">
+            <label class="lux-label">Programme</label>
+            <select id="programme" name="programme" class="lux-input" required>
+              <option value="" disabled selected>Select your programme</option>
+              <option value="RGN">RGN (Nursing)</option>
+              <option value="RM">RM (Midwifery)</option>
+              <option value="NAC">NAC (Nursing Assistant Clinical)</option>
+            </select>
+          </div>
+
+          <div id="classWrapper" class="lux-form-group" style="display:none;">
+            <label class="lux-label">Class</label>
+            <select id="class" name="class" class="lux-input" required disabled>
+              <option value="" disabled selected>Select class</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: SUMMARY -->
+        <div class="col-lg-5">
+          <div class="lux-summary-card">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+              <h2 class="serif m-0" style="font-size: 28px;">Order Summary</h2>
+              <span id="summary-badge" class="lux-badge">0 Items</span>
+            </div>
+
+            <div id="summary-items" style="max-height: 320px; overflow-y: auto; padding-right: 5px;">
+              <!-- Items -->
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+              <button type="button" class="btn-clear-cart-lux" onclick="confirmClearCart()">Clear All</button>
+            </div>
+
+            <div class="lux-divider"></div>
+
+            <div class="lux-total-row">
+              <span class="lux-total-label">Total</span>
+              <span id="total-price-display" class="lux-total-value">GH₵ 45.00</span>
+            </div>
+            <span class="total-includes">Includes all selected options</span>
+
+            <button type="submit" id="payBtn" class="lux-pay-btn">
+              <span class="pay-label">Pay GH₵ 45.00</span>
+              <i class="ph ph-lock-simple"></i>
+            </button>
+
+            <!-- WHATSAPP ALTERNATIVE -->
+            <button type="button" id="waFinishBtn"
+              class="btn-lux w-100 mt-3 d-flex align-items-center justify-content-center gap-2"
+              style="background: #25D366; color: #fff; border: none; height: 50px; font-weight: 600;">
+              <i class="ph-bold ph-whatsapp-logo" style="font-size: 20px;"></i>
+              Order via WhatsApp
+            </button>
+
+            <div class="lux-trust-line">
+              <i class="ph ph-shield-check"></i>
+              <span>Secured by Paystack · GHS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div> <!-- End checkout-container -->
+
+  <footer class="footer-lux"
+    style="background: var(--lux-ink); color: var(--lux-white); padding: 50px 0; text-align: center; margin-top: 60px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+    <div class="container">
+      <div class="footer-logos-lux d-flex justify-content-center gap-4 mb-4">
+        <img src="img/Flyer/logo1.jpeg" alt="DNMTC Logo" class="footer-logo-img">
+        <img src="img/Flyer/logo2.jpeg" alt="SRC Logo" class="footer-logo-img">
+      </div>
+      <div class="logo-lux"
+        style="color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 20px; margin-bottom: 25px; display: flex; justify-content: center;">
+        SRC PULSE</div>
+      <p class="opacity-30 small text-uppercase tracking-widest mb-1" style="font-size: 11px;">&copy; 2026
+        Dunkwa-On-Offin Nursing & Midwifery
+        College</p>
+      <p class="small text-uppercase tracking-widest opacity-20" style="font-size: 9px; letter-spacing: 0.25em;">
+        Created by Jonas Coleman, SRC PRO</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPTS -->
+  <!-- CUSTOM CONFIRMATION MODAL -->
+  <div id="removeModalOverlay" class="lux-modal-overlay">
+    <div class="lux-modal">
+      <div class="lux-modal-title">Remove Item?</div>
+      <div class="lux-modal-body">Are you sure you want to remove this item from your order? This action cannot be
+        undone.</div>
+      <div class="lux-modal-actions">
+        <button type="button" class="lux-modal-btn" onclick="hideRemoveModal()">Cancel</button>
+        <button type="button" class="lux-modal-btn confirm-btn" id="confirmRemoveBtn">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="js/app.js?v=1.1.0"></script>
+
+  <script>
+    let cart = AppState.getCart();
+    if (cart.length === 0) window.location.href = 'product.html';
+
+    let itemToRemove = null;
+
+    const DOM = {
+      form: document.getElementById('checkoutForm'),
+      programme: document.getElementById('programme'),
+      classWrap: document.getElementById('classWrapper'),
+      classSelect: document.getElementById('class'),
+      totalDisplay: document.getElementById('total-price-display'),
+      payBtn: document.getElementById('payBtn'),
+      summaryItems: document.getElementById('summary-items')
+    };
+
+    const classMapping = {
+      'RGN': ['RGN13 A', 'RGN13 B', 'RGN14 A', 'RGN14 B', 'RGN15'],
+      'RM': ['RM10A', 'RM10B', 'RM11', 'RM12'],
+      'NAC': ['NAC17', 'NAC18']
+    };
+
+    // The fee is now dynamically calculated as 1.95% of total
+
+    // CUSTOM SELECT LOGIC
+    function setupCustomSelects() {
+      const selects = document.querySelectorAll('select.lux-input');
+
+      function updateOptions(sel, list, trig, wrap) {
+        list.innerHTML = '';
+        Array.from(sel.options).forEach((opt, index) => {
+          if (opt.disabled && index === 0) return;
+          const item = document.createElement('div');
+          item.className = 'lux-select-option' + (index === sel.selectedIndex ? ' selected' : '');
+          item.textContent = opt.text;
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sel.selectedIndex = index;
+            trig.querySelector('span').textContent = opt.text;
+            sel.dispatchEvent(new Event('change'));
+            wrap.classList.remove('open');
+            updateOptions(sel, list, trig, wrap);
+          });
+          list.appendChild(item);
+        });
+      }
+
+      selects.forEach(select => {
+        let wrapper = select.parentElement;
+        const isNew = !wrapper.classList.contains('lux-select');
+
+        if (isNew) {
+          wrapper = document.createElement('div');
+          wrapper.className = 'lux-select';
+          select.parentNode.insertBefore(wrapper, select);
+          wrapper.appendChild(select);
+
+          const trigger = document.createElement('div');
+          trigger.className = 'lux-select-trigger';
+          trigger.innerHTML = `<span>${select.options[select.selectedIndex]?.text || 'Select...'}</span><i class="ph ph-caret-down"></i>`;
+          wrapper.appendChild(trigger);
+
+          const optionsList = document.createElement('div');
+          optionsList.className = 'lux-select-options';
+          wrapper.appendChild(optionsList);
+
+          trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.lux-select').forEach(ls => {
+              if (ls !== wrapper) ls.classList.remove('open');
+            });
+            wrapper.classList.toggle('open');
+          });
+
+          select.addEventListener('change', () => {
+            trigger.querySelector('span').textContent = select.options[select.selectedIndex]?.text || 'Select...';
+            updateOptions(select, optionsList, trigger, wrapper);
+          });
+        }
+
+        const trigger = wrapper.querySelector('.lux-select-trigger');
+        const optionsList = wrapper.querySelector('.lux-select-options');
+
+        // Reset trigger text if nothing selected
+        if (select.selectedIndex === 0 || select.selectedIndex === -1) {
+          trigger.querySelector('span').textContent = select.options[0]?.text || 'Select...';
+        }
+
+        updateOptions(select, optionsList, trigger, wrapper);
+      });
+    }
+
+    window.addEventListener('click', () => {
+      document.querySelectorAll('.lux-select').forEach(ls => ls.classList.remove('open'));
+    });
+
+    function init() {
+      cart = AppState.getCart();
+      if (cart.length === 0) {
+        window.location.href = 'product.html';
+        return;
+      }
+
+      setupCustomSelects();
+
+      // Render Summary
+      let itemsHtml = '';
+      let grandTotal = 0;
+
+      cart.forEach((item, index) => {
+        const itemGrandTotal = Number(((item.unitPrice + 1.00) / 0.9805).toFixed(2));
+        const itemFee = Number((itemGrandTotal - item.unitPrice).toFixed(2));
+        grandTotal += itemGrandTotal;
+
+        itemsHtml += `
+          <div class="summary-item-compact d-flex align-items-start justify-content-between py-3 border-bottom" style="gap: 12px;">
+            <div class="d-flex align-items-start gap-3 flex-grow-1" style="min-width: 0;">
+              <div style="width:12px; height:12px; border-radius:50%; background:${item.colorHex}; flex-shrink: 0; margin-top: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,0.1);"></div>
+              <div style="min-width: 0;">
+                <div class="fw-bold serif" style="font-size: 16px; line-height: 1.2; color: var(--lux-ink); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${item.color} Shirt · ${item.size}
+                </div>
+                <div class="small opacity-50 text-uppercase tracking-widest" style="font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${item.texture} · ${item.package === 'bundle' ? 'Bundle' : 'Shirt'}
+                  ${item.hasNickname ? ` · "${item.nickname}"` : ''}
+                </div>
+                <div class="mt-1" style="font-size: 10px; color: var(--lux-gold); font-weight: 600; opacity: 0.8; letter-spacing: 0.02em;">
+                  Inc. GHS ${itemFee.toFixed(2)} service fee
+                </div>
+                ${item.isGift ? `<div class="text-gold fw-bold mt-1" style="font-size: 11px; letter-spacing:0.05em;">Gift for: ${item.recipient.name}</div>` : ''}
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-3 flex-shrink-0" style="margin-top: 2px;">
+              <span class="fw-bold" style="color: var(--lux-ink); font-size: 15px; white-space: nowrap;">GH₵ ${itemGrandTotal.toFixed(2)}</span>
+              <button type="button" class="btn-remove-item border-0 bg-transparent p-0" data-id="${item.id}" title="Remove item">
+                <i class="ph ph-trash" style="font-size: 18px;"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('summary-items').innerHTML = itemsHtml;
+      document.getElementById('summary-badge').textContent = `${cart.length} Item${cart.length > 1 ? 's' : ''}`;
+
+      DOM.totalDisplay.textContent = `GHS ${grandTotal.toFixed(2)}`;
+      if (DOM.payBtn.querySelector('.pay-label')) {
+        DOM.payBtn.querySelector('.pay-label').textContent = `Pay GHS ${grandTotal.toFixed(2)}`;
+      }
+
+      // Add event listeners to remove buttons
+      const removeButtons = document.querySelectorAll('.btn-remove-item');
+      removeButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          itemToRemove = btn.getAttribute('data-id');
+          showRemoveModal();
+        });
+      });
+
+      // Update first swatch/title placeholder if needed
+      if (cart.length > 0) {
+        const summarySwatch = document.getElementById('summary-swatch');
+        if (summarySwatch) summarySwatch.style.backgroundColor = cart[0].colorHex;
+
+        const summaryColorName = document.getElementById('summary-color-name');
+        if (summaryColorName) summaryColorName.textContent = cart.length > 1 ? `${cart.length} Items Selected` : cart[0].color;
+
+        const summarySize = document.getElementById('summary-size');
+        if (summarySize) summarySize.style.display = cart.length > 1 ? 'none' : 'inline-block';
+      }
+    }
+
+    DOM.programme.addEventListener('change', (e) => {
+      const p = e.target.value;
+      DOM.classSelect.innerHTML = '<option value="" disabled selected>Select class</option>';
+      if (classMapping[p]) {
+        classMapping[p].forEach(c => {
+          DOM.classSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+        DOM.classSelect.disabled = false;
+        DOM.classWrap.style.display = 'block';
+        setupCustomSelects();
+      }
+    });
+
+    async function processOrderRecords() {
+      const fullName = document.getElementById('fullName').value;
+      const phone = document.getElementById('phone').value;
+      const hostel = document.getElementById('hostel').value;
+      const programme = document.getElementById('programme').value;
+      const className = document.getElementById('class').value;
+
+      localStorage.setItem('lastStudentName', fullName);
+
+      // 1. Insert/Update Buyer
+      const buyerId = await insertStudent({
+        name: fullName,
+        phone: phone,
+        hostel: hostel,
+        programme: programme,
+        class: className
+      });
+
+      // 2. Prepare Transaction
+      const transactionId = generateTransactionId();
+      let grandTotal = 0;
+      cart.forEach(item => {
+        const itemGrandTotal = Number(((item.unitPrice + 1.00) / 0.9805).toFixed(2));
+        grandTotal += itemGrandTotal;
+      });
+      const subTotal = cart.reduce((sum, item) => sum + item.unitPrice, 0);
+      const processingFee = Number((grandTotal - subTotal).toFixed(2));
+
+      // 3. Loop and Insert Orders
+      for (let i = 0; i < cart.length; i++) {
+        const item = cart[i];
+        let recipientId = buyerId;
+
+        if (item.isGift && item.recipient) {
+          recipientId = await insertStudent({
+            name: item.recipient.name,
+            phone: item.recipient.phone || 'N/A',
+            hostel: item.recipient.hostel || 'N/A',
+            programme: item.recipient.programme || 'N/A',
+            class: item.recipient.class || 'N/A'
+          });
+        }
+
+        await insertOrder({
+          student_id: recipientId,
+          buyer_id: buyerId,
+          is_gift: item.isGift,
+          shirt_color: item.color,
+          shirt_size: item.size,
+          shirt_texture: item.texture,
+          cap_option: item.package === 'bundle',
+          nickname_option: item.hasNickname,
+          nickname_text: item.nickname || null,
+          total_price: item.unitPrice,
+          service_fee: processingFee / cart.length, // Split fee equally among items in transaction for stats
+          payment_status: 'pending',
+          transaction_id: transactionId
+        });
+      }
+      return { transactionId, fullName, phone, hostel, className, grandTotal, processingFee };
+    }
+
+    function getWhatsAppMessage(data) {
+      if (typeof window.generateWhatsAppSummary === 'function') {
+        const orderData = { ...data, programme: document.getElementById('programme').value };
+        return window.generateWhatsAppSummary(orderData, cart);
+      }
+      return "Order details missing. Please check your dashboard.";
+    }
+
+    DOM.form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      let isValid = true;
+      const inputs = DOM.form.querySelectorAll('input[required], select[required]');
+      inputs.forEach(input => {
+        if (!input.value.trim()) {
+          input.style.borderColor = 'var(--lux-gold)';
+          isValid = false;
+        } else {
+          input.style.borderColor = '';
+        }
+      });
+
+      if (!isValid) return;
+
+      const phoneInput = document.getElementById('phone').value;
+      if (!/^0\d{9}$/.test(phoneInput)) {
+        showLuxAlert("Invalid phone number. Please enter exactly 10 digits starting with 0.", "Validation Error", "ph ph-warning");
+        document.getElementById('phone').style.borderColor = 'var(--lux-gold)';
+        return;
+      }
+
+      DOM.payBtn.disabled = true;
+      DOM.payBtn.textContent = 'Processing...';
+
+      try {
+        // 1. Save to Database first
+        const { transactionId, fullName, phone, hostel, className, grandTotal, processingFee } = await processOrderRecords();
+        const orderSummaryText = cart.map(i => `${i.color} ${i.size}`).join(', ');
+
+        const handler = PaystackPop.setup({
+          key: CONFIG.PAYSTACK_KEY,
+          email: `${fullName.toLowerCase().replace(/\s+/g, '_')}+${className.toLowerCase().replace(/\s+/g, '').replace(/[\(\)]/g, '')}@order.net`,
+          amount: Math.round(grandTotal * 100),
+          currency: 'GHS',
+          ref: transactionId,
+          phone: phone,
+          mobile_money: { phone: phone },
+          metadata: {
+            custom_fields: [
+              { display_name: "Customer Name", variable_name: "customer_name", value: fullName },
+              { display_name: "Phone Number", variable_name: "customer_phone", value: phone },
+              { display_name: "Hostel", variable_name: "customer_hostel", value: hostel },
+              { display_name: "Items", variable_name: "order_items", value: orderSummaryText }
+            ]
+          },
+          callback: function (response) {
+            updatePaymentStatus(transactionId, 'paid').then(function () {
+              const msg = getWhatsAppMessage({ transactionId, fullName, phone, hostel, className, grandTotal, processingFee });
+              const waNumber = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233240064472';
+              const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
+
+              AppState.clearAll();
+              window.location.href = `confirmation.html?ref=${transactionId}&wa=${encodeURIComponent(waUrl)}`;
+            }).catch(function (err) {
+              AppState.clearAll();
+              window.location.href = 'confirmation.html?ref=' + transactionId;
+            });
+          },
+          onClose: function () {
+            DOM.payBtn.disabled = false;
+            DOM.payBtn.innerHTML = `<span class="pay-label">Pay GH₵ ${grandTotal.toFixed(2)}</span><i class="ph ph-lock-simple"></i>`;
+          }
+        });
+        handler.openIframe();
+      } catch (err) {
+        showLuxAlert('Your order could not be saved. Please check your internet or contact support. ' + (err.message || ''), "Database Error", "ph ph-x-circle");
+        DOM.payBtn.disabled = false;
+        DOM.payBtn.innerHTML = `<span class="pay-label">Try Again</span><i class="ph ph-lock-simple"></i>`;
+      }
+    });
+
+    // WhatsApp Finish
+    const waFinishBtn = document.getElementById('waFinishBtn');
+    if (waFinishBtn) {
+      waFinishBtn.addEventListener('click', async () => {
+        // Manual Validation check
+        const inputs = DOM.form.querySelectorAll('input[required], select[required]');
+        let valid = true;
+        inputs.forEach(i => { if (!i.value) { i.style.borderColor = 'red'; valid = false; } });
+        if (!valid) return showLuxAlert("Please fill in all required details to proceed with your order.", "Missing Details", "ph ph-warning-circle");
+
+        waFinishBtn.disabled = true;
+        waFinishBtn.innerHTML = '<i class="ph ph-spinner-gap spinning"></i> Saving...';
+
+        try {
+          // 1. SAVE TO DATABASE first so admin sees the order
+          const orderData = await processOrderRecords();
+          const { transactionId } = orderData;
+
+          // 2. Format WhatsApp Message
+          const msg = getWhatsAppMessage(orderData);
+          const waNumber = (typeof CONFIG !== 'undefined' && CONFIG.WHATSAPP_NUMBER) ? CONFIG.WHATSAPP_NUMBER : '233240064472';
+          const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
+
+          // Clear cart and redirect
+          AppState.clearAll();
+          window.open(url, '_blank');
+          window.location.href = 'index.html'; // Return home after WhatsApp
+        } catch (err) {
+          showLuxAlert("Could not register order in Database: " + err.message, "System Error", "ph ph-warning");
+          waFinishBtn.disabled = false;
+          waFinishBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo"></i> Order via WhatsApp';
+        }
+      });
+    }
+
+    function showRemoveModal() {
+      document.getElementById('removeModalOverlay').classList.add('active');
+    }
+    function hideRemoveModal() {
+      document.getElementById('removeModalOverlay').classList.remove('active');
+      itemToRemove = null;
+    }
+
+    document.getElementById('confirmRemoveBtn').addEventListener('click', () => {
+      if (itemToRemove) {
+        AppState.removeItem(itemToRemove);
+        hideRemoveModal();
+        init();
+      }
+    });
+
+    init();
+  </script>
+
+  <style>
+    .footer-logo-img {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      object-fit: contain;
+      background: white;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px;
+    }
+  </style>
+</body>
+
+</html>

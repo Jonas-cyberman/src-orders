@@ -1,0 +1,3301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | SRC Pulse Luxury</title>
+  
+  <!-- Social Media Preview (Open Graph) -->
+  <meta property="og:title" content="SRC Pulse | Celebration 2026">
+  <meta property="og:description" content="Official SRC Week 2026 Merchandise Store - DNMTC Dunkwa-On-Offin.">
+  <meta property="og:image" content="https://src-orders.vercel.app/img/Flyer/social-share.jpg">
+  <meta property="og:url" content="https://src-orders.vercel.app/admin">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SRC Pulse | Celebration 2026">
+  <meta name="twitter:description" content="Official SRC Week 2026 Merchandise Store - DNMTC Dunkwa-On-Offin.">
+  <meta name="twitter:image" content="https://src-orders.vercel.app/img/Flyer/social-share.jpg">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- EXTERNAL LIBRARIES -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/theme.css">
+
+  <!-- AUTHENTICATION SHIELD: Prevent Flash of Unauthenticated Content -->
+  <style> body { visibility: hidden; opacity: 0; } </style>
+  <script src="js/app.js?v=1.1.0"></script>
+  <script>
+    (function() {
+      try {
+        const user = AdminAuth.getUser();
+        if (!user) {
+          window.location.replace('admin-login.html');
+        } else {
+          // Auth OK, show content once body exists
+          document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.visibility = 'visible';
+            document.body.style.opacity = '1';
+          });
+        }
+      } catch (e) {
+        console.error("Auth Shield Error:", e);
+        // Fail-safe: if script fails, show content to avoid blank screen
+        document.addEventListener('DOMContentLoaded', () => {
+          document.body.style.visibility = 'visible';
+          document.body.style.opacity = '1';
+        });
+      }
+    })();
+
+    // Auto-check session every minute to force logout if expired while page is open
+    setInterval(() => {
+      if (!AdminAuth.isAuthenticated()) {
+        window.location.replace('admin-login.html');
+      }
+    }, 60000);
+  </script>
+
+  <style>
+    /* Admin Luxury Dashboard */
+    .admin-header-lux {
+      padding: 64px 0 48px;
+      border-bottom: 1px solid var(--lux-border);
+      margin-bottom: 64px;
+    }
+    .metric-card-lux {
+      background: var(--lux-white);
+      border: 1px solid var(--lux-border);
+      padding: 24px 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    .metric-card-lux:hover {
+      border-color: var(--lux-gold);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .metric-value-lux {
+      font-family: var(--font-serif);
+      font-size: 36px;
+      font-weight: 500;
+      color: var(--lux-gold);
+      line-height: 1.2;
+      margin: 12px 0 4px 0;
+    }
+    .metric-label-lux {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      opacity: 0.5;
+    }
+    .metric-sub-lux {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.4;
+      margin-top: 4px;
+    }
+    
+    .table-lux {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--lux-white);
+      border: 1px solid var(--lux-border);
+    }
+    .table-lux th {
+      background: var(--lux-bg);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 20px;
+      border-bottom: 1px solid var(--lux-border);
+    }
+    .table-lux td {
+      padding: 20px;
+      border-bottom: 1px solid var(--lux-border);
+      font-size: 14px;
+    }
+    .table-lux tr:last-child td { border-bottom: none; }
+    
+    .status-badge-lux {
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid var(--lux-border);
+    }
+    .status-paid { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+    .status-pending { background: #fff3e0; color: #ef6c00; border-color: #ffe0b2; }
+
+    .search-bar-lux {
+      height: 56px;
+      border: 1px solid var(--lux-border);
+      background: var(--lux-white);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      margin-bottom: 32px;
+    }
+    .search-input-lux {
+      border: none;
+      background: transparent;
+      width: 100%;
+      height: 100%;
+      padding-left: 12px;
+      font-family: var(--font-sans);
+      font-size: 15px;
+    }
+    .search-input-lux:focus { outline: none; }
+
+    /* Luxury Form Elements for Modals */
+    .lux-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--lux-ink);
+      margin-bottom: 8px;
+      display: block;
+      opacity: 0.6;
+    }
+    .lux-input {
+      width: 100%;
+      height: 48px;
+      padding: 0 16px;
+      background: var(--lux-white);
+      border: 1px solid var(--lux-border);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      color: var(--lux-ink);
+      transition: all 0.3s ease;
+      border-radius: 0; /* Sharp luxury look */
+    }
+    .lux-input:focus {
+      outline: none;
+      border-color: var(--lux-gold);
+      box-shadow: 0 4px 12px rgba(197, 160, 74, 0.1);
+    }
+    .lux-input:disabled {
+      background: #f9f9f9;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .btn-analytics-lux, .btn-export-lux {
+      height: 48px;
+      padding: 0 24px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--lux-ink);
+      cursor: pointer;
+    }
+
+    /* Admin Action Button Variants */
+    .btn-action-lux {
+      padding: 6px 14px;
+      font-family: var(--font-sans);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-confirm-lux { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+    .btn-confirm-lux:hover { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+    .btn-cancel-lux { background: #ffebee; color: #c62828; border-color: #ffcdd2; }
+    .btn-cancel-lux:hover { background: #c62828; color: #fff; border-color: #c62828; }
+    .btn-fulfill-lux { background: var(--lux-bg); color: var(--lux-ink); border-color: var(--lux-border); }
+    .btn-fulfill-lux:hover { background: var(--lux-gold); color: #fff; border-color: var(--lux-gold); }
+    .btn-analytics-lux {
+      background: transparent;
+      color: var(--lux-ink);
+    }
+    .btn-analytics-lux:hover {
+      background: var(--lux-ink);
+      color: var(--lux-white);
+    }
+    .btn-export-lux {
+      background: var(--lux-ink);
+      color: var(--lux-white);
+    }
+    .btn-export-lux:hover {
+      background: #1a2a3a;
+      transform: translateY(-2px);
+    }
+
+    .admin-header-lux { margin-bottom: 64px; }
+    .logo-img-lux {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 1px solid var(--lux-border);
+    }
+    .logo-lux {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--lux-ink);
+      font-family: var(--font-serif);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+
+    /* Table Responsiveness — Horizontal Scroll */
+    /* Table Styles */
+    .table-lux { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+    .table-lux th { 
+      padding: 16px 20px; 
+      font-size: 11px; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      letter-spacing: 0.15em; 
+      color: var(--lux-gold);
+      border-bottom: 2px solid var(--lux-gold-light);
+    }
+    
+    /* Account Row (Master) */
+    .account-row-lux {
+      background: #fff;
+      border: 1px solid var(--lux-border);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .account-row-lux:hover {
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      border-color: var(--lux-gold);
+    }
+    
+    .account-row-lux td { padding: 20px; border-top: 1px solid var(--lux-border); border-bottom: 1px solid var(--lux-border); }
+    .account-row-lux td:first-child { border-left: 1px solid var(--lux-border); border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .account-row-lux td:last-child { border-right: 1px solid var(--lux-border); border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+    /* Transaction Dropdown (Detail) */
+    .transaction-detail-lux {
+      display: none; /* Controlled by active class */
+      background: #fafaf9;
+      margin: -10px 10px 10px 10px;
+      border: 1px solid var(--lux-border);
+      border-top: none;
+      border-radius: 0 0 16px 16px;
+      padding: 24px;
+      animation: slideDownCustom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .transaction-detail-lux.active { display: block; }
+    
+    .tx-card-lux {
+      background: #fff;
+      border: 1px solid var(--lux-border);
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .item-line-lux {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--lux-border);
+    }
+    .item-line-lux:last-child { border-bottom: none; }
+
+    @keyframes slideDownCustom {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .expand-icon-lux {
+      transition: transform 0.3s;
+      color: var(--lux-gold);
+      font-size: 20px;
+    }
+    .account-row-lux.expanded .expand-icon-lux { transform: rotate(180deg); }
+
+    .stat-badge-lux {
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--lux-bg);
+      color: var(--lux-ink);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    /* Sales History Styling */
+    .status-select-lux {
+      border: 1px solid var(--lux-border);
+      background: #fff;
+      padding: 0 32px 0 14px;
+      height: 38px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-family: var(--font-sans);
+      color: var(--lux-ink);
+      cursor: pointer;
+      outline: none;
+      border-radius: 4px;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230f0e0d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: all 0.2s ease;
+    }
+    .status-select-lux:hover {
+      border-color: var(--lux-gold);
+      box-shadow: 0 2px 8px rgba(184, 147, 63, 0.1);
+    }
+    .status-select-lux:focus {
+      border-color: var(--lux-gold);
+      box-shadow: 0 0 0 3px rgba(184, 147, 63, 0.12);
+    }
+
+    /* Filter bar responsive layout */
+    .filter-controls-row {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .filter-search-pill {
+      flex: 1; min-width: 200px; height: 38px; background: #fff;
+      border: 1px solid var(--lux-border); border-radius: 24px;
+      padding: 0 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .filter-actions-row {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      border-top: 1px solid var(--lux-border); padding-top: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .filter-controls-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .filter-search-pill {
+        grid-column: 1 / -1;
+        min-width: unset;
+        width: 100%;
+      }
+      .status-select-lux {
+        width: 100% !important;
+      }
+      .filter-actions-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+      }
+      .filter-actions-row .btn-action-lux {
+        width: 100% !important;
+        padding: 0 8px !important;
+        font-size: 9px !important;
+      }
+      .filter-actions-row .filter-tx-count {
+        grid-column: 1 / -1;
+        text-align: center;
+        margin: 0 !important;
+      }
+    }
+    
+    .customer-avatar-lux {
+      width: 32px;
+      height: 32px;
+      background: var(--lux-bg);
+      color: var(--lux-ink);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      margin-right: 12px;
+      border: 1px solid var(--lux-border);
+    }
+    
+    .status-paid-alt { color: #2e7d32; }
+    .status-pending-alt { color: #ef6c00; }
+    .color-circle-lux {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .color-circle-lux:hover {
+      transform: scale(1.2);
+    }
+    .status-fulfilled-alt { color: var(--lux-gold); }
+
+    /* ── Batch Processing System ────────────────────── */
+    .batch-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-radius: 20px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .batch-action-bar {
+      position: fixed;
+      bottom: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 25, 35, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(184, 147, 63, 0.3);
+      border-radius: 16px;
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 9000;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      transition: bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .batch-action-bar.visible { bottom: 32px; }
+    .batch-action-bar .bar-count {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .batch-action-bar .bar-count span {
+      color: var(--lux-gold);
+      font-family: var(--font-serif);
+      font-size: 18px;
+      margin-right: 4px;
+    }
+    .batch-action-bar .bar-input {
+      height: 40px;
+      width: 80px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(184, 147, 63, 0.4);
+      border-radius: 8px;
+      color: #fff;
+      text-align: center;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .batch-action-bar .bar-input:focus {
+      outline: none;
+      border-color: var(--lux-gold);
+      box-shadow: 0 0 12px rgba(184, 147, 63, 0.2);
+    }
+    .batch-action-bar .bar-btn {
+      height: 40px;
+      padding: 0 20px;
+      background: var(--lux-gold);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+    .batch-action-bar .bar-btn:hover {
+      background: #d4a843;
+      transform: translateY(-1px);
+    }
+    .batch-action-bar .bar-btn-cancel {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .batch-action-bar .bar-btn-cancel:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    @media (max-width: 768px) {
+      .batch-action-bar {
+        width: calc(100% - 32px);
+        flex-wrap: wrap;
+        padding: 14px 20px;
+        gap: 10px;
+        border-radius: 12px;
+      }
+      .batch-action-bar .bar-input { width: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LUXURY NAVBAR -->
+  <nav class="lux-navbar">
+    <a href="index.html" class="logo-lux">
+      <img src="img/Flyer/logo1.jpeg" alt="Logo" class="logo-img-lux">
+      <span>SRC PULSE</span>
+    </a>
+    <div class="nav-links-lux d-none d-md-flex">
+      <a href="index.html" class="nav-link-lux">Collection</a>
+      <a href="product.html" class="nav-link-lux">Store</a>
+      <a href="index.html#archive" class="nav-link-lux">Archive</a>
+      <a href="admin.html" class="nav-link-lux active">Management</a>
+    </div>
+    <div class="d-flex align-items-center gap-4">
+      <div class="text-end d-none d-sm-block">
+        <div id="userDisplayName" class="small fw-bold text-uppercase tracking-widest" style="font-size: 11px;">Admin</div>
+        <div id="userRoleName" class="small opacity-50 text-uppercase tracking-widest" style="font-size: 9px;">Registry Access</div>
+      </div>
+      <i class="ph ph-sign-out" id="logoutBtn" style="font-size: 24px; cursor: pointer;" title="Logout"></i>
+      <!-- Mobile Toggle -->
+      <button class="nav-mobile-toggle d-md-none" aria-label="Toggle Menu">
+        <i class="ph ph-list"></i>
+      </button>
+    </div>
+  </nav>
+
+  <div class="container pb-5">
+    
+    <!-- DASHBOARD HEADER -->
+    <header class="admin-header-lux">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4">
+        <div>
+          <span class="label-eyebrow">Registry</span>
+          <h1 class="serif m-0" style="font-size: 48px;">Sales History</h1>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn-analytics-lux" data-bs-toggle="modal" data-bs-target="#insightsModal">
+            <i class="ph ph-chart-line"></i> Insights
+          </button>
+          <button id="exportCsv" class="btn-export-lux">
+            <i class="ph ph-file-csv"></i> Export
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- METRICS -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-2">
+        <div class="metric-card-lux text-center">
+          <span class="metric-label-lux">Global Orders</span>
+          <div id="statTotalOrders" class="metric-value-lux">0</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card-lux text-center">
+          <span class="metric-label-lux">Gross Revenue</span>
+          <div id="statTotalRevenue" class="metric-value-lux">GHS 0</div>
+          <div class="metric-sub-lux">TOTAL FROM STUDENTS</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card-lux text-center" style="border-bottom: 2px solid var(--lux-gold);">
+          <span class="metric-label-lux">Estimated Payout</span>
+          <div id="statTotalNet" class="metric-value-lux" style="color: var(--lux-gold);">GHS 0</div>
+          <div class="metric-sub-lux">NET SETTLEMENT (1.95% FEE)</div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="metric-card-lux text-center">
+          <span class="metric-label-lux">Popular Color</span>
+          <div id="statTopColor" class="metric-value-lux" style="font-size: 18px; height: 40px; display: flex; align-items: center; justify-content: center;">-</div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="metric-card-lux text-center">
+          <span class="metric-label-lux">Leading Class</span>
+          <div id="statTopClass" class="metric-value-lux" style="font-size: 18px; height: 40px; display: flex; align-items: center; justify-content: center;">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS SECTION -->
+    <div class="row g-4 mb-5">
+      <div class="col-lg-6">
+        <div class="metric-card-lux" style="height: 400px; padding: 24px;">
+           <h6 class="small text-uppercase tracking-widest opacity-50 mb-4">Daily Revenue (GHS)</h6>
+           <div class="lux-chart-container" style="position: relative; height: 300px; width: 100%;">
+              <canvas id="chartDailyRevenue"></canvas>
+           </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="metric-card-lux" style="height: 400px; padding: 24px;">
+           <h6 class="small text-uppercase tracking-widest opacity-50 mb-4">Orders per Student Class</h6>
+           <div class="lux-chart-container" style="position: relative; height: 300px; width: 100%;">
+              <canvas id="chartOrdersPerClass"></canvas>
+           </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="metric-card-lux" style="height: 400px; padding: 24px;">
+           <h6 class="small text-uppercase tracking-widest opacity-50 mb-4">Shirt Size Distribution</h6>
+           <div class="lux-chart-container" style="position: relative; height: 300px; width: 100%;">
+              <canvas id="chartSizeDist"></canvas>
+           </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="metric-card-lux" style="height: 400px; padding: 24px;">
+           <h6 class="small text-uppercase tracking-widest opacity-50 mb-4">Color Popularity</h6>
+           <div class="lux-chart-container" style="position: relative; height: 300px; width: 100%;">
+              <canvas id="chartColorPop"></canvas>
+           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA TABLE -->
+    <div class="table-container-lux">
+      <div class="search-bar-lux" style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Search + Filters Row -->
+        <div class="filter-controls-row">
+          <div class="filter-search-pill">
+            <i class="ph ph-magnifying-glass opacity-50" style="font-size: 15px; flex-shrink: 0;"></i>
+            <input type="text" id="orderSearch" class="search-input-lux" placeholder="Search by name, phone or ID..." style="flex: 1; border: none; background: transparent; outline: none; font-size: 12px; font-family: var(--font-sans); height: 100%; letter-spacing: 0.02em;">
+          </div>
+          <select id="statusFilter" class="status-select-lux">
+            <option value="paid" selected>Paid Only</option>
+            <option value="pending">Pending</option>
+            <option value="all">All Status</option>
+          </select>
+          <select id="classFilter" class="status-select-lux">
+            <option value="all">All Classes</option>
+          </select>
+          <select id="capFilter" class="status-select-lux">
+            <option value="all" selected>All Caps</option>
+            <option value="true">With Cap</option>
+            <option value="false">Without Cap</option>
+          </select>
+          <select id="batchFilter" class="status-select-lux">
+            <option value="all" selected>All Batches</option>
+            <option value="unassigned">Unassigned</option>
+          </select>
+        </div>
+
+        <!-- Actions Row -->
+        <div class="filter-actions-row">
+          <button id="printBatchBtn" class="btn-action-lux d-flex align-items-center justify-content-center gap-2" style="background: #1a3a5c; color: #fff; height: 38px; padding: 0 18px; font-size: 10px; letter-spacing: 0.08em; border-radius: 4px; white-space: nowrap;" onclick="openBatchPrintModal()">
+            <i class="ph-bold ph-printer" style="font-size: 14px;"></i> PRINT
+          </button>
+          <button id="bulkAuditBtn" class="btn-action-lux d-flex align-items-center justify-content-center gap-2" style="background: var(--lux-gold); color: #fff; height: 38px; padding: 0 18px; font-size: 10px; letter-spacing: 0.08em; border-radius: 4px; white-space: nowrap;">
+            <i class="ph-bold ph-shield-check" style="font-size: 14px;"></i> AUDIT
+          </button>
+          <button id="addManualBtn" class="btn-action-lux d-flex align-items-center justify-content-center gap-2" style="background: var(--lux-ink); color: #fff; height: 38px; padding: 0 18px; font-size: 10px; letter-spacing: 0.08em; border-radius: 4px; white-space: nowrap;" onclick="openManualOrderModal()">
+            <i class="ph-bold ph-plus-circle" style="font-size: 14px;"></i> ADD
+          </button>
+          <div class="ms-auto small opacity-50 text-uppercase tracking-widest filter-tx-count" style="font-size: 10px;">
+            Transactions: <span id="transactionCount" class="fw-bold text-dark">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVE FILTERS INDICATOR -->
+      <div id="activeFiltersContainer" class="d-flex gap-2 flex-wrap mb-3 px-1 mt-3"></div>
+
+      <div class="table-responsive">
+        <table class="table-lux">
+          <thead>
+              <th style="width: 40px; border-bottom: none; text-align: center;"><input type="checkbox" id="selectAllOrders" onclick="toggleSelectAll()" style="accent-color: var(--lux-gold); width: 16px; height: 16px; cursor: pointer;" title="Select All"></th>
+              <th style="width: 40px; border-bottom: none;"></th>
+              <th>Student Account</th>
+              <th style="width: 60px;">Color</th>
+              <th>Programme</th>
+              <th>Hostel</th>
+              <th>Total Orders</th>
+              <th>Lifetime Spend</th>
+              <th style="text-align: right;">Latest Activity</th>
+          </thead>
+          <tbody id="ordersTable">
+            <!-- Data rows injected via JS -->
+            <tr>
+              <td colspan="12" class="text-center py-5 opacity-50 italic no-records-td">Synchronizing with registry...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <span class="small opacity-50 text-uppercase tracking-widest" id="pageInfo">Showing 0 of 0 records</span>
+        <div class="nav-links-lux">
+          <button id="prevPage" class="nav-link-lux" style="background:transparent; border:none; padding:0;">Prev</button>
+          <button id="nextPage" class="nav-link-lux" style="background:transparent; border:none; padding:0;">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BATCH ACTION BAR -->
+    <div id="batchActionBar" class="batch-action-bar">
+      <div class="bar-count"><span id="selectedCount">0</span> orders selected</div>
+      <input type="number" id="batchNumberInput" class="bar-input" placeholder="#" min="1" max="99">
+      <button class="bar-btn" onclick="handleBatchAssign()">
+        <i class="ph ph-stack me-1"></i> ASSIGN TO BATCH
+      </button>
+      <button class="bar-btn bar-btn-cancel" onclick="clearAllSelections()">
+        <i class="ph ph-x"></i>
+      </button>
+    </div>
+
+  <footer class="footer-lux" style="background: var(--lux-ink); color: var(--lux-white); padding: 80px 0; text-align: center; margin-top: 80px;">
+    <div class="container">
+      <div class="logo-lux" style="color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 20px; margin-bottom: 40px; display: inline-block;">SRC PULSE</div>
+      <p class="opacity-50 small text-uppercase tracking-widest mb-2">&copy; 2026 Dunkwa-On-Offin Nursing & Midwifery College</p>
+      <p class="small text-uppercase tracking-widest opacity-25" style="font-size: 10px; letter-spacing: 0.2em;">Created by Jonas Coleman, SRC PRO</p>
+    </div>
+  </footer>
+
+  <!-- CUSTOM LOGOUT MODAL -->
+  <div id="logoutModal" class="lux-modal-overlay">
+    <div class="lux-modal-card">
+      <div class="mb-4">
+        <i class="ph ph-sign-out opacity-25" style="font-size: 40px; color: var(--lux-gold);"></i>
+      </div>
+      <h3 class="serif mb-2" style="font-size: 28px;">End Session?</h3>
+      <p class="small opacity-50 mb-5" style="max-width: 240px; margin: 0 auto 32px; line-height: 1.6;">Are you sure you want to sign out of the administrator registry?</p>
+      
+      <div class="d-flex flex-column gap-3">
+        <button id="confirmLogout" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff; padding: 18px; font-size: 11px; letter-spacing: 0.2em;">CONFIRM SIGN OUT</button>
+        <button id="cancelLogout" class="btn-lux w-100 btn-outline-lux" style="padding: 16px; font-size: 11px; letter-spacing: 0.2em; border-color: rgba(15, 25, 35, 0.1);">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LUXURY NOTIFICATION MODAL -->
+  <div id="notificationModal" class="lux-modal-overlay">
+    <div class="lux-modal-card text-center" style="max-width: 400px;">
+      <div id="notifIconContainer" class="mb-4 d-flex justify-content-center"></div>
+      <h3 id="notifTitle" class="serif mb-2" style="font-size: 24px; opacity: 1;">Notification</h3>
+      <p id="notifMessage" class="small opacity-50 mb-5" style="line-height: 1.6;"></p>
+      <button id="closeNotifBtn" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff; padding: 16px; font-size: 11px; letter-spacing: 0.2em;">OK</button>
+    </div>
+  </div>
+
+  <!-- BULK AUDIT MODAL -->
+  <div id="bulkAuditModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 500px;">
+      <i class="ph ph-x modal-close-lux" id="closeBulkAuditTop"></i>
+      <h3 class="serif mb-1" style="font-size: 28px;">Financial Audit</h3>
+      <p class="small opacity-50 mb-4">Verifying all pending orders against Paystack official records.</p>
+      
+      <div id="auditProgress" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--lux-border); border-radius: 8px; padding: 16px; background: #fafafa; margin-bottom: 24px;">
+        <div id="auditProgressList"></div>
+      </div>
+
+      <div id="auditSummary" class="small fw-bold mb-4 text-center d-none" style="background: #f0fdf4; padding: 12px; border-radius: 8px; color: #166534;">
+        AUDIT COMPLETE: <span id="auditCount" class="text-dark">0</span> Success(es). Registry updated.
+      </div>
+
+      <button id="closeBulkAudit" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff; padding: 16px; font-size: 11px; letter-spacing: 0.15em;">CLOSE REPORT</button>
+    </div>
+  </div>
+
+  <!-- BATCH PRINT MODAL -->
+  <div id="batchPrintModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 420px;">
+      <i class="ph ph-x modal-close-lux" onclick="closeBatchPrintModal()"></i>
+      <h3 class="serif mb-2" style="font-size: 28px;">Print Production Sheet</h3>
+      <p class="small opacity-50 mb-4">Select a batch to generate a PDF production sheet for the printing team.</p>
+      <div class="mb-4">
+        <label class="lux-label">Batch Number</label>
+        <select id="printBatchSelect" class="lux-input w-100" onchange="updateBatchPrintSummary()">
+          <option value="" disabled selected>Select a batch...</option>
+        </select>
+      </div>
+      <div id="batchPrintSummary" class="mb-4 p-3 d-none" style="background: var(--lux-bg); border-radius: 8px;">
+        <div class="d-flex justify-content-between small">
+          <span class="opacity-50">Total Items</span>
+          <span id="printBatchItemCount" class="fw-bold">0</span>
+        </div>
+      </div>
+      <div class="d-flex gap-3">
+        <button class="btn-lux w-100" style="background: var(--lux-gold); color: #fff; border: none;" onclick="generateBatchPdf()">
+          <i class="ph ph-file-pdf me-1"></i> GENERATE PDF
+        </button>
+        <button class="btn-lux w-100 btn-outline-lux" onclick="closeBatchPrintModal()">CANCEL</button>
+      </div>
+      <button id="btnCloseBatch" class="btn-lux w-100 mt-2 d-none" style="background: #c21e2d; color: #fff; border: none; font-size: 11px;" onclick="handleCloseBatch()">
+        <i class="ph ph-lock-key me-1"></i> MARK BATCH AS PROCESSED (CLOSE)
+      </button>
+      <button id="btnSyncClosed" class="btn-lux w-100 mt-2 d-none" style="background: var(--lux-bg); color: var(--lux-ink); border: 1px solid var(--lux-border); font-size: 10px; opacity: 0.7;" onclick="syncAllClosedFulfillment()">
+        <i class="ph ph-arrows-clockwise me-1"></i> SYNC ALL CLOSED BATCHES AS FULFILLED
+      </button>
+    </div>
+  </div>
+
+  <style>
+    .lux-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 25, 35, 0.6);
+      backdrop-filter: blur(12px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.4s ease;
+    }
+    .lux-modal-overlay.active { display: flex; }
+    .lux-modal-card {
+      background: #fff;
+      padding: 40px 32px;
+      border-radius: 24px;
+      width: 95%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      text-align: left;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.15);
+      border: 1px solid rgba(184, 147, 63, 0.1);
+      transform: scale(0.9) translateY(40px);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0;
+      position: relative;
+      overscroll-behavior: contain;
+    }
+    @media (max-width: 576px) {
+      .lux-modal-card { padding: 32px 24px; }
+    }
+    .lux-modal-overlay.active .lux-modal-card { 
+      transform: scale(1) translateY(0); 
+      opacity: 1;
+    }
+    .modal-close-lux {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      font-size: 24px;
+      cursor: pointer;
+      opacity: 0.3;
+      transition: opacity 0.3s;
+    }
+    .modal-close-lux:hover { opacity: 1; }
+    body.modal-open { overflow: hidden !important; }
+
+    .btn-outline-lux {
+      background: transparent;
+      border: 1px solid var(--lux-border);
+      color: var(--lux-ink);
+    }
+    .btn-outline-lux:hover {
+      background: rgba(15, 25, 35, 0.03);
+      border-color: var(--lux-ink);
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Receipt Preview */
+    .receipt-preview-frame {
+      width: 100%;
+      height: 500px;
+      border: 1px solid var(--lux-border);
+      background: #fdfdfd;
+    }
+  </style>
+
+  <!-- EXTERNAL LIBRARIES -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- EXPORT SETTINGS MODAL -->
+  <div id="exportModal" class="lux-modal-overlay">
+    <div class="lux-modal-card">
+      <i class="ph ph-x modal-close-lux" id="closeExportTop"></i>
+      <h3 class="serif mb-2" style="font-size: 28px;">Export Settings</h3>
+      <p class="small opacity-50 mb-4">Select format and columns for your intelligence report.</p>
+      
+      <div class="mb-4">
+        <label class="small fw-bold text-uppercase tracking-widest mb-3 d-block" style="font-size: 10px;">Output Format</label>
+        <div class="d-flex gap-2">
+          <button class="format-btn active" data-format="pdf">
+            <i class="ph ph-file-pdf"></i> PDF Document
+          </button>
+          <button class="format-btn" data-format="excel">
+            <i class="ph ph-file-xls"></i> Excel Sheet
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="small fw-bold text-uppercase tracking-widest mb-3 d-block" style="font-size: 10px;">Filter by Status</label>
+        <div class="d-flex gap-3" id="exportStatusFilter">
+          <label class="column-opt"><input type="radio" name="exportStatus" value="all" checked> All</label>
+          <label class="column-opt"><input type="radio" name="exportStatus" value="paid"> Paid</label>
+          <label class="column-opt"><input type="radio" name="exportStatus" value="pending"> Pending</label>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="small fw-bold text-uppercase tracking-widest mb-3 d-block" style="font-size: 10px;">Filter by Class</label>
+        <select id="exportClassFilter" class="status-select-lux w-100" style="border: 1px solid var(--lux-border); height: 45px;">
+          <option value="all">All Classes</option>
+        </select>
+      </div>
+
+      <div class="mb-5">
+        <label class="small fw-bold text-uppercase tracking-widest mb-3 d-block" style="font-size: 10px;">Select Columns</label>
+        <div class="row g-2" id="columnPicker">
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="date" checked> Date</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="name" checked> Student Name</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="hostel" checked> Hostel</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="items" checked> Order Items</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="programme" checked> Programme</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="class" checked> Class</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="nickname" checked> Nickname</label>
+          </div>
+          <div class="col-4">
+            <label class="column-opt"><input type="checkbox" value="total" checked> Price</label>
+          </div>
+          <div class="col-4">
+            <label class="column-opt"><input type="checkbox" value="fee" checked> Service Fee</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="total_paid" checked> Total Paid</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="payout" checked> Est. Payout (Net)</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="status" checked> Status</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="batch" checked> Batch Number</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="visual" checked> Visual Marker</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-3">
+        <button id="runExport" class="btn-lux w-100" style="background: var(--lux-ink); color: #fff;">Generate Report</button>
+        <button id="closeExport" class="btn-lux w-100 btn-outline-lux">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUAL ORDER MODAL -->
+  <div id="manualOrderModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 600px;">
+      <i class="ph ph-x modal-close-lux" onclick="closeManualOrderModal()"></i>
+      <h3 class="serif mb-2" style="font-size: 28px;">Create Manual Record</h3>
+      <p class="small opacity-50 mb-4">Record a transaction for WhatsApp or cash payments.</p>
+      
+      <form id="manualOrderForm" onsubmit="handleManualOrderSubmit(event)">
+        <div class="row g-3">
+          <!-- Student Section -->
+          <div class="col-md-6">
+            <label class="lux-label">Phone Number (Lookup)</label>
+            <input type="tel" id="manPhone" class="lux-input w-100" placeholder="0XXXXXXXXX" required maxlength="10" oninput="handleManualLookup(this.value)">
+          </div>
+          <div class="col-md-6">
+            <label class="lux-label">Student Name</label>
+            <input type="text" id="manName" class="lux-input w-100" placeholder="Full Name" required>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Programme</label>
+            <select id="manProg" class="lux-input w-100" required onchange="updateManualClasses(this.value)">
+              <option value="" disabled selected>Select</option>
+              <option value="RGN">RGN</option>
+              <option value="RM">RM</option>
+              <option value="NAC">NAC</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Class</label>
+            <select id="manClass" class="lux-input w-100" required disabled>
+               <option value="" disabled selected>Select</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Hostel</label>
+            <select id="manHostel" class="lux-input" required>
+              <option value="" disabled selected>Select</option>
+              <option value="Virginia Henerdson">Virginia Henerdson</option>
+              <option value="Queens Hostel">Queens Hostel</option>
+              <option value="Nightingale Hostel">Nightingale Hostel</option>
+              <option value="Royal Hostel">Royal Hostel</option>
+              <option value="DBS Hostel">DBS Hostel</option>
+              <option value="Harmony Hostel">Harmony Hostel</option>
+              <option value="Males Hostel">Males Hostel</option>
+              <option value="Town/Private">Town/Private</option>
+            </select>
+          </div>
+
+          <hr class="my-3 opacity-10">
+
+          <!-- Order Section -->
+          <div class="col-md-4">
+            <label class="lux-label">Shirt Color</label>
+            <select id="manColor" class="lux-input w-100" required>
+              <option value="Navy Tradition">Navy Tradition</option>
+              <option value="Royal Burgundy">Royal Burgundy</option>
+              <option value="Emerald Green">Emerald Green</option>
+              <option value="Midnight Black">Midnight Black</option>
+              <option value="Deep Royal">Deep Royal</option>
+              <option value="Heritage Gold">Heritage Gold</option>
+              <option value="Classic White">Classic White</option>
+              <option value="Dusty Pink">Dusty Pink</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Size</label>
+            <select id="manSize" class="lux-input w-100" required>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="2XL">2XL</option>
+              <option value="3XL">3XL</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="lux-label">Package</label>
+            <select id="manPkg" class="lux-input w-100" required onchange="updateManualPrice()">
+              <option value="shirt">Shirt Only</option>
+              <option value="bundle">Shirt + Cap</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="lux-label">Texture</label>
+            <div class="d-flex gap-2">
+              <label class="small opacity-75"><input type="radio" name="manTexture" value="Cotton" checked> Cotton</label>
+              <label class="small opacity-75"><input type="radio" name="manTexture" value="Jersey"> Jersey</label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="lux-label">Nickname (Optional)</label>
+            <input type="text" id="manNick" class="lux-input w-100" placeholder="e.g. CAPTAIN" oninput="updateManualPrice()">
+          </div>
+        </div>
+
+        <div class="mt-4 p-3 d-flex justify-content-between align-items-center" style="background: var(--lux-bg); border-radius: 8px;">
+           <div class="small opacity-50 fw-bold">ESTIMATED TOTAL:</div>
+           <div class="serif fw-bold" style="font-size: 20px; color: var(--lux-gold);">GHS <span id="manPriceDisplay">45.00</span></div>
+        </div>
+
+        <button type="submit" id="manSubmitBtn" class="btn-action-lux w-100 mt-3" style="background: var(--lux-gold); color: #fff; height: 50px;">
+          RECORD TRANSACTION
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="receiptPreviewModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 600px;">
+      <i class="ph ph-x modal-close-lux" id="closeReceiptPreviewTop"></i>
+      <h3 class="serif mb-1" style="font-size: 28px;">Receipt Preview</h3>
+      <p class="small opacity-50 mb-4">Official SRC Pulse Confirmation Artifact</p>
+      
+      <iframe id="receiptFrame" class="receipt-preview-frame mb-4" style="width:100%; height:450px; border:1px solid #eee;"></iframe>
+
+      <div class="d-flex gap-3">
+        <button id="downloadReceiptBtn" class="btn-lux w-100" style="background: var(--lux-gold); color: #fff; border: none; padding: 16px; font-size: 11px; letter-spacing: 0.15em;">DOWNLOAD PDF</button>
+        <button id="closeReceiptPreview" class="btn-lux w-100 btn-outline-lux" style="padding: 16px; font-size: 11px; letter-spacing: 0.15em;">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .format-btn {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid var(--lux-border);
+      background: transparent;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--lux-ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .format-btn.active {
+      background: var(--lux-ink);
+      color: #fff;
+      border-color: var(--lux-ink);
+    }
+    .column-opt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .column-opt:hover { background: rgba(15, 25, 35, 0.03); }
+    .column-opt input {
+      accent-color: var(--lux-gold);
+      width: 18px; height: 18px;
+    }
+    .lux-chart-container canvas {
+      max-width: 100%;
+    }
+  </style>
+  <script>
+    // ── Authentication Guard (Legacy cleanup) ───────────────────────
+
+    // Populate User Details
+    const currentUser = AdminAuth.getUser();
+    if (currentUser) {
+      const uId = document.getElementById('userDisplayName');
+      const rId = document.getElementById('userRoleName');
+      if (uId) uId.textContent = currentUser.full_name || currentUser.username;
+      if (rId) rId.textContent = currentUser.role || 'Administrator';
+    }
+
+    // Custom Logout Logic
+    const logoutModal = document.getElementById('logoutModal');
+    
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      logoutModal.classList.add('active');
+    });
+
+    document.getElementById('cancelLogout').addEventListener('click', () => {
+      logoutModal.classList.remove('active');
+    });
+
+    document.getElementById('confirmLogout').addEventListener('click', () => {
+      AdminAuth.logout();
+      window.location.href = 'index.html';
+    });
+
+    // Close on overlay click
+    logoutModal.addEventListener('click', (e) => {
+      if (e.target === logoutModal) logoutModal.classList.remove('active');
+    });
+
+    let orders = [];
+    let filteredOrders = []; 
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let currentStatusFilter = 'paid';
+    let currentClassFilter = 'all';
+    let currentCapFilter = 'all';
+    let charts = {}; // Global chart instances
+    let currentBatchFilter = 'all';
+    let selectedOrderIds = new Set();
+    let closedBatches = [];
+
+    const COLOR_MAP = {
+      'Navy Tradition': '#1C2E4A',
+      'Royal Burgundy': '#C21E2D',
+      'Emerald Green': '#1E8449',
+      'Midnight Black': '#111111',
+      'Deep Royal': '#2E5090',
+      'Heritage Gold': '#F1C40F',
+      'Classic White': '#F8F9FA',
+      'Dusty Pink': '#F5B7B1'
+    };
+
+    function getColorCircleHtml(colorName, size = '14px') {
+      const hex = COLOR_MAP[colorName] || '#cccccc';
+      return `<div class="color-circle-lux" style="width:${size}; height:${size}; border-radius:50%; background:${hex}; border:1px solid rgba(0,0,0,0.1); display:inline-block; vertical-align:middle;" title="${colorName}"></div>`;
+    }
+
+    async function loadDashboard() {
+      try {
+        orders = await getAllOrders();
+        
+        // Extract closed batches from system control records
+        closedBatches = orders
+          .filter(o => o.transaction_id === 'SYSTEM_BATCH_CONTROL')
+          .map(o => parseInt(o.batch_number))
+          .filter(Boolean);
+
+        updateExportClassFilter(orders);
+        updateDashboardClassFilter(orders);
+        applyFilters(); 
+        renderStats();
+        renderAnalytics();
+        updateBatchFilterOptions(orders);
+      } catch (err) {
+        console.error("Dashboard Sync Failed:", err);
+        alert("Failed to synchronize with registry: " + (err.message || "Unknown error"));
+      }
+    }
+
+    function updateExportClassFilter(data) {
+      const select = document.getElementById('exportClassFilter');
+      if (!select) return;
+      const currentVal = select.value;
+      
+      const classes = [...new Set(data.map(o => o.student?.class).filter(Boolean))].sort();
+      
+      let html = '<option value="all">All Classes</option>';
+      classes.forEach(c => {
+        html += `<option value="${c}">${c}</option>`;
+      });
+      select.innerHTML = html;
+      if (classes.includes(currentVal)) select.value = currentVal;
+    }
+
+    function updateDashboardClassFilter(data) {
+      const select = document.getElementById('classFilter');
+      if (!select) return;
+      const currentVal = currentClassFilter;
+      
+      const classes = [...new Set(data.map(o => o.student?.class).filter(Boolean))].sort();
+      
+      let html = '<option value="all">All Classes</option>';
+      classes.forEach(c => {
+        html += `<option value="${c}">${c}</option>`;
+      });
+      select.innerHTML = html;
+      if (classes.includes(currentVal)) select.value = currentVal;
+      else currentClassFilter = 'all';
+    }
+
+    function applyFilters() {
+      const searchEl = document.getElementById('orderSearch');
+      const query = (searchEl ? searchEl.value : '').toLowerCase();
+      
+      // Update UI Badges
+      if (typeof updateActiveFilterBadges === 'function') {
+        updateActiveFilterBadges(query);
+      }
+
+      // 1. Filter the base items
+      const baseFiltered = orders.filter(o => {
+        // Exclude internal control records from the UI list
+        if (o.transaction_id === 'SYSTEM_BATCH_CONTROL') return false;
+
+        // Status Filter
+        let matchesStatus = true;
+        if (currentStatusFilter === 'paid') {
+          matchesStatus = (o.payment_status === 'paid' || o.payment_status === 'fulfilled');
+        } else if (currentStatusFilter === 'pending') {
+          matchesStatus = (o.payment_status === 'pending');
+        }
+
+        // Search Filter
+        const matchesSearch = !query || 
+          o.student?.name?.toLowerCase().includes(query) || 
+          o.student?.phone?.includes(query) ||
+          o.buyer?.name?.toLowerCase().includes(query) ||
+          o.transaction_id?.toLowerCase().includes(query) ||
+          (o.nickname_text && o.nickname_text.toLowerCase().includes(query));
+
+        // Class Filter
+        const matchesClass = currentClassFilter === 'all' || o.student?.class === currentClassFilter;
+
+        // Cap Filter
+        const matchesCap = currentCapFilter === 'all' || 
+          (currentCapFilter === 'true' && o.cap_option === true) || 
+          (currentCapFilter === 'false' && o.cap_option === false);
+
+        // Batch Filter
+        let matchesBatch = true;
+        if (currentBatchFilter === 'unassigned') {
+          matchesBatch = !o.batch_number;
+        } else if (currentBatchFilter !== 'all') {
+          matchesBatch = o.batch_number === parseInt(currentBatchFilter);
+        }
+
+        return matchesStatus && matchesSearch && matchesClass && matchesCap && matchesBatch;
+      });
+
+      // 2. Group into Accounts
+      filteredOrders = groupOrdersIntoAccounts(baseFiltered);
+
+      const countTotal = filteredOrders.length;
+      const countItems = baseFiltered.length;
+      const countEl = document.getElementById('transactionCount');
+      if (countEl) countEl.textContent = `${countTotal} Accounts (${countItems} Items)`;
+      
+      currentPage = 1;
+      selectedOrderIds.clear();
+      updateBatchActionBar();
+      renderTable();
+    }
+
+    function groupOrdersIntoAccounts(data) {
+      const map = {};
+      data.forEach(o => {
+        const phone = o.student?.phone || 'Guest';
+        if (!map[phone]) {
+          map[phone] = {
+            student: o.student,
+            transactions: {},
+            totalSpend: 0,
+            itemCount: 0,
+            latestDate: o.created_at
+          };
+        }
+        const acc = map[phone];
+        const txId = o.transaction_id || 'manual-' + Date.now();
+        if (!acc.transactions[txId]) {
+          acc.transactions[txId] = {
+            id: txId,
+            date: o.created_at,
+            status: o.payment_status,
+            totalPaid: o.total_paid || 0,
+            serviceFee: o.service_fee || 0,
+            items: []
+          };
+        }
+        acc.transactions[txId].items.push(o);
+        acc.itemCount++;
+        if (new Date(o.created_at) > new Date(acc.latestDate)) acc.latestDate = o.created_at;
+      });
+
+      // Recalculate account totals
+      return Object.values(map).map(acc => {
+        const txList = Object.values(acc.transactions);
+        acc.subtotal = 0;
+        acc.totalSpend = txList.reduce((sum, tx) => {
+          if (tx.status === 'pending') return sum; 
+          const sumItems = tx.items.reduce((s, i) => s + (Number(i.total_price) || 0), 0);
+          acc.subtotal += sumItems;
+          
+          // Fallback: 1.95% fee + 1 GHC Momo for all Paystack orders (SRC-) if fee is missing
+          const fallbackFee = (tx.id.startsWith('SRC-') ? Number((( (sumItems) / 0.9805) - sumItems).toFixed(2)) : 0);
+          const fee = Number(tx.serviceFee) || fallbackFee;
+          
+          return sum + sumItems + fee;
+        }, 0);
+        return acc;
+      }).sort((a,b) => new Date(b.latestDate) - new Date(a.latestDate));
+    }
+
+    function renderStats() {
+      const paid = orders.filter(o => (o.payment_status === 'paid' || o.payment_status === 'fulfilled') && o.transaction_id !== 'SYSTEM_BATCH_CONTROL');
+      
+      const gross = paid.reduce((sum, o) => {
+        const itemPrice = Number(o.total_price) || 0;
+        // In renderStats, we calculate per-order fee estimate. 
+        // Note: This is an approximation since Momo fee is per transaction.
+        const fallbackFee = (o.transaction_id && o.transaction_id.startsWith('SRC-')) ? Number((( (itemPrice) / 0.9805) - itemPrice).toFixed(2)) : 0;
+        const fee = Number(o.service_fee) || fallbackFee;
+        return sum + itemPrice + fee;
+      }, 0);
+      
+      // Net is simply the sum of base prices (merchant settlement)
+      const net = paid.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+
+      const sRevenue = document.getElementById('statTotalRevenue');
+      if (sRevenue) sRevenue.innerHTML = `<span style="font-size: 16px; opacity: 0.5; margin-right: 4px;">GHS</span>${gross.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+      
+      const sNet = document.getElementById('statTotalNet');
+      if (sNet) sNet.innerHTML = `<span style="font-size: 16px; opacity: 0.5; margin-right: 4px;">GHS</span>${net.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+      const sOrders = document.getElementById('statTotalOrders');
+      if (sOrders) sOrders.textContent = paid.length;
+
+      // Analytics: Top Color
+      const colors = {};
+      paid.forEach(o => { if(o.shirt_color) colors[o.shirt_color] = (colors[o.shirt_color] || 0) + 1; });
+      const topColor = Object.entries(colors).sort((a,b)=>b[1]-a[1])[0];
+      const sColor = document.getElementById('statTopColor');
+      if (sColor) sColor.textContent = topColor ? topColor[0] : '---';
+
+      // Analytics: Top Class
+      const classes = {};
+      paid.forEach(o => { 
+        const cls = o.student?.class || 'Unknown';
+        classes[cls] = (classes[cls] || 0) + (Number(o.total_price) || 0); 
+      });
+      const topClass = Object.entries(classes).sort((a,b)=>b[1]-a[1])[0];
+      const sClass = document.getElementById('statTopClass');
+      if (sClass) sClass.textContent = topClass ? topClass[0] : '---';
+      
+      renderAnalytics(paid);
+    }
+
+    function renderAnalytics() {
+      const paid = orders.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled');
+      if (paid.length === 0) return;
+
+      // 1. Daily Revenue (Line)
+      const revData = {};
+      paid.forEach(o => {
+        const date = new Date(o.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        revData[date] = (revData[date] || 0) + (Number(o.total_price) || 0);
+      });
+      const revLabels = Object.keys(revData).sort((a,b) => new Date(a) - new Date(b));
+      const revValues = revLabels.map(l => revData[l]);
+
+      // 2. Orders per Class (Horizontal Bar)
+      const classData = {};
+      paid.forEach(o => {
+        const cls = o.student?.class || 'Other';
+        classData[cls] = (classData[cls] || 0) + 1;
+      });
+      const classLabels = Object.keys(classData).sort((a,b) => classData[b] - classData[a]).slice(0, 8);
+      const classValues = classLabels.map(l => classData[l]);
+
+      // 3. Shirt Size Distribution (Doughnut)
+      const sizeData = {};
+      paid.forEach(o => {
+        const size = o.shirt_size || 'M';
+        sizeData[size] = (sizeData[size] || 0) + 1;
+      });
+      const sizeOrder = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+      const sizeLabels = sizeOrder.filter(s => sizeData[s]);
+      const sizeValues = sizeLabels.map(l => sizeData[l]);
+
+      // 4. Color Popularity (Vertical Bar)
+      const colorData = {};
+      paid.forEach(o => {
+        const color = o.shirt_color || 'Other';
+        colorData[color] = (colorData[color] || 0) + 1;
+      });
+      const colorLabels = Object.keys(colorData).sort((a,b) => colorData[b] - colorData[a]);
+      const colorValues = colorLabels.map(l => colorData[l]);
+
+      // --- Chart.js Global Theme ---
+      const luxGold = '#b8933f';
+      const luxGoldLight = 'rgba(184, 147, 63, 0.2)';
+      const luxInk = '#0f1923';
+      
+      Chart.defaults.color = 'rgba(15, 25, 35, 0.4)';
+      Chart.defaults.font.family = "'Outfit', sans-serif";
+      Chart.defaults.font.size = 11;
+
+      // Clean up existing charts
+      Object.values(charts).forEach(c => c.destroy());
+
+      // REVENUE LINE
+      const ctxRev = document.getElementById('chartDailyRevenue');
+      if (ctxRev) {
+        charts.revenue = new Chart(ctxRev, {
+          type: 'line',
+          data: {
+            labels: revLabels,
+            datasets: [{
+              label: 'Revenue',
+              data: revValues,
+              borderColor: luxGold,
+              backgroundColor: luxGoldLight,
+              fill: true,
+              borderWidth: 2,
+              tension: 0.4,
+              pointStyle: 'circle',
+              pointRadius: 3,
+              pointBackgroundColor: luxGold
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } }
+        });
+      }
+
+      // CLASS BAR (Horizontal)
+      const ctxClass = document.getElementById('chartOrdersPerClass');
+      if (ctxClass) {
+        charts.class = new Chart(ctxClass, {
+          type: 'bar',
+          data: {
+            labels: classLabels,
+            datasets: [{
+              data: classValues,
+              backgroundColor: luxGold,
+              borderRadius: 4
+            }]
+          },
+          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: false } } } }
+        });
+      }
+
+      // SIZE DOUGHNUT
+      const ctxSize = document.getElementById('chartSizeDist');
+      if (ctxSize) {
+        charts.size = new Chart(ctxSize, {
+          type: 'doughnut',
+          data: {
+            labels: sizeLabels,
+            datasets: [{
+              data: sizeValues,
+              backgroundColor: [luxGold, luxInk, '#34495e', '#7f8c8d', '#95a5a6', '#bdc3c7'],
+              borderWidth: 0,
+              hoverOffset: 10
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 15 } } } }
+        });
+      }
+
+      // COLOR BAR (Vertical)
+      const ctxColor = document.getElementById('chartColorPop');
+      if (ctxColor) {
+        charts.color = new Chart(ctxColor, {
+          type: 'bar',
+          data: {
+            labels: colorLabels,
+            datasets: [{
+              data: colorValues,
+              backgroundColor: luxGold,
+              borderRadius: 4
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } }
+        });
+      }
+
+      // Legacy support for modal analytics if elements exist
+      const modalColors = document.getElementById('analyticsColors');
+      if (modalColors) {
+         // Keep old logic for the pop-up modal
+         const sortedColors = Object.entries(colorData).sort((a,b)=>b[1]-a[1]);
+         modalColors.innerHTML = sortedColors.map(([name, count]) => `
+          <div class="d-flex justify-content-between mb-1">
+            <span>${name}</span> <span>${count}</span>
+          </div>
+          <div class="progress mb-3" style="height:4px; border-radius:0;">
+            <div class="progress-bar bg-dark" style="width:${(count/paid.length)*100}%"></div>
+          </div>
+         `).join('');
+      }
+
+      const modalClasses = document.getElementById('analyticsClasses');
+      if (modalClasses) {
+        const sortedClasses = Object.entries(classData).sort((a,b)=>b[1]-a[1]);
+        const maxVal = sortedClasses[0]?.[1] || 1;
+        modalClasses.innerHTML = sortedClasses.slice(0, 5).map(([name, count]) => `
+          <div class="d-flex justify-content-between mb-1">
+            <span>${name}</span> <span>${count} Orders</span>
+          </div>
+          <div class="progress mb-3" style="height:4px; border-radius:0;">
+            <div class="progress-bar" style="background:var(--lux-gold); width:${(count/maxVal)*100}%"></div>
+          </div>
+        `).join('');
+      }
+
+      const modalItems = document.getElementById('modalTotalItems');
+      if (modalItems) modalItems.textContent = paid.length;
+      
+      const modalAvg = document.getElementById('modalAvgOrder');
+      if (modalAvg) {
+        const totalPaidRev = paid.reduce((s,o)=>s+(Number(o.total_price) || 0), 0);
+        modalAvg.textContent = `GHS ${(totalPaidRev/paid.length || 0).toFixed(2)}`;
+      }
+
+      const modalCaps = document.getElementById('modalTotalCaps');
+      if (modalCaps) modalCaps.textContent = paid.filter(o => o.cap_option).length;
+    }
+
+    function renderTable() {
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const results = filteredOrders.slice(start, end);
+      
+      const tbody = document.getElementById('ordersTable');
+      if (!tbody) return; // Safeguard if DOM isn't fully ready
+      
+      tbody.innerHTML = results.map(acc => {
+        const namePart = acc.student?.name || 'Unknown Student';
+        const initials = namePart.split(' ').filter(n => n).map(n => n[0]).join('').toUpperCase().substring(0,2);
+        const formattedDate = new Date(acc.latestDate).toLocaleString('en-GB', {
+          day: 'numeric', month: 'numeric', year: '2-digit', 
+          hour: 'numeric', minute: '2-digit', hour12: true
+        });
+
+        const txList = Object.values(acc.transactions).sort((a,b) => new Date(b.date) - new Date(a.date));
+        const allOrderIds = txList.flatMap(tx => tx.items.map(i => i.order_id));
+        const isChecked = allOrderIds.length > 0 && allOrderIds.every(id => selectedOrderIds.has(id));
+
+        // Compute account-level batch status
+        const allItems = txList.flatMap(tx => tx.items);
+        const batchNums = [...new Set(allItems.map(i => i.batch_number))];
+        let accountBatchHtml = '';
+        if (batchNums.length === 1 && batchNums[0] != null) {
+          accountBatchHtml = getBatchBadgeHtml(batchNums[0]);
+        } else if (batchNums.every(b => b == null)) {
+          accountBatchHtml = getBatchBadgeHtml(null);
+        } else {
+          // Mixed: some assigned, some not — or multiple batches
+          const assigned = batchNums.filter(b => b != null);
+          accountBatchHtml = assigned.map(b => getBatchBadgeHtml(b)).join(' ');
+          if (batchNums.includes(null) || batchNums.includes(undefined)) {
+            accountBatchHtml += ' ' + getBatchBadgeHtml(null);
+          }
+        }
+
+        return `
+        <tr class="account-row-lux" onclick="toggleAccountRow(this)">
+          <td data-label="Select" style="text-align: center; width: 40px;" onclick="event.stopPropagation()">
+            <input type="checkbox" class="order-select-cb" data-order-ids="${allOrderIds.join(',')}" onchange="toggleAccountSelection(this)" style="accent-color: var(--lux-gold); width: 16px; height: 16px; cursor: pointer;" ${isChecked ? 'checked' : ''}>
+          </td>
+          <td data-label="Expand" style="text-align: center;"><i class="ph-bold ph-caret-right expand-icon-lux"></i></td>
+          <td data-label="Student Account">
+            <div class="d-flex align-items-center">
+              <div class="customer-avatar-lux" style="background:var(--lux-bg); color:var(--lux-gold); border-color:var(--lux-gold-light); display:flex; align-items:center; justify-content:center; font-weight:700;">${initials}</div>
+              <div class="ms-3">
+                <div class="fw-bold">${namePart}</div>
+                <div class="small opacity-50">${acc.student?.phone || 'No Phone'}</div>
+              </div>
+            </div>
+          </td>
+          <td data-label="Color">
+            <div class="d-flex gap-1 flex-wrap">
+              ${[...new Set(txList.flatMap(tx => tx.items.map(i => i.shirt_color)))].map(c => getColorCircleHtml(c, '16px')).join('')}
+            </div>
+          </td>
+          <td data-label="Programme" class="small opacity-50">${acc.student?.programme || '---'}</td>
+          <td data-label="Hostel" class="small opacity-50">${acc.student?.hostel || '---'}</td>
+          <td data-label="Orders">
+            <div class="d-flex flex-column gap-1">
+              <span class="stat-badge-lux">${txList.length} ORDERS</span>
+              <div class="d-flex gap-1 flex-wrap">${accountBatchHtml}</div>
+            </div>
+          </td>
+          <td data-label="Total Spend">
+            <div class="fw-bold text-dark">GHS ${acc.totalSpend.toFixed(2)}</div>
+            <div class="small opacity-50" style="font-size: 9px; text-transform:uppercase;">Items: GHS ${acc.subtotal.toFixed(2)}</div>
+          </td>
+          <td data-label="Latest Activity" class="small opacity-50 text-end">${formattedDate}</td>
+        </tr>
+        <tr class="transaction-detail-row" style="display: none;">
+          <td colspan="12" style="padding: 0; border: none;">
+            <div class="transaction-detail-lux">
+              <h6 class="small text-uppercase tracking-widest opacity-50 mb-3 px-2">Account Transaction History</h6>
+              <div class="row g-3">
+                ${txList.map(tx => {
+                  const txItemsSum = tx.items.reduce((s, i) => s + (Number(i.total_price) || 0), 0);
+                  const txFee = Number(tx.serviceFee) || (tx.id.startsWith('SRC-') ? Number((( (txItemsSum) / 0.9805) - txItemsSum).toFixed(2)) : 0);
+                  const txDisplayTotal = txItemsSum + txFee;
+                  
+                  return `
+                <div class="col-12">
+                  <div class="tx-card-lux">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                       <div class="small font-monospace opacity-50">${tx.id}</div>
+                       <div class="d-flex align-items-center gap-3">
+                          <div class="small opacity-75">${new Date(tx.date).toLocaleDateString()}</div>
+                           <div class="status-badge-lux status-${tx.status}-alt small fw-bold text-uppercase px-2" style="font-size: 9px; border-radius: 4px; padding: 4px;">
+                             ${tx.status}
+                           </div>
+                           ${tx.status === 'pending' ? `
+                             <button class="btn-action-lux btn-confirm-lux" onclick="handleVerifyPaystack('${tx.id}', this)" style="height: 24px; font-size: 8px;">
+                               <i class="ph ph-shield-check me-1"></i> Verify
+                             </button>
+                           ` : ''}
+                           <div class="fw-bold text-dark">GHS ${txDisplayTotal.toFixed(2)}</div>
+                           <div class="small fw-bold text-lux ms-2" style="font-size: 9px; padding: 2px 6px; background: rgba(184, 147, 63, 0.1); border-radius: 4px;" title="Estimated Payout after Paystack fees">
+                             <i class="ph ph-hand-coins me-1"></i> GHS ${(txDisplayTotal * 0.9805).toFixed(2)}
+                           </div>
+                           <a href="https://dashboard.paystack.com/#/transactions?q=${tx.id}" target="_blank" class="ms-2 opacity-50 hover-gold" title="View on Paystack Dashboard">
+                             <i class="ph ph-arrow-square-out" style="font-size: 14px;"></i>
+                           </a>
+                       </div>
+                    </div>
+                    
+                    <div class="items-list-lux">
+                      ${tx.items.map(item => `
+                        <div class="item-line-lux small">
+                          <div>
+                             ${getColorCircleHtml(item.shirt_color, '12px')}
+                             <span class="fw-bold ms-1">${item.shirt_color} (${item.shirt_size})</span>
+                             <span class="opacity-50 ms-1 text-uppercase">${item.shirt_texture || 'Cotton'}</span>
+                             ${item.is_gift ? '<span class="stat-badge-lux ms-1 d-inline-flex align-items-center" style="color:var(--lux-gold);" title="Gift Order"><i class="ph-bold ph-gift" style="font-size:12px;"></i><span class="d-none d-md-inline ms-1">GIFT</span></span>' : ''}
+                             ${item.cap_option ? '<span class="stat-badge-lux ms-1 d-inline-flex align-items-center" style="background:#e3f2fd; color:#1e88e5; border-color:#bbdefb;" title="Includes Cap"><i class="ph-bold ph-baseball-cap" style="font-size:13px;"></i><span class="d-none d-md-inline ms-1">CAP</span></span>' : ''}
+                             ${item.nickname_text ? `<div class="text-gold fw-bold mt-1">NICKNAME: ${item.nickname_text}</div>` : ''}
+                          </div>
+                           <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                             ${getBatchBadgeHtml(item.batch_number)}
+                             <div class="fw-bold">GHS ${Number(item.total_price || 0).toFixed(2)}</div>
+                           </div>
+                        </div>
+                      `).join('')}
+                    </div>
+
+                    <div class="d-flex flex-column gap-1 mt-2 pt-2 border-top">
+                       <div class="d-flex justify-content-between small opacity-50">
+                         <span>Subtotal (Items)</span>
+                         <span>GHS ${txItemsSum.toFixed(2)}</span>
+                       </div>
+                       <div class="d-flex justify-content-between small opacity-50">
+                         <span>Processing Fee</span>
+                         <span>GHS ${(Number(tx.serviceFee) || (txDisplayTotal - txItemsSum)).toFixed(2)}</span>
+                       </div>
+                       <div class="d-flex justify-content-between fw-bold mt-1" style="color:var(--lux-ink);">
+                         <span>Total Received</span>
+                         <span>GHS ${txDisplayTotal.toFixed(2)}</span>
+                       </div>
+                       <div class="d-flex gap-2 mt-2">
+                          <button onclick="event.stopPropagation(); window.openEditOrderModal('${tx.id}')" class="btn-action-lux" style="background:#e8f4fd; color:#0288d1; border-color:#b3e5fc;" title="Edit Order"><i class="ph ph-pencil-simple"></i></button>
+                          <button onclick="event.stopPropagation(); handlePrintReceipt('${tx.id}')" class="btn-action-lux" style="background:#f3f0ff; color:#673ab7; border-color:#d1c4e9;" title="Print Receipt"><i class="ph ph-printer"></i></button>
+                          ${tx.status === 'paid' ? `<button onclick="event.stopPropagation(); handleFulfill('${tx.id}')" class="btn-action-lux btn-fulfill-lux"><i class="ph ph-package"></i></button>` : ''}
+                          ${tx.status === 'pending' ? `
+                            <button onclick="event.stopPropagation(); handleConfirmManual('${tx.id}')" class="btn-action-lux btn-confirm-lux"><i class="ph ph-check"></i></button>
+                            <button onclick="event.stopPropagation(); handleDeleteOrder('${tx.id}')" class="btn-action-lux btn-cancel-lux"><i class="ph ph-trash"></i></button>
+                          ` : ''}
+                       </div>
+                    </div>
+                  </div>
+                </div>
+                `}).join('')}
+              </div>
+            </div>
+          </td>
+        </tr>
+        `}).join('') || '<tr><td colspan="12" class="text-center py-5 opacity-50 no-records-td">No student accounts found matching your filter.</td></tr>';
+
+      const pInfo = document.getElementById('pageInfo');
+      if (pInfo) pInfo.textContent = `Showing ${Math.min(end, filteredOrders.length)} of ${filteredOrders.length} accounts`;
+    }
+
+    function toggleAccountRow(el) {
+      const detailRow = el.nextElementSibling;
+      const detailContent = detailRow.querySelector('.transaction-detail-lux');
+      const icon = el.querySelector('.expand-icon-lux');
+      
+      const isOpen = detailRow.style.display !== 'none';
+      
+      if (isOpen) {
+        detailRow.style.display = 'none';
+        detailContent.classList.remove('active');
+        el.classList.remove('expanded');
+      } else {
+        detailRow.style.display = 'table-row';
+        setTimeout(() => detailContent.classList.add('active'), 10);
+        el.classList.add('expanded');
+      }
+    }
+
+    // Active Filters Pill Controller
+    window.clearFilter = function(filterType) {
+      if (filterType === 'search') {
+        document.getElementById('orderSearch').value = '';
+      } else if (filterType === 'status') {
+        currentStatusFilter = 'all';
+        document.getElementById('statusFilter').value = 'all';
+      } else if (filterType === 'class') {
+        currentClassFilter = 'all';
+        document.getElementById('classFilter').value = 'all';
+      } else if (filterType === 'cap') {
+        currentCapFilter = 'all';
+        document.getElementById('capFilter').value = 'all';
+      } else if (filterType === 'batch') {
+        currentBatchFilter = 'all';
+        document.getElementById('batchFilter').value = 'all';
+      }
+      applyFilters();
+    };
+
+    function updateActiveFilterBadges(query) {
+      const container = document.getElementById('activeFiltersContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      let badges = '';
+      if (query) {
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold);">SEARCH: ${query} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('search')"></i></span>`;
+      }
+      if (currentStatusFilter && currentStatusFilter !== 'all') {
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold); text-transform: uppercase;">STATUS: ${currentStatusFilter} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('status')"></i></span>`;
+      }
+      if (currentClassFilter && currentClassFilter !== 'all') {
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold);">CLASS: ${currentClassFilter} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('class')"></i></span>`;
+      }
+      if (currentCapFilter && currentCapFilter !== 'all') {
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold); text-transform: uppercase;">CAP: ${currentCapFilter === 'true' ? 'WITH CAP' : 'NO CAP'} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('cap')"></i></span>`;
+      }
+      if (currentBatchFilter && currentBatchFilter !== 'all') {
+        const batchLabel = currentBatchFilter === 'unassigned' ? 'UNASSIGNED' : 'BATCH ' + currentBatchFilter;
+        badges += `<span class="badge bg-dark rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="font-size: 10px; letter-spacing: 0.1em; color: var(--lux-gold); text-transform: uppercase;">BATCH: ${batchLabel} <i class="ph-bold ph-x ms-1" style="cursor: pointer; font-size: 12px; color: #fff;" onclick="clearFilter('batch')"></i></span>`;
+      }
+      container.innerHTML = badges;
+    }
+
+    // New event listeners for filtering
+    document.getElementById('statusFilter').addEventListener('change', e => {
+      currentStatusFilter = e.target.value;
+      applyFilters();
+    });
+
+    document.getElementById('classFilter').addEventListener('change', e => {
+      currentClassFilter = e.target.value;
+      applyFilters();
+    });
+
+    const capFilterEl = document.getElementById('capFilter');
+    if (capFilterEl) {
+      capFilterEl.addEventListener('change', e => {
+        currentCapFilter = e.target.value;
+        applyFilters();
+      });
+    }
+
+    const batchFilterEl = document.getElementById('batchFilter');
+    if (batchFilterEl) {
+      batchFilterEl.addEventListener('change', e => {
+        currentBatchFilter = e.target.value;
+        applyFilters();
+      });
+    }
+
+    document.getElementById('orderSearch').addEventListener('input', e => {
+      applyFilters();
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => { 
+      if(currentPage * itemsPerPage < filteredOrders.length) { currentPage++; renderTable(); } 
+    });
+    document.getElementById('prevPage').addEventListener('click', () => { 
+      if(currentPage > 1) { currentPage--; renderTable(); } 
+    });
+
+    async function handleFulfill(txId) {
+      if(!confirm("Mark this order as fulfilled?")) return;
+      try {
+        await updatePaymentStatus(txId, 'fulfilled');
+        showLuxNotification("Order Fulfilled", "Great! This order has been marked as fulfilled.", "success");
+        loadDashboard();
+      } catch (err) {
+        console.error("Fulfillment Failed:", err);
+        showLuxNotification("Error", "Failed to update fulfillment status.", "error");
+      }
+    }
+
+    async function handleConfirmManual(txId) {
+      if(!confirm("Confirm manual payment for this order? This will mark it as PAID.")) return;
+      try {
+        await updatePaymentStatus(txId, 'paid');
+        showLuxNotification("Payment Confirmed", "Success! The manual payment has been recorded.", "success");
+        loadDashboard();
+      } catch (err) {
+        console.error("Confirmation Failed:", err);
+        showLuxNotification("Error", "Failed to confirm payment manually.", "error");
+      }
+    }
+
+    async function handleVerifyPaystack(txId, btn) {
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph ph-spinner-gap spinning"></i> Checking...';
+      
+      try {
+        const response = await fetch(`/api/verify?reference=${encodeURIComponent(txId)}`);
+        const result = await response.json();
+        
+        if (result && result.success && result.status === 'success') {
+          showLuxNotification("Verification Successful", result.message, "success");
+          loadDashboard();
+        } else {
+          showLuxNotification("Verification Result", result.message || "Not confirmed yet.", "info");
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
+      } catch (err) {
+        console.error("Verification Error:", err);
+        showLuxNotification("Gateway Error", "Could not reach the Vercel Verification API. Is the project deployed?", "error");
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+    
+    async function handleConfirmManual(txId) {
+      if (!confirm("Confirm this transaction as PAID?")) return;
+      const db = getSupabase();
+      if (!db) return showLuxNotification("Config Error", "Supabase not initialized.", "error");
+      try {
+        const { error } = await db.from('orders').update({ payment_status: 'paid' }).eq('transaction_id', txId);
+        if (error) throw error;
+        showLuxNotification("Order Confirmed", `Transaction ${txId} marked as PAID.`, "success");
+        loadDashboard();
+      } catch (err) {
+        console.error("Confirmation Error:", err);
+        showLuxNotification("Update Failed", "Could not update transaction status.", "error");
+      }
+    }
+
+    async function handleDeleteOrder(txId) {
+      if (!confirm("Are you sure you want to PERMANENTLY DELETE this record?")) return;
+      const db = getSupabase();
+      if (!db) return showLuxNotification("Config Error", "Supabase not initialized.", "error");
+      try {
+        const { error } = await db.from('orders').delete().eq('transaction_id', txId);
+        if (error) throw error;
+        showLuxNotification("Order Deleted", `Transaction ${txId} removed from registry.`, "info");
+        loadDashboard();
+      } catch (err) {
+        console.error("Delete Error:", err);
+        showLuxNotification("Delete Failed", "Could not remove order record.", "error");
+      }
+    }
+
+    // BULK AUDIT SYSTEM
+    async function handleBulkAudit() {
+      // Find unique pending transactions (excluding system markers)
+      const pendingOrders = orders.filter(o => o.payment_status === 'pending' && o.transaction_id !== 'SYSTEM_BATCH_CONTROL');
+      
+      // Sort by date (newest first) so we check recent attempts first
+      pendingOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      // Get unique IDs to avoid double-verifying (preserving newest-first order)
+      const uniqueRefs = [];
+      const seen = new Set();
+      for (const o of pendingOrders) {
+        if (o.transaction_id && !seen.has(o.transaction_id)) {
+          uniqueRefs.push(o.transaction_id);
+          seen.add(o.transaction_id);
+        }
+      }
+
+      if (uniqueRefs.length === 0) {
+        showLuxNotification("Audit Result", "No pending transactions found for auditing.", "info");
+        return;
+      }
+
+      // Optimization: Limit to the 25 most recent unique attempts
+      const activeRefs = uniqueRefs.slice(0, 25);
+      console.log(`Bulk Audit: Checking ${activeRefs.length} most recent attempts (out of ${uniqueRefs.length} pending)...`);
+
+      const modal = document.getElementById('bulkAuditModal');
+      const list = document.getElementById('auditProgressList');
+      const summary = document.getElementById('auditSummary');
+      const countEl = document.getElementById('auditCount');
+      
+      list.innerHTML = '';
+      summary.classList.add('d-none');
+      modal.classList.add('active');
+      
+      let successCount = 0;
+      
+      // Process in batches of 5 for speed without overwhelming the API
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < activeRefs.length; i += BATCH_SIZE) {
+        const batch = activeRefs.slice(i, i + BATCH_SIZE);
+        
+        await Promise.all(batch.map(async (refId) => {
+          const sampleOrder = pendingOrders.find(o => o.transaction_id === refId);
+          const studentName = sampleOrder?.student?.name || "Unknown";
+
+          const row = document.createElement('div');
+          row.className = 'd-flex justify-content-between align-items-center mb-2 pb-2 border-bottom';
+          row.style.fontSize = '12px';
+          row.innerHTML = `
+            <span class="opacity-75">${studentName} (${refId})</span>
+            <span id="audit-${refId}" class="fw-bold opacity-50">Processing...</span>
+          `;
+          list.appendChild(row);
+          list.scrollTop = list.scrollHeight;
+          
+          try {
+            const res = await fetch(`/api/verify?reference=${encodeURIComponent(refId)}`);
+            const result = await res.json();
+            const statusEl = document.getElementById(`audit-${refId}`);
+            
+            if (result && result.success && result.status === 'success') {
+              statusEl.innerHTML = '<span style="color: #2e7d32; font-weight: bold;">✓ PAID</span>';
+              successCount++;
+            } else {
+              statusEl.innerHTML = '<span style="color: #c21e2d; opacity: 0.5;">NO RECORD</span>';
+            }
+          } catch (err) {
+            const statusEl = document.getElementById(`audit-${refId}`);
+            if (statusEl) statusEl.innerHTML = '<span class="opacity-25">ERROR</span>';
+          }
+        }));
+      }
+
+      countEl.textContent = successCount;
+      summary.classList.remove('d-none');
+      loadDashboard();
+    }
+
+    document.getElementById('bulkAuditBtn').addEventListener('click', handleBulkAudit);
+    document.getElementById('closeBulkAudit').addEventListener('click', () => document.getElementById('bulkAuditModal').classList.remove('active'));
+    document.getElementById('closeBulkAuditTop').addEventListener('click', () => document.getElementById('bulkAuditModal').classList.remove('active'));
+    
+    // Toggle Bulk Audit Visibility (Always visible now for better UX)
+    document.getElementById('statusFilter').addEventListener('change', (e) => {
+       // We keep it visible but could dim it if not pending
+       const btn = document.getElementById('bulkAuditBtn');
+       btn.style.opacity = (e.target.value === 'pending' || e.target.value === 'all') ? '1' : '0.5';
+    });
+
+    // LUXURY NOTIFICATION SYSTEM 
+    function showLuxNotification(title, message, type = 'info') {
+      const modal = document.getElementById('notificationModal');
+      const titleEl = document.getElementById('notifTitle');
+      const msgEl = document.getElementById('notifMessage');
+      const iconContainer = document.getElementById('notifIconContainer');
+      
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      
+      let iconColor = 'var(--lux-gold)';
+      let iconClass = 'ph-fill ph-info';
+
+      if (type === 'success') {
+        iconColor = '#2e7d32';
+        iconClass = 'ph-fill ph-check-circle';
+      } else if (type === 'error') {
+        iconColor = '#c62828';
+        iconClass = 'ph-fill ph-x-circle';
+      }
+
+      iconContainer.innerHTML = `<i class="${iconClass}" style="font-size: 64px; color: ${iconColor};"></i>`;
+      modal.classList.add('active');
+    }
+
+    document.getElementById('closeNotifBtn').addEventListener('click', () => {
+       document.getElementById('notificationModal').classList.remove('active');
+    });
+
+    
+    let currentDoc = null;
+    let currentDocName = "";
+
+    function handlePrintReceipt(txId) {
+      // ✅ FIX: Get ALL orders under this transaction, not just the first
+      const txOrders = orders.filter(o => o.transaction_id === txId);
+      if (!txOrders.length) return showLuxNotification("SEARCH ERROR", "Order not found.", "error");
+
+      // Group by student so gifts get their own separate receipt page
+      const studentGroups = {};
+      txOrders.forEach(o => {
+        const sName = o.student?.name || 'Unknown Student';
+        if (!studentGroups[sName]) {
+          studentGroups[sName] = { student: o.student, items: [] };
+        }
+        studentGroups[sName].items.push(o);
+      });
+
+      const jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+      if (!jsPDF) return showLuxNotification("SYSTEM ERROR", "PDF Engine failed to initialize. Please refresh the page.", "error");
+
+      let doc = null;
+
+      Object.values(studentGroups).forEach((group, groupIndex) => {
+        const groupOrders = group.items;
+        const studentInfo = group.student;
+        const firstOrder = groupOrders[0];
+
+        // Dynamic height calculation based on number of items text lines for THIS student
+        const estimatedHeight = 130 + (groupOrders.length * 20);
+        const pageHeight = Math.max(148, estimatedHeight);
+
+        if (groupIndex === 0) {
+          doc = new jsPDF('p', 'mm', [105, pageHeight]); // Custom A6 width, dynamic height
+        } else {
+          doc.addPage([105, pageHeight], 'p');
+        }
+
+        const W = doc.internal.pageSize.getWidth();
+        const H = doc.internal.pageSize.getHeight();
+
+        doc.setDrawColor(230, 230, 230);
+        doc.rect(5, 5, W - 10, H - 10);
+
+        // 1. Success Circle & Check
+        doc.setDrawColor(184, 147, 63);
+        doc.setLineWidth(0.5);
+        doc.circle(W/2, 25, 10);
+        doc.setLineWidth(1);
+        doc.line(W/2 - 4.5, 25, W/2 - 1.5, 28);
+        doc.line(W/2 - 1.5, 28, W/2 + 4.5, 22);
+
+        // 2. Title
+        doc.setFont("times", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(15, 25, 35);
+        doc.text("Payment Successful", W/2, 45, { align: 'center' });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Official SRC Pulse Confirmation", W/2, 52, { align: 'center' });
+
+        // 3. Detail Rows
+        const startY = 65;
+        const rowH = 8;
+        const detailX = 15;
+        const valueX = W - 15;
+
+        doc.setDrawColor(240, 240, 240);
+        doc.line(detailX, startY - 5, valueX, startY - 5);
+
+        function drawRow(label, value, y, color = [15, 25, 35]) {
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(150, 150, 150);
+          doc.text(label.toUpperCase(), detailX, y);
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(color[0], color[1], color[2]);
+          doc.text(value, valueX, y, { align: 'right' });
+        }
+
+        drawRow("Student Name", studentInfo?.name || '---', startY);
+        drawRow("Reference ID", firstOrder.transaction_id || '---', startY + rowH, [184, 147, 63]);
+        drawRow("Status", (firstOrder.payment_status || 'PENDING').toUpperCase(), startY + rowH * 2, firstOrder.payment_status === 'pending' ? [239, 108, 0] : [39, 174, 96]);
+        drawRow("Date", new Date(firstOrder.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), startY + rowH * 3);
+
+        doc.line(detailX, startY + rowH * 3 + 5, valueX, startY + rowH * 3 + 5);
+
+        // 4. ✅ FIX: Loop through ALL items for THIS student
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(150, 150, 150);
+        doc.text("ORDER SUMMARY", detailX, startY + rowH * 4 + 5);
+
+        let itemY = startY + rowH * 4 + 13;
+        let grandTotal = 0;
+
+        groupOrders.forEach((item, index) => {
+          const label = `${index + 1}. ${item.shirt_color} Shirt (${item.shirt_size})${item.cap_option ? ' + Cap' : ''}`;
+          
+          // Remove emoji to prevent garbled PDF characters
+          const subLabel = `${item.shirt_texture || ''}${item.nickname_text ? ' · Nickname: "' + item.nickname_text + '"' : ''}${item.is_gift ? ' · GIFT' : ''}`;
+          const price = `GHS ${Number(item.total_price).toFixed(2)}`;
+          grandTotal += Number(item.total_price) || 0;
+
+          doc.setFontSize(10);
+          doc.setFont("times", "bolditalic");
+          doc.setTextColor(15, 25, 35);
+          
+          // Wrap label if too long
+          const labelLines = doc.splitTextToSize(label, W - detailX - 25);
+          doc.text(labelLines, detailX, itemY);
+
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(184, 147, 63);
+          doc.text(price, valueX, itemY, { align: 'right' });
+
+          itemY += (labelLines.length * 4) + 1;
+
+          if (subLabel.trim()) {
+            doc.setFontSize(7.5);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(150, 150, 150);
+            
+            // Wrap sub-label if too long
+            const subLabelLines = doc.splitTextToSize(subLabel, W - detailX - 5);
+            doc.text(subLabelLines, detailX, itemY);
+            itemY += (subLabelLines.length * 3.5) + 4;
+          } else {
+            itemY += 4;
+          }
+        });
+
+        // 5. Grand Total
+        itemY += 2;
+        doc.setDrawColor(220, 220, 220);
+        doc.line(detailX, itemY, valueX, itemY);
+        
+        itemY += 8;
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(184, 147, 63);
+        doc.text(`GHS ${grandTotal.toFixed(2)}`, valueX, itemY, { align: 'right' });
+        
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(150, 150, 150);
+        doc.text("TOTAL", detailX, itemY);
+
+        // 6. Footer (Pinned to bottom of the document)
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "italic");
+        doc.setTextColor(180, 180, 180);
+        doc.text("Thank you for supporting SRC Week 2026.", W/2, H - 15, { align: 'center' });
+        doc.text("This receipt is official proof of payment.", W/2, H - 11, { align: 'center' });
+      });
+
+      currentDoc = doc;
+      currentDocName = `Receipt-${txId}.pdf`;
+      const pdfUrl = doc.output('datauristring');
+      document.getElementById('receiptFrame').src = pdfUrl;
+      document.getElementById('receiptPreviewModal').classList.add('active');
+    }
+
+    // Modal Control Logic
+    document.getElementById('closeReceiptPreview').addEventListener('click', () => {
+      document.getElementById('receiptPreviewModal').classList.remove('active');
+    });
+    document.getElementById('closeReceiptPreviewTop').addEventListener('click', () => {
+      document.getElementById('receiptPreviewModal').classList.remove('active');
+    });
+    document.getElementById('downloadReceiptBtn').addEventListener('click', () => {
+      if(currentDoc) {
+        currentDoc.save(currentDocName);
+        document.getElementById('receiptPreviewModal').classList.remove('active');
+      }
+    });
+
+
+    async function handleDeleteOrder(txId) {
+      if(!confirm("Are you sure you want to cancel and DELETE this order record? This cannot be undone.")) return;
+      try {
+        const adminName = AdminAuth.getUser()?.username || 'System';
+        await deleteOrder(txId, adminName);
+        showLuxNotification("ACTION COMPLETE", "Order record has been cancelled and moved to archives.", "success");
+        loadDashboard();
+      } catch (err) {
+        showLuxNotification("ACTION FAILED", "Failed to delete order record.", "error");
+      }
+    }
+
+    // ── Advanced Export Logic ────────────────────────────────
+    const exportModal = document.getElementById('exportModal');
+    let exportFormat = 'pdf'; // default
+
+    document.getElementById('exportCsv').addEventListener('click', () => {
+      exportModal.classList.add('active');
+      document.body.classList.add('modal-open');
+    });
+
+    const closeExport = () => {
+      exportModal.classList.remove('active');
+      document.body.classList.remove('modal-open');
+    }
+    document.getElementById('closeExport').addEventListener('click', closeExport);
+    document.getElementById('closeExportTop').addEventListener('click', closeExport);
+    
+    // Close on overlay click
+    exportModal.addEventListener('click', (e) => {
+      if (e.target === exportModal) closeExport();
+    });
+
+    // Handle Format Selection
+    document.querySelectorAll('.format-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        exportFormat = btn.dataset.format;
+      });
+    });
+
+    document.getElementById('runExport').addEventListener('click', async () => {
+      const selectedColumns = Array.from(document.querySelectorAll('#columnPicker input:checked')).map(cb => cb.value);
+      const selectedStatus = document.querySelector('input[name="exportStatus"]:checked').value;
+      const selectedClass = document.getElementById('exportClassFilter').value;
+      
+      let dataToExport = orders;
+      
+      // 1. Status Filter
+      if (selectedStatus === 'paid') {
+        dataToExport = dataToExport.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled');
+      } else if (selectedStatus === 'pending') {
+        dataToExport = dataToExport.filter(o => o.payment_status === 'pending');
+      }
+
+      // 2. Class Filter
+      if (selectedClass !== 'all') {
+        dataToExport = dataToExport.filter(o => o.student?.class === selectedClass);
+      }
+
+      if (selectedColumns.length === 0) {
+        showLuxNotification("EXPORT ERROR", "Please select at least one column to include in your report.", "info");
+        return;
+      }
+      if (dataToExport.length === 0) {
+        showLuxNotification("EXPORT ERROR", "No data available matching the current filters.", "info");
+        return;
+      }
+
+      const selectedClassLabel = selectedClass === 'all' ? 'All Classes' : `Class: ${selectedClass}`;
+
+      try {
+        if (exportFormat === 'pdf') {
+          generatePdfReport(dataToExport, selectedColumns, selectedClassLabel);
+        } else {
+          generateExcelReport(dataToExport, selectedColumns);
+        }
+      } catch (err) {
+        console.error("Export Error:", err);
+        showLuxNotification("EXPORT FAILED", "We couldn't generate your report. This usually happens if some order data is incomplete or corrupted. Please refresh the page and try again.", "error");
+      }
+      
+      exportModal.classList.remove('active');
+    });
+
+    function generatePdfReport(data, cols, selectionLabel) {
+      const jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+      if (!jsPDF) {
+        showLuxNotification("SYSTEM ERROR", "PDF Library failed to load. Please check your internet connection.", "error");
+        return;
+      }
+      
+      const doc = new jsPDF('l', 'mm', 'a4');
+      
+      // Luxury Header
+      doc.setFont("times", "bold");
+      doc.setFontSize(24);
+      doc.setTextColor(15, 25, 35);
+      doc.text("SRC PULSE | ORDER INTELLIGENCE", 14, 20);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Generated on ${new Date().toLocaleString()} | Dunkwa-On-Offin NMTC`, 14, 28);
+
+      // Summary Logic
+      const totalCount = data.length;
+      const paidCount = data.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled').length;
+      
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(15, 25, 35);
+      doc.text(`REPORT SUMMARY: ${selectionLabel || 'General Listing'}`, 14, 38);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Total Records Found: ${totalCount} | Successfully Settled (Paid): ${paidCount}`, 14, 44);
+
+      const tableHeaders = [];
+      const tableData = [];
+
+      // Map columns
+      const colMap = {
+        date: { label: 'DATE', key: 'created_at', fmt: v => new Date(v).toLocaleDateString() },
+        name: { label: 'STUDENT', key: 'student.name' },
+        hostel: { label: 'HOSTEL', key: 'student.hostel' },
+        programme: { label: 'PROGRAMME', key: 'student.programme' },
+        class: { label: 'CLASS', key: 'student.class' },
+        items: { label: 'ITEMS', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
+        nickname: { label: 'NICKNAME', key: 'nickname_text' },
+        total: { label: 'BASE PRICE (GHS)', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        fee: { label: 'PROCESSING FEE', key: 'service_fee', fmt: v => Number(v || 0).toFixed(2) },
+        total_paid: { label: 'TOTAL PAID', key: 'total_paid', fmt: (v, row) => {
+          const val = Number(v);
+          return (val > 0 ? val : (Number(row.total_price) || 0)).toFixed(2);
+        }},
+        payout: { label: 'EST. SETTLEMENT', key: 'total_paid', fmt: (v, row) => {
+          const val = Number(v) > 0 ? Number(v) : (Number(row.total_price) || 0);
+          return (val * 0.9805).toFixed(2);
+        }},
+        status: { label: 'STATUS', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' },
+        batch: { label: 'BATCH #', key: 'batch_number', fmt: v => v ? `Batch ${v}` : '---' },
+        visual: { label: 'REF', key: 'shirt_color', fmt: () => '' }
+      };
+
+      cols.forEach(c => tableHeaders.push(colMap[c].label));
+
+      data.forEach(order => {
+        const row = [];
+        cols.forEach(c => {
+          const config = colMap[c];
+          let val = '';
+          if (config.key.includes('.')) {
+            const keys = config.key.split('.');
+            val = order[keys[0]] ? order[keys[0]][keys[1]] : '---';
+          } else {
+            val = order[config.key] || '---';
+          }
+          row.push(config.fmt ? config.fmt(val, order) : val);
+        });
+        tableData.push(row);
+      });
+
+
+
+      doc.autoTable({
+        head: [tableHeaders],
+        body: tableData,
+        startY: 52,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 25, 35], textColor: [255, 255, 255], font: 'helvetica', fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4 },
+        margin: { top: 35 },
+        didDrawCell: function(cellData) {
+          if (cellData.section === 'body') {
+            const colKey = cols[cellData.column.index];
+            if (colKey === 'visual') {
+              const order = data[cellData.row.index];
+              if (!order) return;
+              const colorName = order.shirt_color || '---';
+              
+              const cMap = {
+                'Navy Tradition': '#1C2E4A',
+                'Royal Burgundy': '#C21E2D',
+                'Emerald Green': '#1E8449',
+                'Midnight Black': '#111111',
+                'Deep Royal': '#2E5090',
+                'Heritage Gold': '#F1C40F',
+                'Classic White': '#F8F9FA',
+                'Dusty Pink': '#F5B7B1'
+              };
+              
+              const hex = cMap[colorName] || '#000000';
+              const r = parseInt(hex.slice(1, 3), 16);
+              const g = parseInt(hex.slice(3, 5), 16);
+              const b = parseInt(hex.slice(5, 7), 16);
+              
+              const cx = cellData.cell.x + cellData.cell.width / 2;
+              const cy = cellData.cell.y + cellData.cell.height / 2;
+              
+              doc.setFillColor(r, g, b);
+              doc.circle(cx, cy, 2.5, 'F');
+              
+              if (colorName === 'Classic White') {
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.1);
+                doc.circle(cx, cy, 2.5, 'S');
+              }
+            }
+          }
+        }
+      });
+
+      const pdfBaseName = `src-intelligence-${new Date().toISOString().slice(0, 10)}`;
+      doc.save(`${pdfBaseName}.pdf`);
+    }
+
+    function generateExcelReport(data, cols) {
+      if (typeof XLSX === 'undefined') throw new Error("Excel library (xlsx) not loaded. Please refresh.");
+      
+      const colMap = {
+        date: { label: 'Date', key: 'created_at', fmt: v => new Date(v).toLocaleDateString() },
+        name: { label: 'Student Name', key: 'student.name' },
+        hostel: { label: 'Hostel', key: 'student.hostel' },
+        programme: { label: 'Programme', key: 'student.programme' },
+        class: { label: 'Class', key: 'student.class' },
+        items: { label: 'Order Items', key: 'shirt_color', fmt: (v, row) => `${v} (${row.shirt_size}) ${row.shirt_texture || ''} ${row.cap_option ? '+ Cap' : ''}` },
+        nickname: { label: 'Nickname', key: 'nickname_text' },
+        total: { label: 'Base Price', key: 'total_price', fmt: v => Number(v).toFixed(2) },
+        fee: { label: 'Processing Fee', key: 'service_fee', fmt: v => Number(v || 0).toFixed(2) },
+        total_paid: { label: 'Total Paid', key: 'total_paid', fmt: (v, row) => {
+          const val = Number(v);
+          return (val > 0 ? val : (Number(row.total_price) || 0)).toFixed(2);
+        }},
+        payout: { label: 'Est. Settlement', key: 'total_paid', fmt: (v, row) => {
+           const val = Number(v) > 0 ? Number(v) : (Number(row.total_price) || 0);
+           return (val * 0.9805).toFixed(2);
+        }},
+        status: { label: 'Payment Status', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' },
+        batch: { label: 'Batch #', key: 'batch_number', fmt: v => v ? `Batch ${v}` : '---' },
+        visual: { label: 'Visual Ref', key: 'shirt_color' }
+      };
+
+      const excelRows = data.map(order => {
+        const row = {};
+        cols.forEach(c => {
+          const config = colMap[c];
+          let val = '';
+          if (config.key.includes('.')) {
+            const keys = config.key.split('.');
+            val = order[keys[0]] ? order[keys[0]][keys[1]] : '---';
+          } else {
+            val = order[config.key] || '---';
+          }
+          row[config.label] = config.fmt ? config.fmt(val, order) : val;
+        });
+        return row;
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+      
+      const excelBaseName = `src-registry-${new Date().toISOString().slice(0, 10)}`;
+      XLSX.writeFile(workbook, `${excelBaseName}.xlsx`);
+    }
+
+    // MANUAL ORDER MANAGEMENT
+    window.openManualOrderModal = function() {
+      document.getElementById('manualOrderModal').classList.add('active');
+    };
+    window.closeManualOrderModal = function() {
+      document.getElementById('manualOrderModal').classList.remove('active');
+      document.getElementById('manualOrderForm').reset();
+      document.getElementById('manPriceDisplay').textContent = "45.00";
+    };
+
+    window.handleManualLookup = function(phone) {
+      if (phone.length < 10) return;
+      // Search existing orders for student data
+      const student = orders.find(o => o.student?.phone === phone)?.student;
+      if (student) {
+        document.getElementById('manName').value = student.name || '';
+        document.getElementById('manHostel').value = student.hostel || '';
+        document.getElementById('manProg').value = student.programme || '';
+        updateManualClasses(student.programme);
+        setTimeout(() => { document.getElementById('manClass').value = student.class || ''; }, 100);
+      }
+    };
+
+    window.updateManualClasses = function(prog) {
+      const clsSelect = document.getElementById('manClass');
+      clsSelect.innerHTML = '<option value="" disabled selected>Select</option>';
+      const mapping = {
+        'RGN': ['RGN13 A', 'RGN13 B', 'RGN14 A', 'RGN14 B', 'RGN15'],
+        'RM': ['RM10A', 'RM10B', 'RM11', 'RM12'],
+        'NAC': ['NAC17', 'NAC18']
+      };
+      if (mapping[prog]) {
+        mapping[prog].forEach(c => {
+          clsSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+        clsSelect.disabled = false;
+      }
+    };
+
+    window.updateManualPrice = function() {
+      let total = 45; // Shirt Base
+      if (document.getElementById('manPkg').value === 'bundle') total += 25; // Cap
+      if (document.getElementById('manNick').value.trim()) total += 5; // Nickname
+      document.getElementById('manPriceDisplay').textContent = total.toFixed(2);
+    };
+
+    window.handleManualOrderSubmit = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('manSubmitBtn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'SAVING RECORD...';
+
+      try {
+        const phone = document.getElementById('manPhone').value;
+        const name = document.getElementById('manName').value;
+        const prog = document.getElementById('manProg').value;
+        const cls = document.getElementById('manClass').value;
+        const hostel = document.getElementById('manHostel').value;
+        const color = document.getElementById('manColor').value;
+        const size = document.getElementById('manSize').value;
+        const pkg = document.getElementById('manPkg').value;
+        const texture = document.querySelector('input[name="manTexture"]:checked').value;
+        const nickname = (document.getElementById('manNick').value || '').toUpperCase();
+        
+        const price = Number(document.getElementById('manPriceDisplay').textContent);
+        const txId = 'MANUAL-' + Date.now().toString().slice(-8);
+
+        // 1. Process Student (Uses app.js helper for existence check/upsert)
+        const buyerId = await insertStudent({
+          name: name,
+          phone: phone,
+          programme: prog,
+          class: cls,
+          hostel: hostel
+        });
+        
+        if (!buyerId) throw new Error("Could not process student record.");
+
+        // 2. Insert Order (Uses app.js helper)
+        const orderId = await insertOrder({
+          transaction_id: txId,
+          buyer_id: buyerId,
+          student_id: buyerId,
+          is_gift: false,
+          shirt_color: color,
+          shirt_size: size,
+          shirt_texture: texture,
+          cap_option: pkg === 'bundle',
+          nickname_option: !!nickname,
+          nickname_text: nickname || null,
+          total_price: price,
+          payment_status: 'paid'
+        });
+
+        if (!orderId) throw new Error("Order registration returned empty ID.");
+
+        showLuxNotification("SUCCESS", "Manual order recorded successfully!", "success");
+        closeManualOrderModal();
+        loadDashboard();
+      } catch (err) {
+        showLuxNotification("ERROR", "Failed to save record: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    };
+
+    // --- EDIT ORDER LOGIC ---
+    window.openEditOrderModal = function(txId) {
+      const txItems = orders.filter(o => o.transaction_id === txId);
+      if (!txItems.length) return showLuxNotification("ERROR", "Order items not found.", "error");
+
+      document.getElementById('editTxIdDisplay').textContent = "REF: #" + txId;
+      const list = document.getElementById('editItemsList');
+      list.innerHTML = "";
+
+      txItems.forEach((item, index) => {
+        const itemRow = document.createElement('div');
+        itemRow.className = "mb-4 pb-4 border-bottom";
+        itemRow.dataset.orderId = item.order_id;
+        
+        itemRow.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center mb-3">
+             <h6 class="small text-uppercase tracking-widest opacity-50 mb-0">Item ${index + 1}: ${item.shirt_color} (${item.shirt_size})</h6>
+             <div class="small fw-bold text-lux">SUBTOTAL: GHS <span class="item-subtotal">${Number(item.total_price).toFixed(2)}</span></div>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="lux-label">Color</label>
+              <input type="text" class="lux-input w-100 edit-color" value="${item.shirt_color}" oninput="window.updateEditItemSubtotal(${index})">
+            </div>
+            <div class="col-md-3">
+              <label class="lux-label">Size</label>
+              <select class="lux-input w-100 edit-size" onchange="window.updateEditItemSubtotal(${index})">
+                ${['S','M','L', 'XL', '2XL', '3XL'].map(s => `<option value="${s}" ${item.shirt_size === s ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="lux-label">Fabric</label>
+               <select class="lux-input w-100 edit-texture">
+                <option value="Cotton" ${item.shirt_texture === 'Cotton' ? 'selected' : ''}>Cotton</option>
+                <option value="Jersey" ${item.shirt_texture === 'Jersey' ? 'selected' : ''}>Jersey</option>
+              </select>
+            </div>
+             <div class="col-md-3">
+              <label class="lux-label">Status</label>
+               <select class="lux-input w-100 edit-status">
+                <option value="pending" ${item.payment_status === 'pending' ? 'selected' : ''}>PENDING</option>
+                <option value="paid" ${item.payment_status === 'paid' ? 'selected' : ''}>PAID</option>
+                <option value="fulfilled" ${item.payment_status === 'fulfilled' ? 'selected' : ''}>FULFILLED</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+               <div class="d-flex align-items-center gap-2 mt-2">
+                  <input type="checkbox" class="edit-cap" id="cap_${index}" ${item.cap_option ? 'checked' : ''} onchange="window.updateEditItemSubtotal(${index})">
+                  <label for="cap_${index}" class="small mb-0">Include Cap (+GHS 25)</label>
+               </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-center gap-2 mt-2">
+                  <input type="checkbox" class="edit-has-nick" id="nick_${index}" ${item.nickname_option ? 'checked' : ''} onchange="window.updateEditItemSubtotal(${index})">
+                  <label for="nick_${index}" class="small mb-0">Nickname (+GHS 5)</label>
+               </div>
+            </div>
+             <div class="col-md-4">
+                <div class="d-flex align-items-center gap-2 mt-2">
+                  <input type="checkbox" class="edit-gift" id="gift_${index}" ${item.is_gift ? 'checked' : ''} onchange="window.updateEditItemSubtotal(${index})">
+                  <label for="gift_${index}" class="small mb-0">Is Gift?</label>
+               </div>
+            </div>
+            <div class="col-12 mt-2 edit-nick-area" style="display: ${item.nickname_option ? 'block' : 'none'};">
+              <label class="lux-label">Nickname Text</label>
+              <input type="text" class="lux-input w-100 edit-nick-text" value="${item.nickname_text || ''}" placeholder="ENTER NICKNAME">
+            </div>
+          </div>
+        `;
+        list.appendChild(itemRow);
+      });
+
+      document.getElementById('editOrderModal').classList.add('active');
+    };
+
+    window.updateEditItemSubtotal = function(index) {
+      const rows = document.querySelectorAll('#editItemsList > div');
+      const row = rows[index];
+      if (!row) return;
+
+      const hasCap = row.querySelector('.edit-cap').checked;
+      const hasNick = row.querySelector('.edit-has-nick').checked;
+      const nickArea = row.querySelector('.edit-nick-area');
+      const subtotalEl = row.querySelector('.item-subtotal');
+
+      nickArea.style.display = hasNick ? 'block' : 'none';
+
+      let total = 45; // Shirt
+      if (hasCap) total += 25;
+      if (hasNick) total += 5;
+
+      subtotalEl.textContent = total.toFixed(2);
+    };
+
+    window.closeEditOrderModal = function() {
+      document.getElementById('editOrderModal').classList.remove('active');
+    };
+
+    window.handleEditOrderSubmit = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('editSaveBtn');
+      const originalText = btn.textContent;
+      const db = getSupabase();
+      
+      btn.disabled = true;
+      btn.textContent = "UPDATING REGISTRY...";
+
+      try {
+        const rows = document.querySelectorAll('#editItemsList > div');
+        const updates = [];
+
+        for (const row of rows) {
+          const orderId = row.dataset.orderId;
+          const color = row.querySelector('.edit-color').value;
+          const size = row.querySelector('.edit-size').value;
+          const texture = row.querySelector('.edit-texture').value;
+          const status = row.querySelector('.edit-status').value;
+          const cap = row.querySelector('.edit-cap').checked;
+          const hasNick = row.querySelector('.edit-has-nick').checked;
+          const nickText = row.querySelector('.edit-nick-text').value;
+          const gift = row.querySelector('.edit-gift').checked;
+          const total = parseFloat(row.querySelector('.item-subtotal').textContent);
+
+          if (hasNick && !nickText.trim()) throw new Error("Nickname cannot be empty if enabled.");
+
+          const payload = {
+            shirt_color: color,
+            shirt_size: size,
+            shirt_texture: texture,
+            payment_status: status,
+            cap_option: cap,
+            nickname_option: hasNick,
+            nickname_text: hasNick ? nickText.toUpperCase() : null,
+            is_gift: gift,
+            total_price: total
+          };
+
+          const { error } = await db.from('orders').update(payload).eq('order_id', orderId);
+          if (error) throw error;
+        }
+
+        showLuxNotification("SUCCESS", "Orders updated successfully.", "success");
+        window.closeEditOrderModal();
+        loadDashboard();
+      } catch (err) {
+        showLuxNotification("UPDATE FAILED", err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    };
+
+    // ── Batch Processing System ────────────────────────────
+    function getBatchBadgeHtml(batchNum) {
+      const colorMap = {
+        1: { bg: 'rgba(184,147,63,0.15)', color: '#b8933f', border: 'rgba(184,147,63,0.4)' },
+        2: { bg: 'rgba(26,58,92,0.15)', color: '#1a3a5c', border: 'rgba(26,58,92,0.4)' },
+        3: { bg: 'rgba(46,125,50,0.15)', color: '#2e7d32', border: 'rgba(46,125,50,0.4)' },
+      };
+      const fallbackColors = [
+        { bg: 'rgba(99,102,241,0.15)', color: '#6366f1', border: 'rgba(99,102,241,0.4)' },
+        { bg: 'rgba(236,72,153,0.15)', color: '#ec4899', border: 'rgba(236,72,153,0.4)' },
+        { bg: 'rgba(14,165,233,0.15)', color: '#0ea5e9', border: 'rgba(14,165,233,0.4)' },
+      ];
+      if (!batchNum) {
+        return '<span class="batch-badge" style="background:rgba(107,114,128,0.12);color:#6b7280;border-color:rgba(107,114,128,0.3);">UNASSIGNED</span>';
+      }
+      const scheme = colorMap[batchNum] || fallbackColors[(batchNum - 4) % fallbackColors.length] || fallbackColors[0];
+      return `<span class="batch-badge" style="background:${scheme.bg};color:${scheme.color};border-color:${scheme.border};">BATCH ${batchNum}</span>`;
+    }
+
+    function updateBatchFilterOptions(data) {
+      const select = document.getElementById('batchFilter');
+      if (!select) return;
+      const currentVal = currentBatchFilter;
+      const batches = [...new Set(data.filter(o => o.transaction_id !== 'SYSTEM_BATCH_CONTROL').map(o => o.batch_number).filter(b => b != null))].sort((a,b) => a - b);
+      let html = '<option value="all">All Batches</option><option value="unassigned">Unassigned</option>';
+      batches.forEach(b => { 
+        const label = closedBatches.includes(b) ? `Batch ${b} [CLOSED]` : `Batch ${b}`;
+        html += `<option value="${b}">${label}</option>`; 
+      });
+      select.innerHTML = html;
+      select.value = currentVal;
+
+      // Also update the print modal dropdown
+      const printSelect = document.getElementById('printBatchSelect');
+      if (printSelect) {
+        let printHtml = '<option value="" disabled selected>Select a batch...</option>';
+        batches.forEach(b => { 
+          const label = closedBatches.includes(b) ? `Batch ${b} [CLOSED]` : `Batch ${b}`;
+          printHtml += `<option value="${b}">${label}</option>`; 
+        });
+        printSelect.innerHTML = printHtml;
+      }
+    }
+
+    function toggleAccountSelection(checkbox) {
+      const ids = (checkbox.dataset.orderIds || '').split(',').filter(Boolean);
+      if (checkbox.checked) {
+        ids.forEach(id => selectedOrderIds.add(id));
+      } else {
+        ids.forEach(id => selectedOrderIds.delete(id));
+      }
+      updateBatchActionBar();
+      // Update select-all checkbox state
+      const allCbs = document.querySelectorAll('.order-select-cb');
+      const selectAll = document.getElementById('selectAllOrders');
+      if (selectAll) {
+        selectAll.checked = allCbs.length > 0 && [...allCbs].every(cb => cb.checked);
+      }
+    }
+
+    function toggleSelectAll() {
+      const selectAll = document.getElementById('selectAllOrders');
+      const allCbs = document.querySelectorAll('.order-select-cb');
+      allCbs.forEach(cb => {
+        cb.checked = selectAll.checked;
+        const ids = (cb.dataset.orderIds || '').split(',').filter(Boolean);
+        if (selectAll.checked) {
+          ids.forEach(id => selectedOrderIds.add(id));
+        } else {
+          ids.forEach(id => selectedOrderIds.delete(id));
+        }
+      });
+      updateBatchActionBar();
+    }
+
+    function clearAllSelections() {
+      selectedOrderIds.clear();
+      document.querySelectorAll('.order-select-cb').forEach(cb => cb.checked = false);
+      const selectAll = document.getElementById('selectAllOrders');
+      if (selectAll) selectAll.checked = false;
+      updateBatchActionBar();
+    }
+
+    function updateBatchActionBar() {
+      const bar = document.getElementById('batchActionBar');
+      const countEl = document.getElementById('selectedCount');
+      if (!bar) return;
+      const count = selectedOrderIds.size;
+      if (countEl) countEl.textContent = count;
+      if (count > 0) {
+        bar.classList.add('visible');
+      } else {
+        bar.classList.remove('visible');
+      }
+    }
+
+    async function handleBatchAssign() {
+      const batchNum = parseInt(document.getElementById('batchNumberInput').value);
+      if (!batchNum || batchNum < 1) {
+        showLuxNotification("INPUT REQUIRED", "Please enter a valid batch number (1, 2, 3...).", "info");
+        return;
+      }
+      const ids = [...selectedOrderIds];
+      if (ids.length === 0) {
+        showLuxNotification("NO SELECTION", "Please select orders to assign.", "info");
+        return;
+      }
+
+      if (closedBatches.includes(batchNum)) {
+        showLuxNotification("BATCH CLOSED", `Batch ${batchNum} is already processed and closed. Please consider another batch number ahead.`, "error");
+        return;
+      }
+
+      const db = getSupabase();
+      if (!db) return showLuxNotification("Config Error", "Supabase not initialized.", "error");
+
+      try {
+        // Batch update all selected orders
+        const { error } = await db
+          .from('orders')
+          .update({ batch_number: batchNum })
+          .in('order_id', ids);
+
+        if (error) throw error;
+
+        showLuxNotification("SUCCESS", `${ids.length} orders assigned to Batch ${batchNum}.`, "success");
+        clearAllSelections();
+        document.getElementById('batchNumberInput').value = '';
+        loadDashboard();
+      } catch (err) {
+        console.error("Batch Assign Error:", err);
+        showLuxNotification("ASSIGNMENT FAILED", "Could not update batch numbers: " + err.message, "error");
+      }
+    }
+
+    function openBatchPrintModal() {
+      updateBatchFilterOptions(orders); // refresh dropdown
+      document.getElementById('batchPrintModal').classList.add('active');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeBatchPrintModal() {
+      document.getElementById('batchPrintModal').classList.remove('active');
+      document.body.classList.remove('modal-open');
+      document.getElementById('batchPrintSummary').classList.add('d-none');
+    }
+
+    function getFilteredOrdersForPrint(batchNum) {
+      return orders.filter(o => {
+        // Batch filter (from print modal selection)
+        if (o.batch_number !== batchNum) return false;
+
+        // Status filter (from dashboard)
+        if (currentStatusFilter === 'paid') {
+          if (o.payment_status !== 'paid' && o.payment_status !== 'fulfilled') return false;
+        } else if (currentStatusFilter === 'pending') {
+          if (o.payment_status !== 'pending') return false;
+        }
+
+        // Class filter
+        if (currentClassFilter !== 'all' && o.student?.class !== currentClassFilter) return false;
+
+        // Cap filter
+        if (currentCapFilter === 'true' && !o.cap_option) return false;
+        if (currentCapFilter === 'false' && o.cap_option) return false;
+
+        return true;
+      });
+    }
+
+    function getActiveFilterLabel() {
+      const parts = [];
+      if (currentStatusFilter !== 'all') parts.push(currentStatusFilter.toUpperCase());
+      if (currentClassFilter !== 'all') parts.push(currentClassFilter);
+      if (currentCapFilter === 'true') parts.push('With Cap');
+      if (currentCapFilter === 'false') parts.push('No Cap');
+      return parts.length > 0 ? ' | Filters: ' + parts.join(', ') : '';
+    }
+
+    function updateBatchPrintSummary() {
+      const batchNum = parseInt(document.getElementById('printBatchSelect').value);
+      const summary = document.getElementById('batchPrintSummary');
+      const countEl = document.getElementById('printBatchItemCount');
+      const closeBtn = document.getElementById('btnCloseBatch');
+
+      if (!batchNum) { 
+        summary.classList.add('d-none'); 
+        if (closeBtn) closeBtn.classList.add('d-none');
+        return; 
+      }
+
+      const items = getFilteredOrdersForPrint(batchNum);
+      countEl.textContent = items.length;
+      summary.classList.remove('d-none');
+
+      if (closeBtn) {
+        closeBtn.classList.remove('d-none');
+        if (closedBatches.includes(batchNum)) {
+          closeBtn.innerHTML = '<i class="ph ph-lock me-1"></i> BATCH ALREADY CLOSED';
+          closeBtn.disabled = true;
+          closeBtn.style.opacity = '0.5';
+        } else {
+          closeBtn.innerHTML = '<i class="ph ph-lock-key me-1"></i> MARK BATCH AS PROCESSED (CLOSE)';
+          closeBtn.disabled = false;
+          closeBtn.style.opacity = '1';
+        }
+      }
+
+      const syncBtn = document.getElementById('btnSyncClosed');
+      if (syncBtn) {
+        const legacyCount = orders.filter(o => 
+          o.transaction_id !== 'SYSTEM_BATCH_CONTROL' && 
+          o.payment_status === 'paid' && 
+          closedBatches.includes(o.batch_number)
+        ).length;
+        
+        if (legacyCount > 0) {
+          syncBtn.classList.remove('d-none');
+          syncBtn.innerHTML = `<i class="ph ph-arrows-clockwise me-1"></i> SYNC ${legacyCount} LEGACY ORDERS AS FULFILLED`;
+        } else {
+          syncBtn.classList.add('d-none');
+        }
+      }
+    }
+
+    function generateBatchPdf() {
+      const batchNum = parseInt(document.getElementById('printBatchSelect').value);
+      if (!batchNum) {
+        showLuxNotification("SELECT BATCH", "Please select a batch number to print.", "info");
+        return;
+      }
+
+      const batchOrders = getFilteredOrdersForPrint(batchNum);
+      if (batchOrders.length === 0) {
+        showLuxNotification("NO ORDERS", `No orders found in Batch ${batchNum} matching current filters.`, "info");
+        return;
+      }
+
+      const jsPDF = window.jspdf ? window.jspdf.jsPDF : window.jsPDF;
+      if (!jsPDF) return showLuxNotification("SYSTEM ERROR", "PDF Engine not available.", "error");
+
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const filterLabel = getActiveFilterLabel();
+
+      // Header
+      doc.setFont("times", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(15, 25, 35);
+      doc.text(`SRC Pulse \u2014 Batch ${batchNum} Production Sheet`, 14, 18);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Generated: ${today} | Total Items: ${batchOrders.length}${filterLabel}`, 14, 26);
+
+      // Gold underline
+      doc.setDrawColor(184, 147, 63);
+      doc.setLineWidth(0.5);
+      doc.line(14, 29, 283, 29);
+
+      const colorMap = {
+        'Navy Tradition': '#1C2E4A',
+        'Royal Burgundy': '#C21E2D',
+        'Emerald Green': '#1E8449',
+        'Midnight Black': '#111111',
+        'Deep Royal': '#2E5090',
+        'Heritage Gold': '#F1C40F',
+        'Classic White': '#F8F9FA',
+        'Dusty Pink': '#F5B7B1'
+      };
+
+      // Table data
+      const tableData = batchOrders.map((o, idx) => [
+        idx + 1,
+        o.student?.name || '---',
+        o.student?.class || '---',
+        o.shirt_color || '---',
+        '', // Visual Marker Placeholder
+        o.shirt_size || '---',
+        o.shirt_texture || 'Cotton',
+        o.cap_option ? 'YES' : 'NO',
+        o.nickname_text || '---'
+      ]);
+
+      doc.autoTable({
+        head: [['#', 'Student Name', 'Class', 'Color', 'Ref', 'Size', 'Texture', 'Cap', 'Nickname']],
+        body: tableData,
+        startY: 34,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [15, 25, 35],
+          textColor: [255, 255, 255],
+          font: 'helvetica',
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          font: 'helvetica',
+          fontSize: 10,
+          cellPadding: 5,
+        },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        tableWidth: 'auto',
+        columnStyles: {
+          0: { halign: 'center', valign: 'middle', fontStyle: 'bold', cellWidth: 15 },
+          4: { halign: 'center', valign: 'middle', cellWidth: 15 },
+          5: { halign: 'center' },
+          7: { halign: 'center' }
+        },
+        margin: { top: 34 },
+        didDrawCell: function(data) {
+          if (data.section === 'body' && data.column.index === 4) {
+            const colorName = data.row.raw[3]; // Color Name is now at index 3 of row data
+            const hex = colorMap[colorName] || '#000000';
+            
+            // Convert Hex to RGB
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            
+            // Calculate Center
+            const cx = data.cell.x + data.cell.width / 2;
+            const cy = data.cell.y + data.cell.height / 2;
+            
+            // Draw Circle
+            doc.setFillColor(r, g, b);
+            doc.circle(cx, cy, 3, 'F');
+            
+            // Add subtle border for white
+            if (colorName === 'Classic White') {
+              doc.setDrawColor(200, 200, 200);
+              doc.setLineWidth(0.1);
+              doc.circle(cx, cy, 3, 'S');
+            }
+          }
+        },
+        didDrawPage: function(data) {
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(180, 180, 180);
+          const pageH = doc.internal.pageSize.getHeight();
+          doc.text(`SRC Pulse Production Sheet \u2014 Batch ${batchNum} \u2014 Page ${data.pageNumber}`, 14, pageH - 8);
+        }
+      });
+
+      // Show preview instead of direct download
+      closeBatchPrintModal();
+      currentDoc = doc;
+      currentDocName = `SRC-Pulse-Batch-${batchNum}-Production-Sheet.pdf`;
+      const pdfBlob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      document.getElementById('receiptFrame').src = blobUrl;
+      document.getElementById('receiptPreviewModal').classList.add('active');
+    }
+
+    window.handleCloseBatch = async function() {
+      const batchNum = parseInt(document.getElementById('printBatchSelect').value);
+      if (!batchNum) return;
+      
+      if (closedBatches.includes(batchNum)) {
+        showLuxNotification("ALREADY CLOSED", `Batch ${batchNum} is already marked as processed.`, "info");
+        return;
+      }
+      
+      if (!confirm(`Are you sure you want to mark Batch ${batchNum} as PROCESSED? This will prevent any further orders from being assigned to this batch number.`)) {
+        return;
+      }
+      
+      const db = getSupabase();
+      if (!db) return;
+      
+      try {
+        // 1. Mark all 'paid' orders in this batch as 'fulfilled'
+        const { error: updateError } = await db
+          .from('orders')
+          .update({ payment_status: 'fulfilled' })
+          .eq('batch_number', batchNum)
+          .eq('payment_status', 'paid');
+        
+        if (updateError) throw updateError;
+
+        // 2. Insert the system control record
+        const { error } = await db.from('orders').insert([{
+          transaction_id: 'SYSTEM_BATCH_CONTROL',
+          batch_number: batchNum,
+          payment_status: 'fulfilled',
+          shirt_color: 'SYSTEM',
+          shirt_size: 'N/A',
+          total_price: 0
+        }]);
+        
+        if (error) throw error;
+        
+        showLuxNotification("BATCH CLOSED", `Batch ${batchNum} has been closed and all orders marked as fulfilled.`, "success");
+        loadDashboard();
+      } catch (err) {
+        console.error("Close Batch Error:", err);
+        showLuxNotification("ACTION FAILED", "Could not close batch: " + err.message, "error");
+      }
+    }
+
+    window.syncAllClosedFulfillment = async function() {
+      if (closedBatches.length === 0) return;
+      
+      if (!confirm(`This will mark all PAID orders in ALL closed batches (${closedBatches.join(', ')}) as FULFILLED. Continue?`)) {
+        return;
+      }
+      
+      const db = getSupabase();
+      if (!db) return;
+      
+      try {
+        const { error } = await db
+          .from('orders')
+          .update({ payment_status: 'fulfilled' })
+          .in('batch_number', closedBatches)
+          .eq('payment_status', 'paid');
+          
+        if (error) throw error;
+        
+        showLuxNotification("SYNC COMPLETE", "All orders in closed batches have been marked as fulfilled.", "success");
+        loadDashboard();
+      } catch (err) {
+        console.error("Sync Error:", err);
+        showLuxNotification("SYNC FAILED", err.message, "error");
+      }
+    }
+
+    loadDashboard();
+  </script>
+
+  <!-- EDIT ORDER MODAL -->
+  <div id="editOrderModal" class="lux-modal-overlay">
+    <div class="lux-modal-card" style="max-width: 800px; width: 95%;">
+      <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+          <h3 class="serif mb-1" style="font-size: 28px;">Edit Order Details</h3>
+          <p id="editTxIdDisplay" class="small opacity-50 font-monospace" style="letter-spacing: 0.1em; color: var(--lux-gold);">REF: #000000</p>
+        </div>
+        <i class="ph ph-x modal-close-lux" onclick="window.closeEditOrderModal()"></i>
+      </div>
+
+      <form id="editOrderForm" onsubmit="window.handleEditOrderSubmit(event)">
+        <div id="editItemsList" style="max-height: 60vh; overflow-y: auto; padding-right: 12px; margin-bottom: 24px;">
+          <!-- Dynamic Item Rows -->
+        </div>
+
+        <div class="d-flex gap-3 justify-content-end pt-4 border-top">
+          <button type="button" class="btn-lux btn-lux-outline" style="min-width: 120px;" onclick="window.closeEditOrderModal()">DISCARD</button>
+          <button type="submit" id="editSaveBtn" class="btn-lux" style="background: var(--lux-gold); border: none; color: #fff; min-width: 180px;">SAVE CHANGES</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- INSIGHTS MODAL -->
+  <div class="modal fade" id="insightsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 bg-white" style="border-radius: 0;">
+        <div class="modal-header border-0 p-4 pb-0">
+          <h2 class="serif mb-0" style="font-size: 32px;">Sales Intelligence</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-4">
+            <div class="col-md-6">
+              <h6 class="small text-uppercase tracking-widest opacity-50 mb-3">Popularity by Color</h6>
+              <div id="analyticsColors" class="small">
+                <!-- Color Breakdown -->
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h6 class="small text-uppercase tracking-widest opacity-50 mb-3">Revenue by Class</h6>
+              <div id="analyticsClasses" class="small">
+                <!-- Class Breakdown -->
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-5 p-4" style="background: #f9f9f9; border: 1px solid var(--lux-border);">
+            <div class="row text-center">
+              <div class="col-4">
+                <div class="small opacity-50 text-uppercase mb-1">Total Items</div>
+                <div id="modalTotalItems" class="h4 serif mb-0">-</div>
+              </div>
+              <div class="col-4">
+                <div class="small opacity-50 text-uppercase mb-1">Avg Order</div>
+                <div id="modalAvgOrder" class="h4 serif mb-0">-</div>
+              </div>
+              <div class="col-4">
+                <div class="small opacity-50 text-uppercase mb-1">Caps Sold</div>
+                <div id="modalTotalCaps" class="h4 serif mb-0">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+
