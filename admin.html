@@ -25,12 +25,12 @@
   <!-- EXTERNAL LIBRARIES -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/style.css?v=1.1.1">
+  <link rel="stylesheet" href="css/theme.css?v=1.1.1">
 
   <!-- AUTHENTICATION SHIELD: Prevent Flash of Unauthenticated Content -->
   <style> body { visibility: hidden; opacity: 0; } </style>
-  <script src="js/app.js?v=1.1.0"></script>
+  <script src="js/app.js?v=1.1.1"></script>
   <script>
     (function() {
       try {
@@ -445,6 +445,13 @@
     
     .status-paid-alt { color: #2e7d32; }
     .status-pending-alt { color: #ef6c00; }
+    .color-circle-lux {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .color-circle-lux:hover {
+      transform: scale(1.2);
+    }
     .status-fulfilled-alt { color: var(--lux-gold); }
 
     /* ── Batch Processing System ────────────────────── */
@@ -723,6 +730,7 @@
               <th style="width: 40px; border-bottom: none; text-align: center;"><input type="checkbox" id="selectAllOrders" onclick="toggleSelectAll()" style="accent-color: var(--lux-gold); width: 16px; height: 16px; cursor: pointer;" title="Select All"></th>
               <th style="width: 40px; border-bottom: none;"></th>
               <th>Student Account</th>
+              <th style="width: 60px;">Color</th>
               <th>Programme</th>
               <th>Hostel</th>
               <th>Total Orders</th>
@@ -764,7 +772,7 @@
     <div class="container">
       <div class="logo-lux" style="color: #fff; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 20px; margin-bottom: 40px; display: inline-block;">SRC PULSE</div>
       <p class="opacity-50 small text-uppercase tracking-widest mb-2">&copy; 2026 Dunkwa-On-Offin Nursing & Midwifery College</p>
-      <p class="small text-uppercase tracking-widest opacity-25" style="font-size: 10px; letter-spacing: 0.2em;">Created by Jonas Coleman, SRC PRO</p>
+      <p class="small text-uppercase tracking-widest opacity-25" style="font-size: 10px; letter-spacing: 0.2em;">Created by Jonas Coleman, SRC PRO | v1.1.1-PULSE</p>
     </div>
   </footer>
 
@@ -837,6 +845,12 @@
         </button>
         <button class="btn-lux w-100 btn-outline-lux" onclick="closeBatchPrintModal()">CANCEL</button>
       </div>
+      <button id="btnCloseBatch" class="btn-lux w-100 mt-2 d-none" style="background: #c21e2d; color: #fff; border: none; font-size: 11px;" onclick="handleCloseBatch()">
+        <i class="ph ph-lock-key me-1"></i> MARK BATCH AS PROCESSED (CLOSE)
+      </button>
+      <button id="btnSyncClosed" class="btn-lux w-100 mt-2 d-none" style="background: var(--lux-bg); color: var(--lux-ink); border: 1px solid var(--lux-border); font-size: 10px; opacity: 0.7;" onclick="syncAllClosedFulfillment()">
+        <i class="ph ph-arrows-clockwise me-1"></i> SYNC ALL CLOSED BATCHES AS FULFILLED
+      </button>
     </div>
   </div>
 
@@ -987,6 +1001,12 @@
           </div>
           <div class="col-6">
             <label class="column-opt"><input type="checkbox" value="status" checked> Status</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="batch" checked> Batch Number</label>
+          </div>
+          <div class="col-6">
+            <label class="column-opt"><input type="checkbox" value="visual" checked> Visual Marker</label>
           </div>
         </div>
       </div>
@@ -1204,10 +1224,34 @@
     let charts = {}; // Global chart instances
     let currentBatchFilter = 'all';
     let selectedOrderIds = new Set();
+    let closedBatches = [];
+
+    const COLOR_MAP = {
+      'Navy Tradition': '#1C2E4A',
+      'Royal Burgundy': '#C21E2D',
+      'Emerald Green': '#1E8449',
+      'Midnight Black': '#111111',
+      'Deep Royal': '#2E5090',
+      'Heritage Gold': '#F1C40F',
+      'Classic White': '#F8F9FA',
+      'Dusty Pink': '#F5B7B1'
+    };
+
+    function getColorCircleHtml(colorName, size = '14px') {
+      const hex = COLOR_MAP[colorName] || '#cccccc';
+      return `<div class="color-circle-lux" style="width:${size}; height:${size}; border-radius:50%; background:${hex}; border:1px solid rgba(0,0,0,0.1); display:inline-block; vertical-align:middle;" title="${colorName}"></div>`;
+    }
 
     async function loadDashboard() {
       try {
         orders = await getAllOrders();
+        
+        // Extract closed batches from system control records
+        closedBatches = orders
+          .filter(o => o.transaction_id === 'SYSTEM_BATCH_CONTROL')
+          .map(o => parseInt(o.batch_number))
+          .filter(Boolean);
+
         updateExportClassFilter(orders);
         updateDashboardClassFilter(orders);
         applyFilters(); 
@@ -1262,6 +1306,9 @@
 
       // 1. Filter the base items
       const baseFiltered = orders.filter(o => {
+        // Exclude internal control records from the UI list
+        if (o.transaction_id === 'SYSTEM_BATCH_CONTROL') return false;
+
         // Status Filter
         let matchesStatus = true;
         if (currentStatusFilter === 'paid') {
@@ -1361,7 +1408,7 @@
     }
 
     function renderStats() {
-      const paid = orders.filter(o => o.payment_status === 'paid' || o.payment_status === 'fulfilled');
+      const paid = orders.filter(o => (o.payment_status === 'paid' || o.payment_status === 'fulfilled') && o.transaction_id !== 'SYSTEM_BATCH_CONTROL');
       
       const gross = paid.reduce((sum, o) => {
         const itemPrice = Number(o.total_price) || 0;
@@ -1627,6 +1674,11 @@
               </div>
             </div>
           </td>
+          <td data-label="Color">
+            <div class="d-flex gap-1 flex-wrap">
+              ${[...new Set(txList.flatMap(tx => tx.items.map(i => i.shirt_color)))].map(c => getColorCircleHtml(c, '16px')).join('')}
+            </div>
+          </td>
           <td data-label="Programme" class="small opacity-50">${acc.student?.programme || '---'}</td>
           <td data-label="Hostel" class="small opacity-50">${acc.student?.hostel || '---'}</td>
           <td data-label="Orders">
@@ -1680,7 +1732,8 @@
                       ${tx.items.map(item => `
                         <div class="item-line-lux small">
                           <div>
-                             <span class="fw-bold">${item.shirt_color} (${item.shirt_size})</span>
+                             ${getColorCircleHtml(item.shirt_color, '12px')}
+                             <span class="fw-bold ms-1">${item.shirt_color} (${item.shirt_size})</span>
                              <span class="opacity-50 ms-1 text-uppercase">${item.shirt_texture || 'Cotton'}</span>
                              ${item.is_gift ? '<span class="stat-badge-lux ms-1 d-inline-flex align-items-center" style="color:var(--lux-gold);" title="Gift Order"><i class="ph-bold ph-gift" style="font-size:12px;"></i><span class="d-none d-md-inline ms-1">GIFT</span></span>' : ''}
                              ${item.cap_option ? '<span class="stat-badge-lux ms-1 d-inline-flex align-items-center" style="background:#e3f2fd; color:#1e88e5; border-color:#bbdefb;" title="Includes Cap"><i class="ph-bold ph-baseball-cap" style="font-size:13px;"></i><span class="d-none d-md-inline ms-1">CAP</span></span>' : ''}
@@ -1912,17 +1965,30 @@
 
     // BULK AUDIT SYSTEM
     async function handleBulkAudit() {
-      console.log("Bulk Audit: Monitoring 29+ transactions...");
-      // Find unique pending transactions
-      const pendingOrders = orders.filter(o => o.payment_status === 'pending');
+      // Find unique pending transactions (excluding system markers)
+      const pendingOrders = orders.filter(o => o.payment_status === 'pending' && o.transaction_id !== 'SYSTEM_BATCH_CONTROL');
       
-      // Get unique IDs to avoid double-verifying the same ref
-      const uniqueRefs = [...new Set(pendingOrders.map(o => o.transaction_id))];
+      // Sort by date (newest first) so we check recent attempts first
+      pendingOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      // Get unique IDs to avoid double-verifying (preserving newest-first order)
+      const uniqueRefs = [];
+      const seen = new Set();
+      for (const o of pendingOrders) {
+        if (o.transaction_id && !seen.has(o.transaction_id)) {
+          uniqueRefs.push(o.transaction_id);
+          seen.add(o.transaction_id);
+        }
+      }
 
       if (uniqueRefs.length === 0) {
         showLuxNotification("Audit Result", "No pending transactions found for auditing.", "info");
         return;
       }
+
+      // Optimization: Limit to the 25 most recent unique attempts
+      const activeRefs = uniqueRefs.slice(0, 25);
+      console.log(`Bulk Audit: Checking ${activeRefs.length} most recent attempts (out of ${uniqueRefs.length} pending)...`);
 
       const modal = document.getElementById('bulkAuditModal');
       const list = document.getElementById('auditProgressList');
@@ -1934,47 +2000,42 @@
       modal.classList.add('active');
       
       let successCount = 0;
-      for (const refId of uniqueRefs) {
-        // Find a representative order for the name
-        const sampleOrder = pendingOrders.find(o => o.transaction_id === refId);
-        const studentName = sampleOrder?.student?.name || "Unknown";
-
-        const row = document.createElement('div');
-        row.className = 'd-flex justify-content-between align-items-center mb-2 pb-2 border-bottom';
-        row.style.fontSize = '12px';
-        row.innerHTML = `
-          <span class="opacity-75">${studentName} (${refId})</span>
-          <span id="audit-${refId}" class="fw-bold opacity-50">Processing...</span>
-        `;
-        list.appendChild(row);
-        list.scrollTop = list.scrollHeight;
+      
+      // Process in batches of 5 for speed without overwhelming the API
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < activeRefs.length; i += BATCH_SIZE) {
+        const batch = activeRefs.slice(i, i + BATCH_SIZE);
         
-        try {
-          const res = await fetch(`/api/verify?reference=${encodeURIComponent(refId)}`);
-          
-          let result;
-          try {
-            result = await res.json();
-          } catch(e) {
-            throw new Error(`API Offline. Are you running strictly locally without Vercel?`);
-          }
+        await Promise.all(batch.map(async (refId) => {
+          const sampleOrder = pendingOrders.find(o => o.transaction_id === refId);
+          const studentName = sampleOrder?.student?.name || "Unknown";
 
-          const statusEl = document.getElementById(`audit-${refId}`);
+          const row = document.createElement('div');
+          row.className = 'd-flex justify-content-between align-items-center mb-2 pb-2 border-bottom';
+          row.style.fontSize = '12px';
+          row.innerHTML = `
+            <span class="opacity-75">${studentName} (${refId})</span>
+            <span id="audit-${refId}" class="fw-bold opacity-50">Processing...</span>
+          `;
+          list.appendChild(row);
+          list.scrollTop = list.scrollHeight;
           
-          if (result && result.success && result.status === 'success') {
-            statusEl.innerHTML = '<span style="color: #2e7d32; font-weight: bold;">✓ PAID</span>';
-            successCount++;
-          } else if (result && result.message && result.message.toLowerCase().includes('configuration error')) {
-            statusEl.innerHTML = `<span style="color: #d84315; font-weight: bold; cursor: help;" title="Vercel Environment Variables missing.">ENV ERROR</span>`;
-          } else {
-            statusEl.innerHTML = '<span style="color: #c62828; font-weight: bold;">UNPAID</span>';
+          try {
+            const res = await fetch(`/api/verify?reference=${encodeURIComponent(refId)}`);
+            const result = await res.json();
+            const statusEl = document.getElementById(`audit-${refId}`);
+            
+            if (result && result.success && result.status === 'success') {
+              statusEl.innerHTML = '<span style="color: #2e7d32; font-weight: bold;">✓ PAID</span>';
+              successCount++;
+            } else {
+              statusEl.innerHTML = '<span style="color: #c21e2d; opacity: 0.5;">NO RECORD</span>';
+            }
+          } catch (err) {
+            const statusEl = document.getElementById(`audit-${refId}`);
+            if (statusEl) statusEl.innerHTML = '<span class="opacity-25">ERROR</span>';
           }
-        } catch (err) {
-          console.error(`Audit failed for ${refId}:`, err);
-          document.getElementById(`audit-${refId}`).innerHTML = `<span class="text-danger fw-bold" style="font-size: 10px; cursor: help;" title="${err.message}">API ERROR</span>`;
-        }
-        // Small delay to prevent rate limit friction
-        await new Promise(r => setTimeout(r, 400));
+        }));
       }
 
       countEl.textContent = successCount;
@@ -2284,7 +2345,8 @@
           generateExcelReport(dataToExport, selectedColumns);
         }
       } catch (err) {
-        showLuxNotification("EXPORT FAILED", "An error occurred while generating your report: " + err.message, "error");
+        console.error("Export Error:", err);
+        showLuxNotification("EXPORT FAILED", "We couldn't generate your report. This usually happens if some order data is incomplete or corrupted. Please refresh the page and try again.", "error");
       }
       
       exportModal.classList.remove('active');
@@ -2345,7 +2407,9 @@
           const val = Number(v) > 0 ? Number(v) : (Number(row.total_price) || 0);
           return (val * 0.9805).toFixed(2);
         }},
-        status: { label: 'STATUS', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' }
+        status: { label: 'STATUS', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' },
+        batch: { label: 'BATCH #', key: 'batch_number', fmt: v => v ? `Batch ${v}` : '---' },
+        visual: { label: 'REF', key: 'shirt_color', fmt: () => '' }
       };
 
       cols.forEach(c => tableHeaders.push(colMap[c].label));
@@ -2376,7 +2440,45 @@
         headStyles: { fillColor: [15, 25, 35], textColor: [255, 255, 255], font: 'helvetica', fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 248, 248] },
         styles: { font: 'helvetica', fontSize: 9, cellPadding: 4 },
-        margin: { top: 35 }
+        margin: { top: 35 },
+        didDrawCell: function(cellData) {
+          if (cellData.section === 'body') {
+            const colKey = cols[cellData.column.index];
+            if (colKey === 'visual') {
+              const order = data[cellData.row.index];
+              if (!order) return;
+              const colorName = order.shirt_color || '---';
+              
+              const cMap = {
+                'Navy Tradition': '#1C2E4A',
+                'Royal Burgundy': '#C21E2D',
+                'Emerald Green': '#1E8449',
+                'Midnight Black': '#111111',
+                'Deep Royal': '#2E5090',
+                'Heritage Gold': '#F1C40F',
+                'Classic White': '#F8F9FA',
+                'Dusty Pink': '#F5B7B1'
+              };
+              
+              const hex = cMap[colorName] || '#000000';
+              const r = parseInt(hex.slice(1, 3), 16);
+              const g = parseInt(hex.slice(3, 5), 16);
+              const b = parseInt(hex.slice(5, 7), 16);
+              
+              const cx = cellData.cell.x + cellData.cell.width / 2;
+              const cy = cellData.cell.y + cellData.cell.height / 2;
+              
+              doc.setFillColor(r, g, b);
+              doc.circle(cx, cy, 2.5, 'F');
+              
+              if (colorName === 'Classic White') {
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.1);
+                doc.circle(cx, cy, 2.5, 'S');
+              }
+            }
+          }
+        }
       });
 
       const pdfBaseName = `src-intelligence-${new Date().toISOString().slice(0, 10)}`;
@@ -2404,7 +2506,9 @@
            const val = Number(v) > 0 ? Number(v) : (Number(row.total_price) || 0);
            return (val * 0.9805).toFixed(2);
         }},
-        status: { label: 'Payment Status', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' }
+        status: { label: 'Payment Status', key: 'payment_status', fmt: v => v?.toUpperCase() || '---' },
+        batch: { label: 'Batch #', key: 'batch_number', fmt: v => v ? `Batch ${v}` : '---' },
+        visual: { label: 'Visual Ref', key: 'shirt_color' }
       };
 
       const excelRows = data.map(order => {
@@ -2714,9 +2818,12 @@
       const select = document.getElementById('batchFilter');
       if (!select) return;
       const currentVal = currentBatchFilter;
-      const batches = [...new Set(data.map(o => o.batch_number).filter(b => b != null))].sort((a,b) => a - b);
+      const batches = [...new Set(data.filter(o => o.transaction_id !== 'SYSTEM_BATCH_CONTROL').map(o => o.batch_number).filter(b => b != null))].sort((a,b) => a - b);
       let html = '<option value="all">All Batches</option><option value="unassigned">Unassigned</option>';
-      batches.forEach(b => { html += `<option value="${b}">Batch ${b}</option>`; });
+      batches.forEach(b => { 
+        const label = closedBatches.includes(b) ? `Batch ${b} [CLOSED]` : `Batch ${b}`;
+        html += `<option value="${b}">${label}</option>`; 
+      });
       select.innerHTML = html;
       select.value = currentVal;
 
@@ -2724,7 +2831,10 @@
       const printSelect = document.getElementById('printBatchSelect');
       if (printSelect) {
         let printHtml = '<option value="" disabled selected>Select a batch...</option>';
-        batches.forEach(b => { printHtml += `<option value="${b}">Batch ${b}</option>`; });
+        batches.forEach(b => { 
+          const label = closedBatches.includes(b) ? `Batch ${b} [CLOSED]` : `Batch ${b}`;
+          printHtml += `<option value="${b}">${label}</option>`; 
+        });
         printSelect.innerHTML = printHtml;
       }
     }
@@ -2790,6 +2900,11 @@
       const ids = [...selectedOrderIds];
       if (ids.length === 0) {
         showLuxNotification("NO SELECTION", "Please select orders to assign.", "info");
+        return;
+      }
+
+      if (closedBatches.includes(batchNum)) {
+        showLuxNotification("BATCH CLOSED", `Batch ${batchNum} is already processed and closed. Please consider another batch number ahead.`, "error");
         return;
       }
 
@@ -2863,10 +2978,46 @@
       const batchNum = parseInt(document.getElementById('printBatchSelect').value);
       const summary = document.getElementById('batchPrintSummary');
       const countEl = document.getElementById('printBatchItemCount');
-      if (!batchNum) { summary.classList.add('d-none'); return; }
+      const closeBtn = document.getElementById('btnCloseBatch');
+
+      if (!batchNum) { 
+        summary.classList.add('d-none'); 
+        if (closeBtn) closeBtn.classList.add('d-none');
+        return; 
+      }
+
       const items = getFilteredOrdersForPrint(batchNum);
       countEl.textContent = items.length;
       summary.classList.remove('d-none');
+
+      if (closeBtn) {
+        closeBtn.classList.remove('d-none');
+        if (closedBatches.includes(batchNum)) {
+          closeBtn.innerHTML = '<i class="ph ph-lock me-1"></i> BATCH ALREADY CLOSED';
+          closeBtn.disabled = true;
+          closeBtn.style.opacity = '0.5';
+        } else {
+          closeBtn.innerHTML = '<i class="ph ph-lock-key me-1"></i> MARK BATCH AS PROCESSED (CLOSE)';
+          closeBtn.disabled = false;
+          closeBtn.style.opacity = '1';
+        }
+      }
+
+      const syncBtn = document.getElementById('btnSyncClosed');
+      if (syncBtn) {
+        const legacyCount = orders.filter(o => 
+          o.transaction_id !== 'SYSTEM_BATCH_CONTROL' && 
+          o.payment_status === 'paid' && 
+          closedBatches.includes(o.batch_number)
+        ).length;
+        
+        if (legacyCount > 0) {
+          syncBtn.classList.remove('d-none');
+          syncBtn.innerHTML = `<i class="ph ph-arrows-clockwise me-1"></i> SYNC ${legacyCount} LEGACY ORDERS AS FULFILLED`;
+        } else {
+          syncBtn.classList.add('d-none');
+        }
+      }
     }
 
     function generateBatchPdf() {
@@ -2905,21 +3056,32 @@
       doc.setLineWidth(0.5);
       doc.line(14, 29, 283, 29);
 
+      const colorMap = {
+        'Navy Tradition': '#1C2E4A',
+        'Royal Burgundy': '#C21E2D',
+        'Emerald Green': '#1E8449',
+        'Midnight Black': '#111111',
+        'Deep Royal': '#2E5090',
+        'Heritage Gold': '#F1C40F',
+        'Classic White': '#F8F9FA',
+        'Dusty Pink': '#F5B7B1'
+      };
+
       // Table data
       const tableData = batchOrders.map((o, idx) => [
         idx + 1,
         o.student?.name || '---',
         o.student?.class || '---',
         o.shirt_color || '---',
+        '', // Visual Marker Placeholder
         o.shirt_size || '---',
         o.shirt_texture || 'Cotton',
         o.cap_option ? 'YES' : 'NO',
-        o.nickname_text || '---',
-        `GHS ${Number(o.total_price || 0).toFixed(2)}`
+        o.nickname_text || '---'
       ]);
 
       doc.autoTable({
-        head: [['#', 'Student Name', 'Class', 'Color', 'Size', 'Texture', 'Cap', 'Nickname', 'Price']],
+        head: [['#', 'Student Name', 'Class', 'Color', 'Ref', 'Size', 'Texture', 'Cap', 'Nickname']],
         body: tableData,
         startY: 34,
         theme: 'grid',
@@ -2938,12 +3100,38 @@
         alternateRowStyles: { fillColor: [248, 248, 248] },
         tableWidth: 'auto',
         columnStyles: {
-          0: { halign: 'center', valign: 'middle', fontStyle: 'bold', cellWidth: 18 },
-          4: { halign: 'center' },
-          6: { halign: 'center' },
-          8: { halign: 'right' },
+          0: { halign: 'center', valign: 'middle', fontStyle: 'bold', cellWidth: 15 },
+          4: { halign: 'center', valign: 'middle', cellWidth: 15 },
+          5: { halign: 'center' },
+          7: { halign: 'center' }
         },
         margin: { top: 34 },
+        didDrawCell: function(data) {
+          if (data.section === 'body' && data.column.index === 4) {
+            const colorName = data.row.raw[3]; // Color Name is now at index 3 of row data
+            const hex = colorMap[colorName] || '#000000';
+            
+            // Convert Hex to RGB
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            
+            // Calculate Center
+            const cx = data.cell.x + data.cell.width / 2;
+            const cy = data.cell.y + data.cell.height / 2;
+            
+            // Draw Circle
+            doc.setFillColor(r, g, b);
+            doc.circle(cx, cy, 3, 'F');
+            
+            // Add subtle border for white
+            if (colorName === 'Classic White') {
+              doc.setDrawColor(200, 200, 200);
+              doc.setLineWidth(0.1);
+              doc.circle(cx, cy, 3, 'S');
+            }
+          }
+        },
         didDrawPage: function(data) {
           doc.setFontSize(8);
           doc.setFont("helvetica", "italic");
@@ -2961,6 +3149,79 @@
       const blobUrl = URL.createObjectURL(pdfBlob);
       document.getElementById('receiptFrame').src = blobUrl;
       document.getElementById('receiptPreviewModal').classList.add('active');
+    }
+
+    window.handleCloseBatch = async function() {
+      const batchNum = parseInt(document.getElementById('printBatchSelect').value);
+      if (!batchNum) return;
+      
+      if (closedBatches.includes(batchNum)) {
+        showLuxNotification("ALREADY CLOSED", `Batch ${batchNum} is already marked as processed.`, "info");
+        return;
+      }
+      
+      if (!confirm(`Are you sure you want to mark Batch ${batchNum} as PROCESSED? This will prevent any further orders from being assigned to this batch number.`)) {
+        return;
+      }
+      
+      const db = getSupabase();
+      if (!db) return;
+      
+      try {
+        // 1. Mark all 'paid' orders in this batch as 'fulfilled'
+        const { error: updateError } = await db
+          .from('orders')
+          .update({ payment_status: 'fulfilled' })
+          .eq('batch_number', batchNum)
+          .eq('payment_status', 'paid');
+        
+        if (updateError) throw updateError;
+
+        // 2. Insert the system control record
+        const { error } = await db.from('orders').insert([{
+          transaction_id: 'SYSTEM_BATCH_CONTROL',
+          batch_number: batchNum,
+          payment_status: 'fulfilled',
+          shirt_color: 'SYSTEM',
+          shirt_size: 'N/A',
+          total_price: 0
+        }]);
+        
+        if (error) throw error;
+        
+        showLuxNotification("BATCH CLOSED", `Batch ${batchNum} has been closed and all orders marked as fulfilled.`, "success");
+        loadDashboard();
+      } catch (err) {
+        console.error("Close Batch Error:", err);
+        showLuxNotification("ACTION FAILED", "Could not close batch: " + err.message, "error");
+      }
+    }
+
+    window.syncAllClosedFulfillment = async function() {
+      if (closedBatches.length === 0) return;
+      
+      if (!confirm(`This will mark all PAID orders in ALL closed batches (${closedBatches.join(', ')}) as FULFILLED. Continue?`)) {
+        return;
+      }
+      
+      const db = getSupabase();
+      if (!db) return;
+      
+      try {
+        const { error } = await db
+          .from('orders')
+          .update({ payment_status: 'fulfilled' })
+          .in('batch_number', closedBatches)
+          .eq('payment_status', 'paid');
+          
+        if (error) throw error;
+        
+        showLuxNotification("SYNC COMPLETE", "All orders in closed batches have been marked as fulfilled.", "success");
+        loadDashboard();
+      } catch (err) {
+        console.error("Sync Error:", err);
+        showLuxNotification("SYNC FAILED", err.message, "error");
+      }
     }
 
     loadDashboard();

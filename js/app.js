@@ -681,7 +681,7 @@ onReady(() => {
   
   // Initialize Global Countdown
   if (document.getElementById('preorder-countdown')) {
-    initCountdown(new Date('2026-06-12T00:00:00'), 'preorder-countdown');
+    initCountdown(CONFIG.DEADLINE, 'preorder-countdown');
   }
 });
 
